@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>NSCameraUsageDescription</key>
+    <string>LifeClip needs camera access to record your daily moments.</string>
+
+    <key>NSMicrophoneUsageDescription</key>
+    <string>LifeClip needs microphone access to capture audio with your clips.</string>
+
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>LifeClip needs photo library access to import existing videos.</string>
+
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>LifeClip needs permission to save compiled videos to your photo library.</string>
+
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>processing</string>
+    </array>
+
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>video-camera</string>
+        <string>microphone</string>
+    </array>
+
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+        <key>UIApplicationSupportsMultipleScenes</key>
+        <false/>
+    </dict>
+</dict>
+</plist>
