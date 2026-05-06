@@ -29,9 +29,11 @@ final class Clip {
 
     /// Resolves the stored URL, preferring the security-scoped bookmark when available.
     var fileURL: URL {
-        if let bookmark = fileBookmark,
-           let resolved = try? URL(resolvingBookmarkData: bookmark, bookmarkDataIsStale: nil) {
-            return resolved
+        if let bookmark = fileBookmark {
+            var isStale = false
+            if let resolved = try? URL(resolvingBookmarkData: bookmark, bookmarkDataIsStale: &isStale) {
+                return resolved
+            }
         }
         return URL(string: fileURLString) ?? URL(fileURLWithPath: fileURLString)
     }
