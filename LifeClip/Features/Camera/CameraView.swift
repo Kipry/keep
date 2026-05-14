@@ -36,7 +36,7 @@ struct CameraView: View {
             }
 
             if showZoomLabel {
-                Text(String(format: "%.1f×", camera.currentZoomFactor))
+                Text(String(format: "%.1f×", camera.displayZoomFactor))
                     .font(.mono(15, weight: .medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
@@ -285,20 +285,15 @@ private struct RecordButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                // Ring track — visible only while recording
+                // Amber progress arc, sits just outside the white ring — replaces the dashed guide circle
                 if isRecording {
-                    Circle()
-                        .stroke(.white.opacity(0.15), lineWidth: 5)
-                        .frame(width: 90, height: 90)
-
-                    // Amber progress arc, starts from 12 o'clock
                     Circle()
                         .trim(from: 0, to: progress)
                         .stroke(
                             Theme.amber,
-                            style: StrokeStyle(lineWidth: 5, lineCap: .round)
+                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
                         )
-                        .frame(width: 90, height: 90)
+                        .frame(width: 82, height: 82)
                         .rotationEffect(.degrees(-90))
                         .animation(.linear(duration: 0.06), value: progress)
                         .shadow(color: Theme.amber.opacity(0.6), radius: 4)

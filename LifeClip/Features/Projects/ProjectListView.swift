@@ -6,7 +6,7 @@ struct ProjectListView: View {
 
     @Query(
         filter: #Predicate<Project> { !$0.isDeleted },
-        sort: \Project.createdAt,
+        sort: \Project.updatedAt,
         order: .reverse
     )
     private var projects: [Project]
@@ -190,7 +190,7 @@ struct ProjectCard: View {
                         .font(.cardTitle)
                         .foregroundStyle(.white)
                         .lineLimit(2)
-                    Text(project.createdAt.formatted(date: .abbreviated, time: .omitted))
+                    Text(project.updatedAt.formatted(date: .abbreviated, time: .omitted))
                         .font(.monoCaption)
                         .foregroundStyle(.white.opacity(0.8))
                 }

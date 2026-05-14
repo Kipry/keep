@@ -58,6 +58,7 @@ final class CameraService: NSObject, ObservableObject {
     @Published var cameraError: CameraError?
     @Published var lastRecordedURL: URL?
     @Published var currentZoomFactor: CGFloat = 1.0
+    @Published var displayZoomFactor: CGFloat = 1.0
 
     // MARK: Private objects
 
@@ -103,6 +104,7 @@ final class CameraService: NSObject, ObservableObject {
         s.commitConfiguration()
         session = s
         currentZoomFactor = videoInput.device.videoZoomFactor
+        displayZoomFactor = Self.computeDisplayZoom(videoInput.device.videoZoomFactor, device: videoInput.device)
 
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
             DispatchQueue.global(qos: .userInitiated).async { s.startRunning(); c.resume() }
@@ -148,6 +150,7 @@ final class CameraService: NSObject, ObservableObject {
         videoDeviceInput = newInput
         cameraPosition = newPosition
         currentZoomFactor = newInput.device.videoZoomFactor
+        displayZoomFactor = Self.computeDisplayZoom(newInput.device.videoZoomFactor, device: newInput.device)
     }
 
     // MARK: - Zoom (auto-switches lenses via virtual device)
@@ -160,6 +163,7 @@ final class CameraService: NSObject, ObservableObject {
         device.videoZoomFactor = clamped
         device.unlockForConfiguration()
         currentZoomFactor = clamped
+        displayZoomFactor = Self.computeDisplayZoom(clamped, device: device)
     }
 
     // MARK: - Focus / Torch
@@ -185,6 +189,20 @@ final class CameraService: NSObject, ObservableObject {
     }
 
     // MARK: - Private helpers
+
+    // Maps internal videoZoomFactor to the conventional camera-app multiplier.
+    // Devices with an ultra-wide lens (triple / dual-wide): the first switch-over
+    // factor is where the wide-angle (1×) activates, so dividing by it gives
+    // 0.5× for ultra-wide, 1× for wide, 2-3× for telephoto.
+    // Devices without an ultra-wide: factor is used as-is (starts at 1×).
+    private static func computeDisplayZoom(_ factor: CGFloat, device: AVCaptureDevice) -> CGFloat {
+        let hasUltraWide = device.deviceType == .builtInTripleCamera
+                        || device.deviceType == .builtInDualWideCamera
+        if hasUltraWide, let first = device.virtualDeviceSwitchOverVideoZoomFactors.first {
+            return factor / CGFloat(first)
+        }
+        return factor
+    }
 
     private func configureAudioSession() throws {
         let a = AVAudioSession.sharedInstance()
