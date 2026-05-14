@@ -1,89 +1,153 @@
 import SwiftUI
-import AVKit
+import AVFoundation
 
-/// Plays all active clips of a project back-to-back using AVQueuePlayer.
-/// No export step required — clips are streamed directly from the sandbox.
 struct ProjectPlayerView: View {
     let project: Project
 
     @Environment(\.dismiss) private var dismiss
-    @State private var player: AVQueuePlayer?
-    @State private var isReady = false
+    @State private var player: AVPlayer?
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if let player, isReady {
-                VideoPlayer(player: player)
+            if let player {
+                VideoLayerView(player: player)
                     .ignoresSafeArea()
+                    .onTapGesture { togglePlayback() }
             } else {
-                ProgressView()
-                    .tint(.white)
-                    .scaleEffect(1.5)
+                ProgressView().tint(.white).scaleEffect(1.5)
             }
 
-            // Overlay: close button + title
-            VStack {
-                HStack {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.title3.bold())
-                            .foregroundStyle(.white)
-                            .padding(12)
-                            .background(.black.opacity(0.5), in: Circle())
-                    }
-
-                    Spacer()
-
-                    VStack(spacing: 2) {
-                        Text(project.name)
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                        Text("\(project.activeClips.count) clips · \(durationText)")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-
-                    Spacer()
-
-                    // Mirror close button for centering
-                    Color.clear.frame(width: 44, height: 44)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-
-                Spacer()
-            }
+            overlay
         }
-        .task { setupPlayer() }
+        .task { await buildCompositionAndPlay() }
         .onDisappear { player?.pause() }
+        .preferredColorScheme(.dark)
+        .statusBarHidden(true)
     }
 
-    // MARK: - Setup
+    // MARK: - Overlay
 
-    private func setupPlayer() {
-        let clips = project.activeClips
+    private var overlay: some View {
+        VStack {
+            HStack {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title3.bold())
+                        .foregroundStyle(.white)
+                        .padding(12)
+                        .background(.black.opacity(0.5), in: Circle())
+                }
+
+                Spacer()
+
+                VStack(spacing: 2) {
+                    Text(project.name)
+                        .font(.navTitle)
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text("\(project.activeClips.count) CLIPS · \(durationText)")
+                        .font(.monoCaption)
+                        .tracking(0.5)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+
+                Spacer()
+
+                // Balance the back button so the title stays centred
+                Color.clear.frame(width: 44, height: 44)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Playback
+
+    private func togglePlayback() {
+        guard let player else { return }
+        player.timeControlStatus == .playing ? player.pause() : player.play()
+    }
+
+    // MARK: - Composition
+
+    private func buildCompositionAndPlay() async {
+        let clips = project.activeClips.filter { $0.isAvailable }
         guard !clips.isEmpty else { return }
 
-        // Filter to clips whose files actually exist so we don't hit a broken item
-        let items = clips
-            .filter { $0.isAvailable }
-            .map { AVPlayerItem(url: $0.fileURL) }
+        let composition = AVMutableComposition()
+        guard
+            let videoTrack = composition.addMutableTrack(
+                withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid),
+            let audioTrack = composition.addMutableTrack(
+                withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
+        else { return }
 
-        guard !items.isEmpty else { return }
+        var cursor = CMTime.zero
+        var firstAsset: AVURLAsset?
 
-        let queuePlayer = AVQueuePlayer(items: items)
-        player = queuePlayer
-        isReady = true
-        queuePlayer.play()
+        for clip in clips {
+            let asset = AVURLAsset(url: clip.fileURL)
+            guard
+                let duration = try? await asset.load(.duration),
+                let srcVideo = try? await asset.loadTracks(withMediaType: .video).first
+            else { continue }
+
+            let range = CMTimeRange(start: .zero, duration: duration)
+            try? videoTrack.insertTimeRange(range, of: srcVideo, at: cursor)
+
+            if let srcAudio = try? await asset.loadTracks(withMediaType: .audio).first {
+                try? audioTrack.insertTimeRange(range, of: srcAudio, at: cursor)
+            }
+
+            if firstAsset == nil { firstAsset = asset }
+            cursor = CMTimeAdd(cursor, duration)
+        }
+
+        // Carry the preferred rotation transform from the first clip
+        if let first = firstAsset,
+           let track = try? await first.loadTracks(withMediaType: .video).first,
+           let transform = try? await track.load(.preferredTransform) {
+            videoTrack.preferredTransform = transform
+        }
+
+        let newPlayer = AVPlayer(playerItem: AVPlayerItem(asset: composition))
+        player = newPlayer
+        newPlayer.play()
     }
 
     // MARK: - Helpers
 
     private var durationText: String {
-        let total = project.totalDuration
-        if total < 60 { return String(format: "%.0fs", total) }
-        return String(format: "%d:%02d", Int(total) / 60, Int(total) % 60)
+        let t = project.totalDuration
+        return t < 60
+            ? String(format: "%.0fs", t)
+            : String(format: "%d:%02d", Int(t) / 60, Int(t) % 60)
     }
+}
+
+// MARK: - VideoLayerView
+
+private struct VideoLayerView: UIViewRepresentable {
+    let player: AVPlayer
+
+    func makeUIView(context: Context) -> PlayerLayerView {
+        let view = PlayerLayerView()
+        view.playerLayer.player = player
+        view.playerLayer.videoGravity = .resizeAspect
+        view.backgroundColor = .black
+        return view
+    }
+
+    func updateUIView(_ view: PlayerLayerView, context: Context) {
+        view.playerLayer.player = player
+    }
+}
+
+private final class PlayerLayerView: UIView {
+    override class var layerClass: AnyClass { AVPlayerLayer.self }
+    var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
 }
