@@ -87,7 +87,7 @@ struct ProjectListView: View {
                 .padding(.trailing, 20)
                 .padding(.bottom, 36)
             }
-            .navigationBarHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
         }
         .preferredColorScheme(.dark)
         .alert("New Project", isPresented: $isCreatingProject) {

@@ -2,32 +2,39 @@ import SwiftUI
 import SwiftData
 import AVKit
 import PhotosUI
+import UniformTypeIdentifiers
 
 struct ProjectDetailView: View {
     @Bindable var project: Project
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
+    // Presentation
     @State private var isCameraPresented = false
     @State private var isPlayerPresented = false
     @State private var isExportOptionsPresented = false
     @State private var isExporting = false
     @State private var exportedURL: URL?
     @State private var exportError: String?
-
     @State private var importSelections: [PhotosPickerItem] = []
     @State private var isImporting = false
-    @State private var isReorderMode = false
     @State private var clipToDelete: Clip?
-
     @State private var selectedTransition: TransitionStyle = .crossFade
     @State private var selectedQuality: ExportQuality = .p1080
 
+    // Drag-and-drop reorder state
+    @State private var dragClips: [Clip] = []       // local order while dragging
+    @State private var draggingClipID: UUID? = nil  // which clip is in flight
+
     private let composer = VideoComposer()
 
-    // Clips in rows of 4 for the filmstrip layout
+    // During drag use the local array; otherwise use persisted order
+    private var displayClips: [Clip] {
+        dragClips.isEmpty ? project.activeClips : dragClips
+    }
+
     private var filmRows: [[Clip]] {
-        let clips = project.activeClips
+        let clips = displayClips
         guard !clips.isEmpty else { return [] }
         return stride(from: 0, to: clips.count, by: 4).map {
             Array(clips[$0..<min($0 + 4, clips.count)])
@@ -42,7 +49,7 @@ struct ProjectDetailView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topLeading) {
             Theme.background.ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -51,22 +58,22 @@ struct ProjectDetailView: View {
 
                 if project.activeClips.isEmpty {
                     emptyState
-                } else if isReorderMode {
-                    reorderList
                 } else {
-                    filmstripContent
+                    filmstripScrollView
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-            // Right-edge vertical toolbar (overlaid)
-            if !isReorderMode && !project.activeClips.isEmpty {
+            // Right-edge floating toolbar
+            if !project.activeClips.isEmpty {
                 rightEdgeToolbar
             }
 
             if isExporting { progressOverlay(text: "Compiling video…") }
             if isImporting { progressOverlay(text: "Importing videos…") }
         }
-        .navigationBarHidden(true)
+        .ignoresSafeArea(edges: .bottom)
+        .toolbar(.hidden, for: .navigationBar)
         .preferredColorScheme(.dark)
         .fullScreenCover(isPresented: $isCameraPresented) {
             CameraView { url, dur in addClip(fileURL: url, duration: dur) }
@@ -131,14 +138,6 @@ struct ProjectDetailView: View {
                 PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
                     Label("Import from Library", systemImage: "photo.on.rectangle")
                 }
-                if !project.activeClips.isEmpty {
-                    Button {
-                        withAnimation { isReorderMode.toggle() }
-                    } label: {
-                        Label(isReorderMode ? "Done Reordering" : "Reorder Clips",
-                              systemImage: isReorderMode ? "checkmark" : "arrow.up.arrow.down")
-                    }
-                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 20))
@@ -146,7 +145,8 @@ struct ProjectDetailView: View {
             }
         }
         .padding(.horizontal, 22)
-        .padding(.vertical, 14)
+        .padding(.top, 14)
+        .padding(.bottom, 14)
     }
 
     // MARK: - Title block
@@ -161,46 +161,50 @@ struct ProjectDetailView: View {
                 .tracking(0.8)
                 .foregroundStyle(.white.opacity(0.38))
         }
-        .padding(.bottom, 18)
+        .padding(.bottom, 16)
     }
 
-    // MARK: - Filmstrip scroll content
+    // MARK: - Filmstrip scroll view
 
-    private var filmstripContent: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(filmRows.indices, id: \.self) { i in
-                        FilmstripRow(clips: filmRows[i]) { clip in
-                            clipToDelete = clip
-                        }
-                    }
-
-                    // Empty "add to the reel" slot
-                    Button { isCameraPresented = true } label: {
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(.white.opacity(0.12), style: StrokeStyle(lineWidth: 1.4, dash: [6]))
-                            .frame(height: 88)
-                            .overlay {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "plus")
-                                    Text("add to the reel")
-                                        .font(.system(size: 15))
-                                }
-                                .foregroundStyle(.white.opacity(0.25))
-                            }
-                    }
-                    .padding(.horizontal, 14)
-
-                    Spacer(minLength: 20)
+    private var filmstripScrollView: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(filmRows.indices, id: \.self) { rowIdx in
+                    FilmstripRow(
+                        clips: filmRows[rowIdx],
+                        draggingClipID: $draggingClipID,
+                        onDragStart: { clip in
+                            // Snapshot the current order into local array
+                            if dragClips.isEmpty { dragClips = project.activeClips }
+                            draggingClipID = clip.id
+                        },
+                        onReorder: reorderDragClips,
+                        onDropFinish: commitDragOrder,
+                        onDelete: { clipToDelete = $0 }
+                    )
                 }
-                .padding(.top, 4)
-                .padding(.bottom, 130)
-            }
 
-            // Fixed export bar
-            exportBar
+                // ── Add-to-reel slot ─────────────────────────────────────
+                Button { isCameraPresented = true } label: {
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(.white.opacity(0.12),
+                                style: StrokeStyle(lineWidth: 1.4, dash: [6]))
+                        .frame(height: 88)
+                        .overlay {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus")
+                                Text("add to the reel")
+                                    .font(.system(size: 15))
+                            }
+                            .foregroundStyle(.white.opacity(0.25))
+                        }
+                }
+                .padding(.horizontal, 14)
+            }
+            .padding(.top, 4)
         }
+        // Export bar floats above the scroll content, auto-insets the scroll area
+        .safeAreaInset(edge: .bottom, spacing: 0) { exportBar }
     }
 
     // MARK: - Export bar
@@ -208,13 +212,15 @@ struct ProjectDetailView: View {
     private var exportBar: some View {
         VStack(spacing: 6) {
             Button { isExportOptionsPresented = true } label: {
-                HStack {
+                HStack(spacing: 10) {
                     Image(systemName: "film.stack")
                     Text("Wind the reel · Export")
                         .font(.system(size: 18, weight: .semibold))
+                    Spacer()
                     Image(systemName: "arrow.right")
                 }
                 .foregroundStyle(Theme.ink)
+                .padding(.horizontal, 20)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
                 .background(Theme.amber, in: RoundedRectangle(cornerRadius: 14))
@@ -226,14 +232,15 @@ struct ProjectDetailView: View {
                 .tracking(0.5)
         }
         .padding(.horizontal, 22)
-        .padding(.bottom, 32)
-        .padding(.top, 10)
+        .padding(.top, 12)
+        .padding(.bottom, 36)   // above home indicator
         .background(
             LinearGradient(
                 colors: [Theme.background.opacity(0), Theme.background],
                 startPoint: .top,
                 endPoint: .bottom
             )
+            .ignoresSafeArea(edges: .bottom)
         )
     }
 
@@ -241,7 +248,7 @@ struct ProjectDetailView: View {
 
     private var rightEdgeToolbar: some View {
         VStack(spacing: 10) {
-            // Record (amber)
+            // Record — amber accent
             Button { isCameraPresented = true } label: {
                 Circle()
                     .fill(Theme.amber)
@@ -255,76 +262,31 @@ struct ProjectDetailView: View {
 
             // Import
             PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
-                toolbarBtn(icon: "square.and.arrow.down")
+                toolbarIcon("square.and.arrow.down")
             }
 
-            // Reorder
-            Button { withAnimation { isReorderMode = true } } label: {
-                toolbarBtn(icon: "arrow.up.arrow.down")
-            }
-
-            // More (export options)
+            // Export options
             Button { isExportOptionsPresented = true } label: {
-                toolbarBtn(icon: "ellipsis")
+                toolbarIcon("arrow.up.circle")
             }
         }
         .padding(.vertical, 12)
-        .padding(.horizontal, 7)
+        .padding(.horizontal, 8)
         .background(Theme.paper, in: RoundedRectangle(cornerRadius: 22))
-        .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.ink.opacity(0.2), lineWidth: 1.2))
+        .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.ink.opacity(0.18), lineWidth: 1.2))
+        // Float at the right edge, vertically centred in the filmstrip area
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
-        .offset(x: 6)
-        .padding(.top, 100)
+        .padding(.trailing, -4)
+        .padding(.top, 140)     // clear nav bar + title
+        .padding(.bottom, 140)  // clear export bar
+        .allowsHitTesting(true)
     }
 
-    private func toolbarBtn(icon: String) -> some View {
-        Circle()
-            .fill(.white.opacity(0.0))
+    private func toolbarIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 14))
+            .foregroundStyle(Theme.ink)
             .frame(width: 30, height: 30)
-            .overlay {
-                Image(systemName: icon)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.ink)
-            }
-    }
-
-    // MARK: - Reorder list
-
-    private var reorderList: some View {
-        VStack {
-            List {
-                ForEach(project.activeClips) { clip in
-                    HStack(spacing: 12) {
-                        if let data = clip.thumbnailData, let img = UIImage(data: data) {
-                            Image(uiImage: img)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 56, height: 56)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        } else {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Theme.cardSurface)
-                                .frame(width: 56, height: 56)
-                                .overlay { Image(systemName: "film").foregroundStyle(.secondary) }
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(clip.createdAt.formatted(date: .abbreviated, time: .shortened))
-                                .font(.subheadline)
-                            Text(String(format: "%.1fs", clip.duration))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .onMove(perform: moveClips)
-            }
-            .listStyle(.plain)
-            .environment(\.editMode, .constant(.active))
-
-            Button("Done Reordering") { withAnimation { isReorderMode = false } }
-                .buttonStyle(.borderedProminent)
-                .padding()
-        }
     }
 
     // MARK: - Empty state
@@ -361,7 +323,7 @@ struct ProjectDetailView: View {
         .padding()
     }
 
-    // MARK: - Overlays
+    // MARK: - Progress overlay
 
     private func progressOverlay(text: String) -> some View {
         ZStack {
@@ -375,7 +337,25 @@ struct ProjectDetailView: View {
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Drag-and-drop helpers
+
+    private func reorderDragClips(srcID: UUID, dstID: UUID) {
+        guard srcID != dstID,
+              let fromIdx = dragClips.firstIndex(where: { $0.id == srcID }),
+              let toIdx   = dragClips.firstIndex(where: { $0.id == dstID }) else { return }
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+            dragClips.move(fromOffsets: IndexSet(integer: fromIdx),
+                           toOffset: toIdx > fromIdx ? toIdx + 1 : toIdx)
+        }
+    }
+
+    private func commitDragOrder() {
+        for (i, clip) in dragClips.enumerated() { clip.order = i }
+        dragClips = []
+        draggingClipID = nil
+    }
+
+    // MARK: - Data actions
 
     private func addClip(fileURL: URL, duration: Double) {
         let order = project.activeClips.count
@@ -400,29 +380,27 @@ struct ProjectDetailView: View {
         }
     }
 
-    private func moveClips(from source: IndexSet, to destination: Int) {
-        var ordered = project.activeClips
-        ordered.move(fromOffsets: source, toOffset: destination)
-        for (i, clip) in ordered.enumerated() { clip.order = i }
-    }
-
     private func exportVideo() async {
         isExporting = true
         defer { isExporting = false }
         let urls = project.activeClips.map { $0.fileURL }
         do {
-            let url = try await composer.compose(clips: urls, transition: selectedTransition, quality: selectedQuality)
-            exportedURL = url
+            let out = try await composer.compose(clips: urls, transition: selectedTransition, quality: selectedQuality)
+            exportedURL = out
         } catch {
             exportError = error.localizedDescription
         }
     }
 }
 
-// MARK: - Filmstrip Row (2-b design)
+// MARK: - FilmstripRow
 
 private struct FilmstripRow: View {
     let clips: [Clip]
+    @Binding var draggingClipID: UUID?
+    let onDragStart: (Clip) -> Void
+    let onReorder: (UUID, UUID) -> Void
+    let onDropFinish: () -> Void
     let onDelete: (Clip) -> Void
 
     var body: some View {
@@ -430,15 +408,22 @@ private struct FilmstripRow: View {
             sprocketHoles
             HStack(spacing: 5) {
                 ForEach(clips) { clip in
-                    FilmCell(clip: clip)
-                        .contextMenu {
-                            Button(role: .destructive) { onDelete(clip) } label: {
-                                Label("Delete Clip", systemImage: "trash")
-                            }
+                    FilmCell(
+                        clip: clip,
+                        draggingClipID: $draggingClipID,
+                        onDragStart: { onDragStart(clip) },
+                        onDropEntered: { srcID in onReorder(srcID, clip.id) },
+                        onDropFinish: onDropFinish
+                    )
+                    .contextMenu {
+                        Button(role: .destructive) { onDelete(clip) } label: {
+                            Label("Delete Clip", systemImage: "trash")
                         }
+                    }
                 }
-                // Pad to always fill 4 cells
-                ForEach(0..<(4 - min(clips.count, 4)), id: \.self) { _ in
+                // Padding cells so every row is 4 wide
+                let padCount = 4 - min(clips.count, 4)
+                ForEach(0..<padCount, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: 2)
                         .fill(.white.opacity(0.04))
                         .aspectRatio(4/5, contentMode: .fit)
@@ -460,17 +445,24 @@ private struct FilmstripRow: View {
                     .frame(width: 8, height: 4)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity)
         .padding(.vertical, 5)
         .padding(.horizontal, 4)
     }
 }
 
-// MARK: - Film Cell
+// MARK: - FilmCell
 
 private struct FilmCell: View {
     let clip: Clip
+    @Binding var draggingClipID: UUID?
+    let onDragStart: () -> Void
+    let onDropEntered: (UUID) -> Void
+    let onDropFinish: () -> Void
+
     @State private var isPreviewPresented = false
+
+    private var isDraggingMe: Bool { draggingClipID == clip.id }
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -492,10 +484,8 @@ private struct FilmCell: View {
             .aspectRatio(4/5, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 2))
 
-            // Duration badge — bottom-right, dark bg, mono
-            Text(clip.duration < 10
-                 ? String(format: "%.0fs", clip.duration)
-                 : String(format: "%.0fs", clip.duration))
+            // Duration badge
+            Text(String(format: "%.0fs", clip.duration))
                 .font(.system(size: 9, weight: .medium, design: .monospaced))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 5)
@@ -503,11 +493,55 @@ private struct FilmCell: View {
                 .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 3))
                 .padding(4)
         }
-        .onTapGesture { isPreviewPresented = true }
+        // Ghost effect while dragging
+        .opacity(isDraggingMe ? 0.3 : 1.0)
+        .overlay(
+            RoundedRectangle(cornerRadius: 2)
+                .stroke(Theme.amber.opacity(isDraggingMe ? 0 : (draggingClipID != nil ? 0.4 : 0)),
+                        lineWidth: 1.5)
+        )
+        .animation(.easeInOut(duration: 0.18), value: isDraggingMe)
+        .onTapGesture { if draggingClipID == nil { isPreviewPresented = true } }
+        .onDrag {
+            onDragStart()
+            return NSItemProvider(object: clip.id.uuidString as NSString)
+        }
+        .onDrop(
+            of: [UTType.plainText],
+            delegate: FilmCellDropDelegate(
+                draggingClipID: $draggingClipID,
+                targetID: clip.id,
+                onEntered: onDropEntered,
+                onFinish: onDropFinish
+            )
+        )
         .sheet(isPresented: $isPreviewPresented) {
             VideoPlayer(player: AVPlayer(url: clip.fileURL))
                 .presentationDetents([.medium, .large])
         }
+    }
+}
+
+// MARK: - FilmCellDropDelegate
+
+private struct FilmCellDropDelegate: DropDelegate {
+    @Binding var draggingClipID: UUID?
+    let targetID: UUID
+    let onEntered: (UUID) -> Void
+    let onFinish: () -> Void
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func dropEntered(info: DropInfo) {
+        guard let srcID = draggingClipID, srcID != targetID else { return }
+        onEntered(srcID)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        onFinish()
+        return true
     }
 }
 
