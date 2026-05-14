@@ -21,16 +21,18 @@
 		A100000000000000000002AB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100000000000000000002AA /* Assets.xcassets */; };
 		A100000000000000000003AB /* VideoTransferable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000003AA /* VideoTransferable.swift */; };
 		A100000000000000000004AB /* CompilationOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000004AA /* CompilationOptionsView.swift */; };
-		A10000000000000000000B1B /* ExportProgressOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000B1A /* ExportProgressOverlay.swift */; };
 		A100000000000000000007AB /* ProjectPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000007AA /* ProjectPlayerView.swift */; };
 		A100000000000000000009AB /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000009AA /* Theme.swift */; };
 		A10000000000000000000A1B /* PatrickHand-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A1A /* PatrickHand-Regular.ttf */; };
 		A10000000000000000000A2B /* JetBrainsMono-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */; };
 		A10000000000000000000A3B /* JetBrainsMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */; };
 		A10000000000000000000A4B /* Caveat-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A4A /* Caveat-Regular.ttf */; };
+		A10000000000000000000B1B /* ExportProgressOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000B1A /* ExportProgressOverlay.swift */; };
+		C3B3F5412FB67E7A00518F91 /* AppIcon-1024.png in Resources */ = {isa = PBXBuildFile; fileRef = C3B3F5402FB67E7A00518F91 /* AppIcon-1024.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A1000000000000000000000C /* LifeClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000000000000000000001A /* LifeClipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeClipApp.swift; sourceTree = "<group>"; };
 		A1000000000000000000002A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000000000000000000003A /* Clip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clip.swift; sourceTree = "<group>"; };
@@ -46,14 +48,14 @@
 		A100000000000000000002AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A100000000000000000003AA /* VideoTransferable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoTransferable.swift; sourceTree = "<group>"; };
 		A100000000000000000004AA /* CompilationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompilationOptionsView.swift; sourceTree = "<group>"; };
-		A10000000000000000000B1A /* ExportProgressOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExportProgressOverlay.swift; path = "LifeClip/Features/Compilation/ExportProgressOverlay.swift"; sourceTree = SOURCE_ROOT; };
 		A100000000000000000007AA /* ProjectPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPlayerView.swift; sourceTree = "<group>"; };
 		A100000000000000000009AA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		A10000000000000000000A1A /* PatrickHand-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PatrickHand-Regular.ttf"; sourceTree = "<group>"; };
 		A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Regular.ttf"; sourceTree = "<group>"; };
 		A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Medium.ttf"; sourceTree = "<group>"; };
 		A10000000000000000000A4A /* Caveat-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Caveat-Regular.ttf"; sourceTree = "<group>"; };
-		A1000000000000000000000C /* LifeClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000B1A /* ExportProgressOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExportProgressOverlay.swift; path = LifeClip/Features/Compilation/ExportProgressOverlay.swift; sourceTree = SOURCE_ROOT; };
+		C3B3F5402FB67E7A00518F91 /* AppIcon-1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon-1024.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +74,7 @@
 			children = (
 				A100000000000000000000EA /* LifeClip */,
 				A1000000000000000000016A /* Products */,
+				C3B3F53F2FB67D5A00518F91 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -87,25 +90,6 @@
 				A1000000000000000000012A /* Features */,
 			);
 			path = LifeClip;
-			sourceTree = "<group>";
-		};
-		A10000000000000000000A5A /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				A10000000000000000000A6A /* Fonts */,
-			);
-			path = Resources;
-			sourceTree = "<group>";
-		};
-		A10000000000000000000A6A /* Fonts */ = {
-			isa = PBXGroup;
-			children = (
-				A10000000000000000000A1A /* PatrickHand-Regular.ttf */,
-				A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */,
-				A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */,
-				A10000000000000000000A4A /* Caveat-Regular.ttf */,
-			);
-			path = Fonts;
 			sourceTree = "<group>";
 		};
 		A100000000000000000000FA /* Core */ = {
@@ -157,23 +141,6 @@
 			path = Camera;
 			sourceTree = "<group>";
 		};
-		A100000000000000000005AA /* Import */ = {
-			isa = PBXGroup;
-			children = (
-				A100000000000000000003AA /* VideoTransferable.swift */,
-			);
-			path = Import;
-			sourceTree = "<group>";
-		};
-		A100000000000000000006AA /* Compilation */ = {
-			isa = PBXGroup;
-			children = (
-				A100000000000000000004AA /* CompilationOptionsView.swift */,
-				A10000000000000000000B1A /* ExportProgressOverlay.swift */,
-			);
-			path = Compilation;
-			sourceTree = "<group>";
-		};
 		A1000000000000000000014A /* Clips */ = {
 			isa = PBXGroup;
 			children = (
@@ -214,6 +181,34 @@
 				A100000000000000000004AA /* CompilationOptionsView.swift */,
 			);
 			path = Compilation;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000A5A /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000A6A /* Fonts */,
+				C3B3F5402FB67E7A00518F91 /* AppIcon-1024.png */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000A6A /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000A1A /* PatrickHand-Regular.ttf */,
+				A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */,
+				A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */,
+				A10000000000000000000A4A /* Caveat-Regular.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		C3B3F53F2FB67D5A00518F91 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000B1A /* ExportProgressOverlay.swift */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -277,6 +272,7 @@
 				A100000000000000000002AB /* Assets.xcassets in Resources */,
 				A10000000000000000000A1B /* PatrickHand-Regular.ttf in Resources */,
 				A10000000000000000000A2B /* JetBrainsMono-Regular.ttf in Resources */,
+				C3B3F5412FB67E7A00518F91 /* AppIcon-1024.png in Resources */,
 				A10000000000000000000A3B /* JetBrainsMono-Medium.ttf in Resources */,
 				A10000000000000000000A4B /* Caveat-Regular.ttf in Resources */,
 			);
@@ -430,12 +426,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PAZWVYN25U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = LifeClip/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -458,12 +456,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PAZWVYN25U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = LifeClip/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
