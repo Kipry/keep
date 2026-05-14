@@ -19,6 +19,8 @@
 		A100000000000000000000AB /* ProjectListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000AA /* ProjectListView.swift */; };
 		A100000000000000000000BB /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000BA /* ProjectDetailView.swift */; };
 		A100000000000000000002AB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100000000000000000002AA /* Assets.xcassets */; };
+		A100000000000000000003AB /* VideoTransferable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000003AA /* VideoTransferable.swift */; };
+		A100000000000000000004AB /* CompilationOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000004AA /* CompilationOptionsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +37,8 @@
 		A100000000000000000000BA /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
 		A100000000000000000000CA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A100000000000000000002AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A100000000000000000003AA /* VideoTransferable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoTransferable.swift; sourceTree = "<group>"; };
+		A100000000000000000004AA /* CompilationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompilationOptionsView.swift; sourceTree = "<group>"; };
 		A1000000000000000000000C /* LifeClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -109,6 +113,8 @@
 			isa = PBXGroup;
 			children = (
 				A1000000000000000000013A /* Camera */,
+				A100000000000000000005AA /* Import */,
+				A100000000000000000006AA /* Compilation */,
 				A1000000000000000000014A /* Clips */,
 				A1000000000000000000015A /* Projects */,
 			);
@@ -122,6 +128,22 @@
 				A1000000000000000000008A /* CameraPreviewView.swift */,
 			);
 			path = Camera;
+			sourceTree = "<group>";
+		};
+		A100000000000000000005AA /* Import */ = {
+			isa = PBXGroup;
+			children = (
+				A100000000000000000003AA /* VideoTransferable.swift */,
+			);
+			path = Import;
+			sourceTree = "<group>";
+		};
+		A100000000000000000006AA /* Compilation */ = {
+			isa = PBXGroup;
+			children = (
+				A100000000000000000004AA /* CompilationOptionsView.swift */,
+			);
+			path = Compilation;
 			sourceTree = "<group>";
 		};
 		A1000000000000000000014A /* Clips */ = {
@@ -221,6 +243,8 @@
 				A1000000000000000000009B /* ClipCell.swift in Sources */,
 				A100000000000000000000AB /* ProjectListView.swift in Sources */,
 				A100000000000000000000BB /* ProjectDetailView.swift in Sources */,
+				A100000000000000000003AB /* VideoTransferable.swift in Sources */,
+				A100000000000000000004AB /* CompilationOptionsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
