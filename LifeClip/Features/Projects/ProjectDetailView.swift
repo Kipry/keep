@@ -333,6 +333,7 @@ struct ProjectDetailView: View {
         let order = project.activeClips.count
         let clip = Clip(fileURL: fileURL, duration: duration, order: order)
         clip.project = project
+        project.updatedAt = Date()
         modelContext.insert(clip)
         Task {
             if let img = await composer.thumbnail(from: fileURL),
@@ -440,16 +441,16 @@ private struct FilmstripRow: View {
     }
 
     private var sprocketHoles: some View {
-        HStack(spacing: 4) {
-            ForEach(0..<16, id: \.self) { _ in
+        HStack(spacing: 0) {
+            ForEach(0..<18, id: \.self) { _ in
+                Spacer(minLength: 0)
                 RoundedRectangle(cornerRadius: 2)
                     .fill(Theme.background)
                     .frame(width: 8, height: 4)
             }
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
         .padding(.vertical, 5)
-        .padding(.horizontal, 4)
     }
 }
 

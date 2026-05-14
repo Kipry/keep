@@ -6,6 +6,7 @@ final class Project {
     var id: UUID
     var name: String
     var createdAt: Date
+    var updatedAt: Date
     var isDeleted: Bool
     var deletedAt: Date?
     var coverThumbnailData: Data?
@@ -17,6 +18,7 @@ final class Project {
         self.id = UUID()
         self.name = name
         self.createdAt = Date()
+        self.updatedAt = Date()
         self.isDeleted = false
         self.clips = []
     }
