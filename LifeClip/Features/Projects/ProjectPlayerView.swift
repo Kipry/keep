@@ -6,6 +6,11 @@ struct ProjectPlayerView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var player: AVPlayer?
+    @State private var isPlaying = true
+    @State private var currentTime: Double = 0
+    @State private var duration: Double = 1
+    @State private var isDragging = false
+    @State private var timeObserver: Any?
 
     var body: some View {
         ZStack {
@@ -19,57 +24,145 @@ struct ProjectPlayerView: View {
                 ProgressView().tint(.white).scaleEffect(1.5)
             }
 
-            overlay
+            VStack {
+                topBar
+                Spacer()
+                bottomBar
+            }
         }
         .task { await buildCompositionAndPlay() }
-        .onDisappear { player?.pause() }
+        .onDisappear { teardown() }
         .preferredColorScheme(.dark)
         .statusBarHidden(true)
     }
 
-    // MARK: - Overlay
+    // MARK: - Top bar
 
-    private var overlay: some View {
-        VStack {
-            HStack {
-                Button { dismiss() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.title3.bold())
-                        .foregroundStyle(.white)
-                        .padding(12)
-                        .background(.black.opacity(0.5), in: Circle())
-                }
-
-                Spacer()
-
-                VStack(spacing: 2) {
-                    Text(project.name)
-                        .font(.navTitle)
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                    Text("\(project.activeClips.count) CLIPS · \(durationText)")
-                        .font(.monoCaption)
-                        .tracking(0.5)
-                        .foregroundStyle(.white.opacity(0.5))
-                }
-
-                Spacer()
-
-                // Balance the back button so the title stays centred
-                Color.clear.frame(width: 44, height: 44)
+    private var topBar: some View {
+        HStack {
+            Button { dismiss() } label: {
+                Image(systemName: "chevron.left")
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                    .padding(12)
+                    .background(.black.opacity(0.5), in: Circle())
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-
             Spacer()
+            VStack(spacing: 2) {
+                Text(project.name)
+                    .font(.navTitle)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Text("\(project.activeClips.count) CLIPS · \(timeString(duration))")
+                    .font(.monoCaption)
+                    .tracking(0.5)
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            Spacer()
+            Color.clear.frame(width: 44, height: 44)
         }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
     }
 
-    // MARK: - Playback
+    // MARK: - Bottom bar
+
+    private var bottomBar: some View {
+        VStack(spacing: 14) {
+            scrubBar
+
+            HStack {
+                Text(timeString(currentTime))
+                    .font(.monoCaption)
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(width: 38, alignment: .leading)
+                    .monospacedDigit()
+
+                Spacer()
+
+                Button { togglePlayback() } label: {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                        .frame(width: 44, height: 44)
+                }
+
+                Spacer()
+
+                Text(timeString(duration))
+                    .font(.monoCaption)
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(width: 38, alignment: .trailing)
+                    .monospacedDigit()
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 48)
+        .background(
+            LinearGradient(
+                colors: [.clear, .black.opacity(0.75)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .padding(.top, -40)
+        )
+    }
+
+    // MARK: - Scrub bar
+
+    private var scrubBar: some View {
+        GeometryReader { geo in
+            let progress = duration > 0 ? min(currentTime / duration, 1.0) : 0
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(.white.opacity(0.2))
+                    .frame(height: 3)
+                Capsule()
+                    .fill(Theme.amber)
+                    .frame(width: geo.size.width * CGFloat(progress), height: 3)
+                Circle()
+                    .fill(.white)
+                    .frame(width: 14, height: 14)
+                    .shadow(color: .black.opacity(0.4), radius: 2)
+                    .offset(x: geo.size.width * CGFloat(progress) - 7)
+            }
+            .frame(height: 20, alignment: .center)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { val in
+                        isDragging = true
+                        let p = max(0, min(1, val.location.x / geo.size.width))
+                        currentTime = p * duration
+                    }
+                    .onEnded { val in
+                        let p = max(0, min(1, val.location.x / geo.size.width))
+                        currentTime = p * duration
+                        player?.seek(
+                            to: CMTime(seconds: currentTime, preferredTimescale: 600),
+                            toleranceBefore: .zero, toleranceAfter: .zero
+                        )
+                        isDragging = false
+                    }
+            )
+        }
+        .frame(height: 20)
+    }
+
+    // MARK: - Actions
 
     private func togglePlayback() {
         guard let player else { return }
-        player.timeControlStatus == .playing ? player.pause() : player.play()
+        if player.timeControlStatus == .playing {
+            player.pause(); isPlaying = false
+        } else {
+            player.play(); isPlaying = true
+        }
+    }
+
+    private func teardown() {
+        player?.pause()
+        if let obs = timeObserver { player?.removeTimeObserver(obs); timeObserver = nil }
     }
 
     // MARK: - Composition
@@ -92,46 +185,53 @@ struct ProjectPlayerView: View {
         for clip in clips {
             let asset = AVURLAsset(url: clip.fileURL)
             guard
-                let duration = try? await asset.load(.duration),
+                let dur = try? await asset.load(.duration),
                 let srcVideo = try? await asset.loadTracks(withMediaType: .video).first
             else { continue }
 
-            let range = CMTimeRange(start: .zero, duration: duration)
+            let range = CMTimeRange(start: .zero, duration: dur)
             try? videoTrack.insertTimeRange(range, of: srcVideo, at: cursor)
-
             if let srcAudio = try? await asset.loadTracks(withMediaType: .audio).first {
                 try? audioTrack.insertTimeRange(range, of: srcAudio, at: cursor)
             }
-
             if firstAsset == nil { firstAsset = asset }
-            cursor = CMTimeAdd(cursor, duration)
+            cursor = CMTimeAdd(cursor, dur)
         }
 
-        // Carry the preferred rotation transform from the first clip
         if let first = firstAsset,
            let track = try? await first.loadTracks(withMediaType: .video).first,
            let transform = try? await track.load(.preferredTransform) {
             videoTrack.preferredTransform = transform
         }
 
-        let newPlayer = AVPlayer(playerItem: AVPlayerItem(asset: composition))
+        let totalDuration = cursor.seconds
+        let item = AVPlayerItem(asset: composition)
+        let newPlayer = AVPlayer(playerItem: item)
+        duration = totalDuration
+
+        let interval = CMTime(seconds: 0.1, preferredTimescale: 600)
+        timeObserver = newPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
+            guard !self.isDragging else { return }
+            self.currentTime = time.seconds
+        }
+
         player = newPlayer
         newPlayer.play()
     }
 
     // MARK: - Helpers
 
-    private var durationText: String {
-        let t = project.totalDuration
-        return t < 60
-            ? String(format: "%.0fs", t)
-            : String(format: "%d:%02d", Int(t) / 60, Int(t) % 60)
+    private func timeString(_ t: Double) -> String {
+        guard t.isFinite, t >= 0 else { return "0:00" }
+        return String(format: "%d:%02d", Int(t) / 60, Int(t) % 60)
     }
 }
 
 // MARK: - VideoLayerView
+// Shared by ProjectPlayerView and FilmCell preview — plain AVPlayerLayer,
+// no AVKit chrome (no AirPlay, no speed control).
 
-private struct VideoLayerView: UIViewRepresentable {
+struct VideoLayerView: UIViewRepresentable {
     let player: AVPlayer
 
     func makeUIView(context: Context) -> PlayerLayerView {
@@ -147,7 +247,7 @@ private struct VideoLayerView: UIViewRepresentable {
     }
 }
 
-private final class PlayerLayerView: UIView {
+final class PlayerLayerView: UIView {
     override class var layerClass: AnyClass { AVPlayerLayer.self }
     var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
 }

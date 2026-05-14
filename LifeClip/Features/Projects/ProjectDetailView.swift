@@ -1,6 +1,6 @@
 import SwiftUI
 import SwiftData
-import AVKit
+import AVFoundation
 import PhotosUI
 import UniformTypeIdentifiers
 
@@ -441,13 +441,9 @@ private struct FilmstripRow: View {
                         draggingClipID: $draggingClipID,
                         onDragStart: { onDragStart(clip) },
                         onDropEntered: { srcID in onReorder(srcID, clip.id) },
-                        onDropFinish: onDropFinish
+                        onDropFinish: onDropFinish,
+                        onDelete: { onDelete(clip) }
                     )
-                    .contextMenu {
-                        Button(role: .destructive) { onDelete(clip) } label: {
-                            Label("Delete Clip", systemImage: "trash")
-                        }
-                    }
                 }
                 let padCount = 4 - min(clips.count, 4)
                 ForEach(0..<padCount, id: \.self) { _ in
@@ -486,14 +482,17 @@ private struct FilmCell: View {
     let onDragStart: () -> Void
     let onDropEntered: (UUID) -> Void
     let onDropFinish: () -> Void
+    let onDelete: () -> Void
 
     @State private var isPreviewPresented = false
+    @State private var clipPlayer: AVPlayer?
 
     private var isDraggingMe: Bool { draggingClipID == clip.id }
     private var isDraggingOther: Bool { draggingClipID != nil && !isDraggingMe }
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
+            // Thumbnail
             Group {
                 if let data = clip.thumbnailData, let img = UIImage(data: data) {
                     Image(uiImage: img)
@@ -512,6 +511,7 @@ private struct FilmCell: View {
             .aspectRatio(4/5, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 2))
 
+            // Duration badge
             Text(String(format: "%.0fs", clip.duration))
                 .font(.durBadge)
                 .foregroundStyle(.white)
@@ -519,6 +519,18 @@ private struct FilmCell: View {
                 .padding(.vertical, 2)
                 .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 3))
                 .padding(4)
+        }
+        // Delete badge — top-left corner
+        .overlay(alignment: .topLeading) {
+            Button { onDelete() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(width: 18, height: 18)
+                    .background(.black.opacity(0.55), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .padding(3)
         }
         .opacity(isDraggingMe ? 0.3 : 1.0)
         .overlay(
@@ -541,23 +553,38 @@ private struct FilmCell: View {
                 onFinish: onDropFinish
             )
         )
-        // fullScreenCover avoids the _UIReparentingView warning that .sheet causes with VideoPlayer
+        // Clip preview — raw AVPlayerLayer, no AVKit chrome
         .fullScreenCover(isPresented: $isPreviewPresented) {
             ZStack {
                 Color.black.ignoresSafeArea()
-                VideoPlayer(player: AVPlayer(url: clip.fileURL))
+                if let p = clipPlayer {
+                    VideoLayerView(player: p)
+                        .ignoresSafeArea()
+                }
                 VStack {
                     HStack {
-                        Spacer()
                         Button { isPreviewPresented = false } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.title)
-                                .foregroundStyle(.white.opacity(0.8))
-                                .padding(16)
+                            Image(systemName: "chevron.left")
+                                .font(.title3.bold())
+                                .foregroundStyle(.white)
+                                .padding(12)
+                                .background(.black.opacity(0.5), in: Circle())
                         }
+                        Spacer()
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
                     Spacer()
                 }
+            }
+            .onAppear {
+                let p = AVPlayer(url: clip.fileURL)
+                clipPlayer = p
+                p.play()
+            }
+            .onDisappear {
+                clipPlayer?.pause()
+                clipPlayer = nil
             }
         }
     }
