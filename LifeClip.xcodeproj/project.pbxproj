@@ -21,6 +21,7 @@
 		A100000000000000000002AB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100000000000000000002AA /* Assets.xcassets */; };
 		A100000000000000000003AB /* VideoTransferable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000003AA /* VideoTransferable.swift */; };
 		A100000000000000000004AB /* CompilationOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000004AA /* CompilationOptionsView.swift */; };
+		A10000000000000000000B1B /* ExportProgressOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000B1A /* ExportProgressOverlay.swift */; };
 		A100000000000000000007AB /* ProjectPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000007AA /* ProjectPlayerView.swift */; };
 		A100000000000000000009AB /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000009AA /* Theme.swift */; };
 		A10000000000000000000A1B /* PatrickHand-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A1A /* PatrickHand-Regular.ttf */; };
@@ -30,7 +31,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A1000000000000000000000C /* LifeClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000000000000000000001A /* LifeClipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeClipApp.swift; sourceTree = "<group>"; };
 		A1000000000000000000002A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000000000000000000003A /* Clip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clip.swift; sourceTree = "<group>"; };
@@ -46,6 +46,7 @@
 		A100000000000000000002AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A100000000000000000003AA /* VideoTransferable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoTransferable.swift; sourceTree = "<group>"; };
 		A100000000000000000004AA /* CompilationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompilationOptionsView.swift; sourceTree = "<group>"; };
+		A10000000000000000000B1A /* ExportProgressOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportProgressOverlay.swift; sourceTree = "<group>"; };
 		A100000000000000000007AA /* ProjectPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPlayerView.swift; sourceTree = "<group>"; };
 		A100000000000000000009AA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		A10000000000000000000A1A /* PatrickHand-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PatrickHand-Regular.ttf"; sourceTree = "<group>"; };
@@ -154,6 +155,23 @@
 				A1000000000000000000008A /* CameraPreviewView.swift */,
 			);
 			path = Camera;
+			sourceTree = "<group>";
+		};
+		A100000000000000000005AA /* Import */ = {
+			isa = PBXGroup;
+			children = (
+				A100000000000000000003AA /* VideoTransferable.swift */,
+			);
+			path = Import;
+			sourceTree = "<group>";
+		};
+		A100000000000000000006AA /* Compilation */ = {
+			isa = PBXGroup;
+			children = (
+				A100000000000000000004AA /* CompilationOptionsView.swift */,
+				A10000000000000000000B1A /* ExportProgressOverlay.swift */,
+			);
+			path = Compilation;
 			sourceTree = "<group>";
 		};
 		A1000000000000000000014A /* Clips */ = {
@@ -284,6 +302,7 @@
 				A100000000000000000000BB /* ProjectDetailView.swift in Sources */,
 				A100000000000000000003AB /* VideoTransferable.swift in Sources */,
 				A100000000000000000004AB /* CompilationOptionsView.swift in Sources */,
+				A10000000000000000000B1B /* ExportProgressOverlay.swift in Sources */,
 				A100000000000000000007AB /* ProjectPlayerView.swift in Sources */,
 				A100000000000000000009AB /* Theme.swift in Sources */,
 			);
