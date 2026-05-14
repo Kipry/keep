@@ -23,6 +23,10 @@
 		A100000000000000000004AB /* CompilationOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000004AA /* CompilationOptionsView.swift */; };
 		A100000000000000000007AB /* ProjectPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000007AA /* ProjectPlayerView.swift */; };
 		A100000000000000000009AB /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000009AA /* Theme.swift */; };
+		A10000000000000000000A1B /* PatrickHand-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A1A /* PatrickHand-Regular.ttf */; };
+		A10000000000000000000A2B /* JetBrainsMono-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */; };
+		A10000000000000000000A3B /* JetBrainsMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */; };
+		A10000000000000000000A4B /* Caveat-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A4A /* Caveat-Regular.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +47,10 @@
 		A100000000000000000004AA /* CompilationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompilationOptionsView.swift; sourceTree = "<group>"; };
 		A100000000000000000007AA /* ProjectPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPlayerView.swift; sourceTree = "<group>"; };
 		A100000000000000000009AA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		A10000000000000000000A1A /* PatrickHand-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PatrickHand-Regular.ttf"; sourceTree = "<group>"; };
+		A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Regular.ttf"; sourceTree = "<group>"; };
+		A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Medium.ttf"; sourceTree = "<group>"; };
+		A10000000000000000000A4A /* Caveat-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Caveat-Regular.ttf"; sourceTree = "<group>"; };
 		A1000000000000000000000C /* LifeClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -80,10 +88,30 @@
 				A1000000000000000000002A /* ContentView.swift */,
 				A100000000000000000000CA /* Info.plist */,
 				A100000000000000000002AA /* Assets.xcassets */,
+				A10000000000000000000A5A /* Resources */,
 				A100000000000000000000FA /* Core */,
 				A1000000000000000000012A /* Features */,
 			);
 			path = LifeClip;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000A5A /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000A6A /* Fonts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000A6A /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000A1A /* PatrickHand-Regular.ttf */,
+				A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */,
+				A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */,
+				A10000000000000000000A4A /* Caveat-Regular.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		A100000000000000000000FA /* Core */ = {
@@ -228,6 +256,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				A100000000000000000002AB /* Assets.xcassets in Resources */,
+				A10000000000000000000A1B /* PatrickHand-Regular.ttf in Resources */,
+				A10000000000000000000A2B /* JetBrainsMono-Regular.ttf in Resources */,
+				A10000000000000000000A3B /* JetBrainsMono-Medium.ttf in Resources */,
+				A10000000000000000000A4B /* Caveat-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

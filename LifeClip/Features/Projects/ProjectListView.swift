@@ -24,13 +24,13 @@ struct ProjectListView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     // ── Header ───────────────────────────────────────────
                     HStack(alignment: .bottom) {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text("YOUR LIBRARY")
-                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .font(.eyebrow)
                                 .tracking(2)
                                 .foregroundStyle(.white.opacity(0.35))
                             Text("LifeClip")
-                                .font(.system(size: 36, weight: .bold))
+                                .font(.appWordmark)
                                 .foregroundStyle(.white)
                         }
                         Spacer()
@@ -187,18 +187,18 @@ struct ProjectCard: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(project.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.cardTitle)
                         .foregroundStyle(.white)
                         .lineLimit(2)
                     Text(project.createdAt.formatted(date: .abbreviated, time: .omitted))
-                        .font(.system(size: 9, design: .monospaced))
+                        .font(.monoCaption)
                         .foregroundStyle(.white.opacity(0.8))
                 }
                 .padding(10)
             }
 
             Text("\(project.activeClips.count)")
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .font(.clipBadge)
                 .foregroundStyle(Theme.paper)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)

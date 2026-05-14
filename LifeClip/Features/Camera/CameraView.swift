@@ -37,7 +37,7 @@ struct CameraView: View {
 
             if showZoomLabel {
                 Text(String(format: "%.1f×", camera.currentZoomFactor))
-                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                    .font(.mono(15, weight: .medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 7)
@@ -85,7 +85,7 @@ struct CameraView: View {
                         .fill(Theme.amber)
                         .frame(width: 8, height: 8)
                     Text(String(format: "%.1fs", elapsed))
-                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .font(.mono(13, weight: .medium))
                         .foregroundStyle(.white)
                 }
                 .padding(.horizontal, 12)
@@ -158,7 +158,7 @@ struct CameraView: View {
                     durationLimit = d
                 } label: {
                     Text("\(Int(d))s")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.mono(13, weight: .medium))
                         .foregroundStyle(durationLimit == d ? Theme.ink : .white)
                         .padding(.horizontal, 18)
                         .padding(.vertical, 8)

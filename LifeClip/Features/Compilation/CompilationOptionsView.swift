@@ -52,7 +52,7 @@ struct CompilationOptionsView: View {
             }
             Spacer()
             Text("EXPORT")
-                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .font(.eyebrow)
                 .tracking(3)
                 .foregroundStyle(.white.opacity(0.5))
             Spacer()
@@ -111,7 +111,7 @@ struct CompilationOptionsView: View {
                 )
 
                 Text(style.rawValue)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.mono(11, weight: .medium))
                     .foregroundStyle(isSelected ? .white : .white.opacity(0.4))
             }
         }
@@ -143,10 +143,10 @@ struct CompilationOptionsView: View {
         } label: {
             VStack(spacing: 6) {
                 Text(q.rawValue)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.hand(22))
                     .foregroundStyle(isSelected ? .white : .white.opacity(0.28))
                 Text(q == .p4K ? "Largest file" : "Smaller file")
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.monoCaption)
                     .foregroundStyle(isSelected ? .white.opacity(0.55) : .white.opacity(0.18))
             }
             .frame(maxWidth: .infinity)
@@ -171,7 +171,7 @@ struct CompilationOptionsView: View {
             Image(systemName: "film.stack")
                 .foregroundStyle(.white.opacity(0.28))
             Text("\(clipCount) clip\(clipCount == 1 ? "" : "s") → 1 video")
-                .font(.system(size: 12, design: .monospaced))
+                .font(.monoCaption)
                 .foregroundStyle(.white.opacity(0.28))
             Spacer()
         }
@@ -200,7 +200,7 @@ struct CompilationOptionsView: View {
                 Image(systemName: holdProgress > 0.02 ? "arrow.right.circle.fill" : "hand.tap.fill")
                     .font(.body.bold())
                 Text(holdProgress > 0.02 ? "Keep holding…" : "Hold to Export")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.hand(18))
             }
             .foregroundStyle(holdProgress > 0.55 ? Theme.ink : .white)
             .animation(.easeInOut(duration: 0.2), value: holdProgress > 0.55)
@@ -247,7 +247,7 @@ struct CompilationOptionsView: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .medium, design: .monospaced))
+            .font(.eyebrow)
             .tracking(2)
             .foregroundStyle(.white.opacity(0.35))
             .padding(.horizontal, 20)

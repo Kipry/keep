@@ -22,6 +22,15 @@
     <key>LSRequiresIPhoneOS</key>
     <true/>
 
+    <!-- Custom fonts -->
+    <key>UIAppFonts</key>
+    <array>
+        <string>PatrickHand-Regular.ttf</string>
+        <string>JetBrainsMono-Regular.ttf</string>
+        <string>JetBrainsMono-Medium.ttf</string>
+        <string>Caveat-Regular.ttf</string>
+    </array>
+
     <!-- Privacy permissions -->
     <key>NSCameraUsageDescription</key>
     <string>LifeClip needs camera access to record your daily moments.</string>
