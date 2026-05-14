@@ -46,7 +46,7 @@
 		A100000000000000000002AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A100000000000000000003AA /* VideoTransferable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoTransferable.swift; sourceTree = "<group>"; };
 		A100000000000000000004AA /* CompilationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompilationOptionsView.swift; sourceTree = "<group>"; };
-		A10000000000000000000B1A /* ExportProgressOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportProgressOverlay.swift; sourceTree = "<group>"; };
+		A10000000000000000000B1A /* ExportProgressOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExportProgressOverlay.swift; path = "LifeClip/Features/Compilation/ExportProgressOverlay.swift"; sourceTree = SOURCE_ROOT; };
 		A100000000000000000007AA /* ProjectPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPlayerView.swift; sourceTree = "<group>"; };
 		A100000000000000000009AA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		A10000000000000000000A1A /* PatrickHand-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PatrickHand-Regular.ttf"; sourceTree = "<group>"; };
