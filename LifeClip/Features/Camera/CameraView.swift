@@ -126,7 +126,12 @@ struct CameraView: View {
 
                 Spacer()
 
-                RecordButton(isRecording: camera.isRecording) {
+                RecordButton(
+                    isRecording: camera.isRecording,
+                    progress: durationLimit > 0
+                        ? CGFloat(min(elapsed / durationLimit, 1.0))
+                        : 0
+                ) {
                     Task { await handleRecordTap() }
                 }
 
@@ -274,44 +279,44 @@ struct CameraView: View {
 
 private struct RecordButton: View {
     let isRecording: Bool
+    let progress: CGFloat   // 0.0 – 1.0, drives the amber ring
     let action: () -> Void
-
-    @State private var pulseScale: CGFloat = 1.0
 
     var body: some View {
         Button(action: action) {
             ZStack {
+                // Ring track — visible only while recording
                 if isRecording {
                     Circle()
-                        .stroke(Theme.amber.opacity(0.22), lineWidth: 10)
-                        .frame(width: 96, height: 96)
-                        .scaleEffect(pulseScale)
+                        .stroke(.white.opacity(0.15), lineWidth: 5)
+                        .frame(width: 90, height: 90)
 
+                    // Amber progress arc, starts from 12 o'clock
                     Circle()
-                        .strokeBorder(
-                            style: StrokeStyle(lineWidth: 2, dash: [5, 4])
+                        .trim(from: 0, to: progress)
+                        .stroke(
+                            Theme.amber,
+                            style: StrokeStyle(lineWidth: 5, lineCap: .round)
                         )
-                        .foregroundStyle(Theme.amber.opacity(0.55))
-                        .frame(width: 84, height: 84)
+                        .frame(width: 90, height: 90)
+                        .rotationEffect(.degrees(-90))
+                        .animation(.linear(duration: 0.06), value: progress)
+                        .shadow(color: Theme.amber.opacity(0.6), radius: 4)
                 }
 
+                // White border ring
                 Circle()
                     .stroke(.white, lineWidth: 4)
                     .frame(width: 72, height: 72)
 
+                // Inner fill: circle → rounded square when recording
                 RoundedRectangle(cornerRadius: isRecording ? 8 : 36)
                     .fill(isRecording ? Theme.amber : .red)
-                    .frame(width: isRecording ? 28 : 56, height: isRecording ? 28 : 56)
+                    .frame(
+                        width:  isRecording ? 28 : 56,
+                        height: isRecording ? 28 : 56
+                    )
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isRecording)
-            }
-        }
-        .onChange(of: isRecording) { _, recording in
-            if recording {
-                withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
-                    pulseScale = 1.18
-                }
-            } else {
-                withAnimation(.easeInOut(duration: 0.2)) { pulseScale = 1.0 }
             }
         }
     }

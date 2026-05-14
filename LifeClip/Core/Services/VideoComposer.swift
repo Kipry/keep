@@ -46,6 +46,15 @@ enum CompositionError: LocalizedError {
     }
 }
 
+// MARK: - ProgressBox
+// Shared mutable value passed across the actor boundary for UI progress polling.
+// Declared @unchecked Sendable because reads/writes race, which is acceptable
+// for a coarse progress indicator (worst case: one stale frame).
+
+final class ProgressBox: @unchecked Sendable {
+    var value: Double = 0
+}
+
 // MARK: - VideoComposer
 
 actor VideoComposer {
@@ -55,18 +64,18 @@ actor VideoComposer {
     func compose(
         clips: [URL],
         transition: TransitionStyle = .cut,
-        quality: ExportQuality = .p1080
+        quality: ExportQuality = .p1080,
+        progressBox: ProgressBox? = nil
     ) async throws -> URL {
         guard !clips.isEmpty else { throw CompositionError.noClips }
 
-        // Pre-load all asset metadata
         let pairs = try await loadAssets(urls: clips)
 
         switch transition {
         case .cut:
-            return try await composeCut(pairs: pairs, quality: quality)
+            return try await composeCut(pairs: pairs, quality: quality, progressBox: progressBox)
         case .crossFade:
-            return try await composeCrossFade(pairs: pairs, quality: quality)
+            return try await composeCrossFade(pairs: pairs, quality: quality, progressBox: progressBox)
         }
     }
 
@@ -92,7 +101,8 @@ actor VideoComposer {
 
     private func composeCut(
         pairs: [(AVURLAsset, CMTime)],
-        quality: ExportQuality
+        quality: ExportQuality,
+        progressBox: ProgressBox?
     ) async throws -> URL {
         let composition = AVMutableComposition()
         guard let videoTrack = composition.addMutableTrack(withMediaType: .video,
@@ -114,16 +124,17 @@ actor VideoComposer {
         }
 
         applyPreferredTransform(to: videoTrack, from: pairs[0].0)
-        return try await export(composition: composition, videoComposition: nil, quality: quality)
+        return try await export(composition: composition, videoComposition: nil,
+                                quality: quality, progressBox: progressBox)
     }
 
     // MARK: - Cross-fade composition (two alternating tracks with opacity ramps)
 
     private func composeCrossFade(
         pairs: [(AVURLAsset, CMTime)],
-        quality: ExportQuality
+        quality: ExportQuality,
+        progressBox: ProgressBox?
     ) async throws -> URL {
-        // Transition duration clamped to half the shortest clip
         let minDuration = pairs.map { $0.1.seconds }.min() ?? 1.0
         let fadeSecs = min(0.5, minDuration / 2)
         let fadeDuration = CMTime(seconds: fadeSecs, preferredTimescale: 600)
@@ -160,7 +171,6 @@ actor VideoComposer {
             }
         }
 
-        // Build layer instructions
         let renderSize = await renderSize(for: pairs[0].0)
         var instructions: [AVMutableVideoCompositionInstruction] = []
 
@@ -205,7 +215,8 @@ actor VideoComposer {
         videoComposition.renderSize = renderSize
         videoComposition.instructions = instructions
 
-        return try await export(composition: composition, videoComposition: videoComposition, quality: quality)
+        return try await export(composition: composition, videoComposition: videoComposition,
+                                quality: quality, progressBox: progressBox)
     }
 
     // MARK: - Helpers
@@ -235,7 +246,6 @@ actor VideoComposer {
               let transform = try? await track.load(.preferredTransform) else {
             return CGSize(width: 1080, height: 1920)
         }
-        // Swap dimensions for portrait videos
         let isPortrait = transform.b == 1.0 || transform.b == -1.0
         return isPortrait ? CGSize(width: size.height, height: size.width) : size
     }
@@ -243,7 +253,8 @@ actor VideoComposer {
     private func export(
         composition: AVMutableComposition,
         videoComposition: AVMutableVideoComposition?,
-        quality: ExportQuality
+        quality: ExportQuality,
+        progressBox: ProgressBox?
     ) async throws -> URL {
         guard let session = AVAssetExportSession(asset: composition, presetName: quality.presetName) else {
             throw CompositionError.exportSessionFailed
@@ -260,6 +271,17 @@ actor VideoComposer {
                 case .completed: continuation.resume(returning: outputURL)
                 case .cancelled: continuation.resume(throwing: CompositionError.exportCancelled)
                 default:         continuation.resume(throwing: session.error ?? CompositionError.exportSessionFailed)
+                }
+            }
+            // Poll session.progress ~12 fps and write into the shared box.
+            if let box = progressBox {
+                Task {
+                    while session.status != .completed
+                            && session.status != .failed
+                            && session.status != .cancelled {
+                        box.value = Double(session.progress)
+                        try? await Task.sleep(nanoseconds: 80_000_000) // 80 ms
+                    }
                 }
             }
         }

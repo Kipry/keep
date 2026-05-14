@@ -14,6 +14,7 @@ struct ProjectDetailView: View {
     @State private var isPlayerPresented = false
     @State private var isExportOptionsPresented = false
     @State private var isExporting = false
+    @State private var exportProgress: Double = 0
     @State private var exportError: String?
     @State private var importSelections: [PhotosPickerItem] = []
     @State private var isImporting = false
@@ -66,7 +67,11 @@ struct ProjectDetailView: View {
                 rightEdgeToolbar
             }
 
-            if isExporting { progressOverlay(text: "Compiling video…") }
+            if isExporting {
+                ExportProgressOverlay(clips: project.activeClips, progress: exportProgress)
+                    .transition(.opacity)
+                    .animation(.easeInOut(duration: 0.3), value: isExporting)
+            }
             if isImporting { progressOverlay(text: "Importing videos…") }
         }
         // fullScreenCover presentation — owns the full screen, no nav bar involved
@@ -369,16 +374,37 @@ struct ProjectDetailView: View {
     }
 
     private func exportVideo() async {
+        let box = ProgressBox()
         isExporting = true
-        defer { isExporting = false }
+        exportProgress = 0
+
+        // Poll the shared box ~12 fps and reflect into UI state
+        let pollTask = Task {
+            repeat {
+                exportProgress = box.value
+                try? await Task.sleep(nanoseconds: 80_000_000)
+            } while !Task.isCancelled
+        }
+
         let urls = project.activeClips.map { $0.fileURL }
         do {
-            let out = try await composer.compose(clips: urls,
-                                                 transition: selectedTransition,
-                                                 quality: selectedQuality)
-            // Present share sheet from the window root — avoids _UIReparentingView warning
-            await MainActor.run { presentShareSheet(for: out) }
+            let out = try await composer.compose(
+                clips: urls,
+                transition: selectedTransition,
+                quality: selectedQuality,
+                progressBox: box
+            )
+            pollTask.cancel()
+            // Flash 100% briefly so the user sees the completed ring
+            exportProgress = 1.0
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            isExporting = false
+            exportProgress = 0
+            presentShareSheet(for: out)
         } catch {
+            pollTask.cancel()
+            isExporting = false
+            exportProgress = 0
             exportError = error.localizedDescription
         }
     }
