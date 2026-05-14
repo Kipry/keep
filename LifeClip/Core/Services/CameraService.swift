@@ -30,8 +30,28 @@ enum CameraError: LocalizedError {
 
 enum CameraPosition {
     case front, back
-    var avPosition: AVCaptureDevice.Position {
-        self == .front ? .front : .back
+    var avPosition: AVCaptureDevice.Position { self == .front ? .front : .back }
+}
+
+// MARK: - Lens Type
+
+enum LensType: String, CaseIterable, Identifiable {
+    case ultraWide = "0.5×"
+    case wide      = "1×"
+    case tele      = "2×"
+
+    var id: String { rawValue }
+
+    var avDeviceType: AVCaptureDevice.DeviceType {
+        switch self {
+        case .ultraWide: return .builtInUltraWideCamera
+        case .wide:      return .builtInWideAngleCamera
+        case .tele:      return .builtInTelephotoCamera
+        }
+    }
+
+    var isAvailable: Bool {
+        AVCaptureDevice.default(avDeviceType, for: .video, position: .back) != nil
     }
 }
 
@@ -56,8 +76,15 @@ final class CameraService: NSObject, ObservableObject {
     @Published var isRunning = false
     @Published var isRecording = false
     @Published var cameraPosition: CameraPosition = .back
+    @Published var currentLens: LensType = .wide
     @Published var cameraError: CameraError?
     @Published var lastRecordedURL: URL?
+
+    /// Lenses available for the active camera position.
+    var availableLenses: [LensType] {
+        guard cameraPosition == .back else { return [.wide] }
+        return LensType.allCases.filter { $0.isAvailable }
+    }
 
     // MARK: Private AVFoundation objects
 
@@ -70,12 +97,11 @@ final class CameraService: NSObject, ObservableObject {
 
     // MARK: - Session lifecycle
 
-    /// Builds and starts a fresh capture session. Call once when the camera screen appears.
     func startSession(position: CameraPosition = .back) async throws {
         guard session == nil else { return }
         cameraPosition = position
 
-        // Step 1 — AVAudioSession must be configured BEFORE the capture session starts.
+        // AVAudioSession must be configured BEFORE the capture session starts.
         // Skipping this is the #1 reason audio is silent on clips 2+.
         try configureAudioSession()
 
@@ -83,71 +109,49 @@ final class CameraService: NSObject, ObservableObject {
         s.beginConfiguration()
         s.sessionPreset = .high
 
-        // Step 2 — Video input
-        let videoInput = try makeVideoInput(position: position)
+        let videoInput = try makeVideoInput(lens: .wide, position: position)
         guard s.canAddInput(videoInput) else { throw CameraError.sessionSetupFailed }
         s.addInput(videoInput)
         videoDeviceInput = videoInput
 
-        // Step 3 — Audio input
         let audioInput = try makeAudioInput()
         guard s.canAddInput(audioInput) else { throw CameraError.audioDeviceNotFound }
         s.addInput(audioInput)
         audioDeviceInput = audioInput
 
-        // Step 4 — Movie file output
         let output = AVCaptureMovieFileOutput()
         guard s.canAddOutput(output) else { throw CameraError.outputSetupFailed }
         s.addOutput(output)
         movieOutput = output
 
-        // Step 5 — Explicitly enable the audio connection on the output.
-        // AVFoundation does not always do this automatically, especially after
-        // the app resumes from the background.
+        // Explicitly enable the audio connection — AVFoundation does not always
+        // do this automatically after the app resumes from background.
         try verifyAudioConnection(on: output)
 
         s.commitConfiguration()
         session = s
 
-        // Run session off the main actor to keep the UI responsive.
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            DispatchQueue.global(qos: .userInitiated).async {
-                s.startRunning()
-                continuation.resume()
-            }
+        await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+            DispatchQueue.global(qos: .userInitiated).async { s.startRunning(); c.resume() }
         }
         isRunning = true
     }
 
-    /// Stops and tears down the session. Call when the camera screen disappears.
     func stopSession() {
         guard let s = session else { return }
-        DispatchQueue.global(qos: .userInitiated).async {
-            if s.isRunning { s.stopRunning() }
-        }
-        session = nil
-        videoDeviceInput = nil
-        audioDeviceInput = nil
-        movieOutput = nil
-        isRunning = false
-        isRecording = false
-
-        // Release the audio session so other apps (music, phone) can use it.
+        DispatchQueue.global(qos: .userInitiated).async { if s.isRunning { s.stopRunning() } }
+        session = nil; videoDeviceInput = nil; audioDeviceInput = nil; movieOutput = nil
+        isRunning = false; isRecording = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     // MARK: - Recording
 
-    /// Starts recording to a temp file and returns the URL when finished.
     func startRecording() async throws -> URL {
         guard let output = movieOutput, !output.isRecording else { return URL(fileURLWithPath: "") }
-
-        // Re-verify the audio connection before every clip — this is the direct fix
-        // for the Glimpse bug where clips 2+ had no audio.
+        // Re-verify audio connection before every clip — direct fix for Glimpse bug.
         try verifyAudioConnection(on: output)
-
         let url = makeTemporaryURL()
-
         return try await withCheckedThrowingContinuation { continuation in
             recordingContinuation = continuation
             output.startRecording(to: url, recordingDelegate: self)
@@ -155,29 +159,37 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
 
-    /// Stops the current recording and waits for the file to be finalised.
-    func stopRecording() {
-        movieOutput?.stopRecording()
-    }
+    func stopRecording() { movieOutput?.stopRecording() }
 
-    // MARK: - Camera switching
+    // MARK: - Lens switching
 
-    func switchCamera() async throws {
-        guard let s = session else { return }
-        let newPosition: CameraPosition = cameraPosition == .back ? .front : .back
-        let newInput = try makeVideoInput(position: newPosition)
-
+    func switchLens(to lens: LensType) async throws {
+        guard !isRecording, let s = session, cameraPosition == .back else { return }
+        let newInput = try makeVideoInput(lens: lens, position: .back)
         s.beginConfiguration()
         if let old = videoDeviceInput { s.removeInput(old) }
-        guard s.canAddInput(newInput) else {
-            s.commitConfiguration()
-            throw CameraError.deviceNotFound
-        }
+        guard s.canAddInput(newInput) else { s.commitConfiguration(); throw CameraError.deviceNotFound }
         s.addInput(newInput)
         s.commitConfiguration()
+        videoDeviceInput = newInput
+        currentLens = lens
+    }
 
+    // MARK: - Front/back flip
+
+    func switchCamera() async throws {
+        guard !isRecording, let s = session else { return }
+        let newPosition: CameraPosition = cameraPosition == .back ? .front : .back
+        // Front camera only has wide lens
+        let newInput = try makeVideoInput(lens: .wide, position: newPosition)
+        s.beginConfiguration()
+        if let old = videoDeviceInput { s.removeInput(old) }
+        guard s.canAddInput(newInput) else { s.commitConfiguration(); throw CameraError.deviceNotFound }
+        s.addInput(newInput)
+        s.commitConfiguration()
         videoDeviceInput = newInput
         cameraPosition = newPosition
+        currentLens = .wide
     }
 
     // MARK: - Zoom / focus / torch
@@ -212,39 +224,30 @@ final class CameraService: NSObject, ObservableObject {
     // MARK: - Private helpers
 
     private func configureAudioSession() throws {
-        let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.playAndRecord,
-                                     mode: .videoRecording,
-                                     options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP])
-        try audioSession.setActive(true)
+        let as_ = AVAudioSession.sharedInstance()
+        try as_.setCategory(.playAndRecord, mode: .videoRecording,
+                            options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP])
+        try as_.setActive(true)
     }
 
-    private func makeVideoInput(position: CameraPosition) throws -> AVCaptureDeviceInput {
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera,
-                                                   for: .video,
-                                                   position: position.avPosition) else {
+    private func makeVideoInput(lens: LensType, position: CameraPosition) throws -> AVCaptureDeviceInput {
+        // For front camera always fall back to wide angle
+        let deviceType = position == .front ? AVCaptureDevice.DeviceType.builtInWideAngleCamera : lens.avDeviceType
+        guard let device = AVCaptureDevice.default(deviceType, for: .video, position: position.avPosition) else {
             throw CameraError.deviceNotFound
         }
-        guard let input = try? AVCaptureDeviceInput(device: device) else {
-            throw CameraError.sessionSetupFailed
-        }
+        guard let input = try? AVCaptureDeviceInput(device: device) else { throw CameraError.sessionSetupFailed }
         return input
     }
 
     private func makeAudioInput() throws -> AVCaptureDeviceInput {
-        guard let device = AVCaptureDevice.default(for: .audio) else {
-            throw CameraError.audioDeviceNotFound
-        }
-        guard let input = try? AVCaptureDeviceInput(device: device) else {
-            throw CameraError.audioDeviceNotFound
-        }
+        guard let device = AVCaptureDevice.default(for: .audio),
+              let input = try? AVCaptureDeviceInput(device: device) else { throw CameraError.audioDeviceNotFound }
         return input
     }
 
     private func verifyAudioConnection(on output: AVCaptureMovieFileOutput) throws {
-        guard let connection = output.connection(with: .audio) else {
-            throw CameraError.audioConnectionMissing
-        }
+        guard let connection = output.connection(with: .audio) else { throw CameraError.audioConnectionMissing }
         connection.isEnabled = true
     }
 

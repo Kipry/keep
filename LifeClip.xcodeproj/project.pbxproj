@@ -21,6 +21,7 @@
 		A100000000000000000002AB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100000000000000000002AA /* Assets.xcassets */; };
 		A100000000000000000003AB /* VideoTransferable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000003AA /* VideoTransferable.swift */; };
 		A100000000000000000004AB /* CompilationOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000004AA /* CompilationOptionsView.swift */; };
+		A100000000000000000007AB /* ProjectPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000007AA /* ProjectPlayerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,7 @@
 		A100000000000000000002AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A100000000000000000003AA /* VideoTransferable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoTransferable.swift; sourceTree = "<group>"; };
 		A100000000000000000004AA /* CompilationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompilationOptionsView.swift; sourceTree = "<group>"; };
+		A100000000000000000007AA /* ProjectPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPlayerView.swift; sourceTree = "<group>"; };
 		A1000000000000000000000C /* LifeClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -159,6 +161,7 @@
 			children = (
 				A100000000000000000000AA /* ProjectListView.swift */,
 				A100000000000000000000BA /* ProjectDetailView.swift */,
+				A100000000000000000007AA /* ProjectPlayerView.swift */,
 			);
 			path = Projects;
 			sourceTree = "<group>";
@@ -245,6 +248,7 @@
 				A100000000000000000000BB /* ProjectDetailView.swift in Sources */,
 				A100000000000000000003AB /* VideoTransferable.swift in Sources */,
 				A100000000000000000004AB /* CompilationOptionsView.swift in Sources */,
+				A100000000000000000007AB /* ProjectPlayerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

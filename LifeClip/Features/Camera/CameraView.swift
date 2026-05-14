@@ -1,23 +1,19 @@
 import SwiftUI
 import AVFoundation
 
-/// Full-screen camera interface for recording a single clip.
-/// Dismisses itself and calls onSave(url, duration) when recording is finished.
 struct CameraView: View {
     var onSave: (URL, Double) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var camera = CameraService()
 
-    // Recording state
+    // Recording
     @State private var recordingStart: Date?
     @State private var elapsed: Double = 0
     @State private var timer: Timer?
+    @State private var durationLimit: Double = 1  // default 1 second
 
-    // Clip duration limit (seconds). Users can choose 3 / 5 / 10.
-    @State private var durationLimit: Double = 5
-
-    // UI feedback
+    // UI
     @State private var focusPoint: CGPoint?
     @State private var showFocusRing = false
     @State private var zoom: CGFloat = 1.0
@@ -36,18 +32,14 @@ struct CameraView: View {
                     .gesture(pinchToZoomGesture)
             }
 
-            // Focus ring
             if showFocusRing, let pt = focusPoint {
-                FocusRingView()
-                    .position(pt)
+                FocusRingView().position(pt)
             }
 
-            // Error banner
             if let err = setupError ?? camera.cameraError?.localizedDescription {
                 errorBanner(err)
             }
 
-            // HUD overlay
             VStack {
                 topBar
                 Spacer()
@@ -77,7 +69,6 @@ struct CameraView: View {
 
             Spacer()
 
-            // Elapsed / limit indicator
             if camera.isRecording {
                 Text(String(format: "%.1f / %.0fs", elapsed, durationLimit))
                     .font(.headline.monospacedDigit())
@@ -90,7 +81,6 @@ struct CameraView: View {
 
             Spacer()
 
-            // Torch
             Button {
                 torchOn.toggle()
                 camera.setTorch(torchOn)
@@ -101,6 +91,7 @@ struct CameraView: View {
                     .padding(12)
                     .background(.black.opacity(0.4), in: Circle())
             }
+            .disabled(camera.cameraPosition == .front)
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -110,11 +101,14 @@ struct CameraView: View {
     // MARK: - Bottom bar
 
     private var bottomBar: some View {
-        VStack(spacing: 24) {
-            // Duration picker
+        VStack(spacing: 20) {
             if !camera.isRecording {
-                durationPicker
-                    .transition(.opacity)
+                durationPicker.transition(.opacity)
+            }
+
+            // Lens picker — only shown for back camera with multiple lenses
+            if camera.availableLenses.count > 1 && !camera.isRecording {
+                lensPicker.transition(.opacity)
             }
 
             HStack(spacing: 48) {
@@ -130,23 +124,22 @@ struct CameraView: View {
                 }
                 .disabled(camera.isRecording)
 
-                // Record button
                 RecordButton(isRecording: camera.isRecording) {
                     Task { await handleRecordTap() }
                 }
 
-                // Placeholder spacer (mirrors flip button)
-                Color.clear
-                    .frame(width: 52, height: 52)
+                Color.clear.frame(width: 52, height: 52)
             }
         }
         .padding(.bottom, 48)
         .animation(.easeInOut(duration: 0.2), value: camera.isRecording)
     }
 
+    // MARK: - Duration picker
+
     private var durationPicker: some View {
         HStack(spacing: 0) {
-            ForEach([3.0, 5.0, 10.0], id: \.self) { d in
+            ForEach([1.0, 3.0, 5.0], id: \.self) { d in
                 Button {
                     durationLimit = d
                 } label: {
@@ -163,22 +156,50 @@ struct CameraView: View {
         .background(.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 12))
     }
 
+    // MARK: - Lens picker
+
+    private var lensPicker: some View {
+        HStack(spacing: 4) {
+            ForEach(camera.availableLenses) { lens in
+                Button {
+                    Task { try? await camera.switchLens(to: lens) }
+                } label: {
+                    Text(lens.rawValue)
+                        .font(.caption.bold())
+                        .foregroundStyle(camera.currentLens == lens ? .black : .white)
+                        .frame(width: 46, height: 32)
+                        .background(
+                            camera.currentLens == lens
+                                ? Color.white
+                                : Color.black.opacity(0.4),
+                            in: RoundedRectangle(cornerRadius: 8)
+                        )
+                        // Active lens gets a subtle golden ring like the native Camera app
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(camera.currentLens == lens ? Color.yellow.opacity(0.6) : .clear,
+                                        lineWidth: 1)
+                        )
+                }
+                .disabled(camera.isRecording)
+            }
+        }
+        .padding(4)
+        .background(.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 12))
+    }
+
     // MARK: - Gestures
 
     private var tapToFocusGesture: some Gesture {
-        SpatialTapGesture()
-            .onEnded { value in
-                let size = UIScreen.main.bounds.size
-                // Normalise to [0,1] for AVFoundation, then store screen-space for the ring
-                let normPt = CGPoint(x: value.location.x / size.width,
-                                     y: value.location.y / size.height)
-                camera.focusAt(normPt)
-                focusPoint = value.location
-                showFocusRing = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                    showFocusRing = false
-                }
-            }
+        SpatialTapGesture().onEnded { value in
+            let size = UIScreen.main.bounds.size
+            let normPt = CGPoint(x: value.location.x / size.width,
+                                 y: value.location.y / size.height)
+            camera.focusAt(normPt)
+            focusPoint = value.location
+            showFocusRing = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { showFocusRing = false }
+        }
     }
 
     private var pinchToZoomGesture: some Gesture {
@@ -194,11 +215,8 @@ struct CameraView: View {
     // MARK: - Actions
 
     private func setupCamera() async {
-        do {
-            try await camera.startSession()
-        } catch {
-            setupError = error.localizedDescription
-        }
+        do { try await camera.startSession() }
+        catch { setupError = error.localizedDescription }
     }
 
     private func teardown() {
@@ -223,8 +241,7 @@ struct CameraView: View {
 
     private func finishRecording(url: URL) {
         stopTimer()
-        let duration = elapsed > 0 ? elapsed : durationLimit
-        onSave(url, duration)
+        onSave(url, elapsed > 0 ? elapsed : durationLimit)
         dismiss()
     }
 
@@ -233,7 +250,7 @@ struct CameraView: View {
     private func startTimer() {
         elapsed = 0
         recordingStart = Date()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
             guard let start = recordingStart else { return }
             elapsed = Date().timeIntervalSince(start)
             if elapsed >= durationLimit {
@@ -243,12 +260,7 @@ struct CameraView: View {
         }
     }
 
-    private func stopTimer() {
-        timer?.invalidate()
-        timer = nil
-    }
-
-    // MARK: - Error banner
+    private func stopTimer() { timer?.invalidate(); timer = nil }
 
     private func errorBanner(_ message: String) -> some View {
         VStack {
@@ -273,10 +285,18 @@ private struct RecordButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
+                // Pulse ring while recording
+                if isRecording {
+                    Circle()
+                        .stroke(.red.opacity(0.3), lineWidth: 6)
+                        .frame(width: 84, height: 84)
+                        .scaleEffect(isRecording ? 1.15 : 1)
+                        .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true),
+                                   value: isRecording)
+                }
                 Circle()
                     .stroke(.white, lineWidth: 4)
                     .frame(width: 72, height: 72)
-
                 RoundedRectangle(cornerRadius: isRecording ? 8 : 36)
                     .fill(.red)
                     .frame(width: isRecording ? 30 : 58, height: isRecording ? 30 : 58)

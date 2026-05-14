@@ -9,6 +9,7 @@ struct ProjectDetailView: View {
 
     // Sheets & overlays
     @State private var isCameraPresented = false
+    @State private var isPlayerPresented = false
     @State private var isExportOptionsPresented = false
     @State private var isExporting = false
     @State private var exportedURL: URL?
@@ -43,6 +44,10 @@ struct ProjectDetailView: View {
         .navigationTitle(project.name)
         .navigationBarTitleDisplayMode(.large)
         .toolbar { toolbarContent }
+        // Project player
+        .fullScreenCover(isPresented: $isPlayerPresented) {
+            ProjectPlayerView(project: project)
+        }
         // Camera
         .fullScreenCover(isPresented: $isCameraPresented) {
             CameraView { url, duration in addClip(fileURL: url, duration: duration) }
@@ -201,6 +206,16 @@ struct ProjectDetailView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        // Play button — instant preview without export
+        if !project.activeClips.isEmpty {
+            ToolbarItem(placement: .primaryAction) {
+                Button { isPlayerPresented = true } label: {
+                    Image(systemName: "play.circle.fill")
+                        .font(.title2)
+                }
+            }
+        }
+
         // Camera button
         ToolbarItem(placement: .primaryAction) {
             Button { isCameraPresented = true } label: {
