@@ -14,7 +14,6 @@ struct ProjectDetailView: View {
     @State private var isPlayerPresented = false
     @State private var isExportOptionsPresented = false
     @State private var isExporting = false
-    @State private var exportedURL: URL?
     @State private var exportError: String?
     @State private var importSelections: [PhotosPickerItem] = []
     @State private var isImporting = false
@@ -22,13 +21,12 @@ struct ProjectDetailView: View {
     @State private var selectedTransition: TransitionStyle = .crossFade
     @State private var selectedQuality: ExportQuality = .p1080
 
-    // Drag-and-drop reorder state
-    @State private var dragClips: [Clip] = []       // local order while dragging
-    @State private var draggingClipID: UUID? = nil  // which clip is in flight
+    // Drag-and-drop reorder
+    @State private var dragClips: [Clip] = []
+    @State private var draggingClipID: UUID? = nil
 
     private let composer = VideoComposer()
 
-    // During drag use the local array; otherwise use persisted order
     private var displayClips: [Clip] {
         dragClips.isEmpty ? project.activeClips : dragClips
     }
@@ -64,7 +62,6 @@ struct ProjectDetailView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-            // Right-edge floating toolbar
             if !project.activeClips.isEmpty {
                 rightEdgeToolbar
             }
@@ -72,8 +69,7 @@ struct ProjectDetailView: View {
             if isExporting { progressOverlay(text: "Compiling video…") }
             if isImporting { progressOverlay(text: "Importing videos…") }
         }
-        .ignoresSafeArea(edges: .bottom)
-        .toolbar(.hidden, for: .navigationBar)
+        // fullScreenCover presentation — owns the full screen, no nav bar involved
         .preferredColorScheme(.dark)
         .fullScreenCover(isPresented: $isCameraPresented) {
             CameraView { url, dur in addClip(fileURL: url, duration: dur) }
@@ -88,7 +84,6 @@ struct ProjectDetailView: View {
                 clipCount: project.activeClips.count
             ) { Task { await exportVideo() } }
         }
-        .sheet(item: $exportedURL) { url in ShareSheet(url: url) }
         .confirmationDialog(
             "Delete this clip?",
             isPresented: Binding(get: { clipToDelete != nil }, set: { if !$0 { clipToDelete = nil } }),
@@ -145,8 +140,7 @@ struct ProjectDetailView: View {
             }
         }
         .padding(.horizontal, 22)
-        .padding(.top, 14)
-        .padding(.bottom, 14)
+        .padding(.vertical, 14)
     }
 
     // MARK: - Title block
@@ -174,7 +168,6 @@ struct ProjectDetailView: View {
                         clips: filmRows[rowIdx],
                         draggingClipID: $draggingClipID,
                         onDragStart: { clip in
-                            // Snapshot the current order into local array
                             if dragClips.isEmpty { dragClips = project.activeClips }
                             draggingClipID = clip.id
                         },
@@ -184,7 +177,6 @@ struct ProjectDetailView: View {
                     )
                 }
 
-                // ── Add-to-reel slot ─────────────────────────────────────
                 Button { isCameraPresented = true } label: {
                     RoundedRectangle(cornerRadius: 6)
                         .stroke(.white.opacity(0.12),
@@ -203,7 +195,6 @@ struct ProjectDetailView: View {
             }
             .padding(.top, 4)
         }
-        // Export bar floats above the scroll content, auto-insets the scroll area
         .safeAreaInset(edge: .bottom, spacing: 0) { exportBar }
     }
 
@@ -233,14 +224,13 @@ struct ProjectDetailView: View {
         }
         .padding(.horizontal, 22)
         .padding(.top, 12)
-        .padding(.bottom, 36)   // above home indicator
+        .padding(.bottom, 16)
         .background(
             LinearGradient(
                 colors: [Theme.background.opacity(0), Theme.background],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .ignoresSafeArea(edges: .bottom)
         )
     }
 
@@ -248,7 +238,6 @@ struct ProjectDetailView: View {
 
     private var rightEdgeToolbar: some View {
         VStack(spacing: 10) {
-            // Record — amber accent
             Button { isCameraPresented = true } label: {
                 Circle()
                     .fill(Theme.amber)
@@ -260,12 +249,10 @@ struct ProjectDetailView: View {
                     }
             }
 
-            // Import
             PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
                 toolbarIcon("square.and.arrow.down")
             }
 
-            // Export options
             Button { isExportOptionsPresented = true } label: {
                 toolbarIcon("arrow.up.circle")
             }
@@ -274,11 +261,10 @@ struct ProjectDetailView: View {
         .padding(.horizontal, 8)
         .background(Theme.paper, in: RoundedRectangle(cornerRadius: 22))
         .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.ink.opacity(0.18), lineWidth: 1.2))
-        // Float at the right edge, vertically centred in the filmstrip area
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
         .padding(.trailing, -4)
-        .padding(.top, 140)     // clear nav bar + title
-        .padding(.bottom, 140)  // clear export bar
+        .padding(.top, 130)
+        .padding(.bottom, 130)
         .allowsHitTesting(true)
     }
 
@@ -385,11 +371,25 @@ struct ProjectDetailView: View {
         defer { isExporting = false }
         let urls = project.activeClips.map { $0.fileURL }
         do {
-            let out = try await composer.compose(clips: urls, transition: selectedTransition, quality: selectedQuality)
-            exportedURL = out
+            let out = try await composer.compose(clips: urls,
+                                                 transition: selectedTransition,
+                                                 quality: selectedQuality)
+            // Present share sheet from the window root — avoids _UIReparentingView warning
+            await MainActor.run { presentShareSheet(for: out) }
         } catch {
             exportError = error.localizedDescription
         }
+    }
+
+    // Presents UIActivityViewController directly from the key window, bypassing SwiftUI sheet
+    private func presentShareSheet(for url: URL) {
+        let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootVC = windowScene.keyWindow?.rootViewController else { return }
+        var topVC = rootVC
+        while let presented = topVC.presentedViewController { topVC = presented }
+        activityVC.popoverPresentationController?.sourceView = topVC.view
+        topVC.present(activityVC, animated: true)
     }
 }
 
@@ -421,7 +421,6 @@ private struct FilmstripRow: View {
                         }
                     }
                 }
-                // Padding cells so every row is 4 wide
                 let padCount = 4 - min(clips.count, 4)
                 ForEach(0..<padCount, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: 2)
@@ -463,6 +462,7 @@ private struct FilmCell: View {
     @State private var isPreviewPresented = false
 
     private var isDraggingMe: Bool { draggingClipID == clip.id }
+    private var isDraggingOther: Bool { draggingClipID != nil && !isDraggingMe }
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -484,7 +484,6 @@ private struct FilmCell: View {
             .aspectRatio(4/5, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 2))
 
-            // Duration badge
             Text(String(format: "%.0fs", clip.duration))
                 .font(.system(size: 9, weight: .medium, design: .monospaced))
                 .foregroundStyle(.white)
@@ -493,14 +492,13 @@ private struct FilmCell: View {
                 .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 3))
                 .padding(4)
         }
-        // Ghost effect while dragging
         .opacity(isDraggingMe ? 0.3 : 1.0)
         .overlay(
             RoundedRectangle(cornerRadius: 2)
-                .stroke(Theme.amber.opacity(isDraggingMe ? 0 : (draggingClipID != nil ? 0.4 : 0)),
-                        lineWidth: 1.5)
+                .stroke(Theme.amber.opacity(isDraggingOther ? 0.35 : 0), lineWidth: 1.5)
         )
         .animation(.easeInOut(duration: 0.18), value: isDraggingMe)
+        .animation(.easeInOut(duration: 0.18), value: isDraggingOther)
         .onTapGesture { if draggingClipID == nil { isPreviewPresented = true } }
         .onDrag {
             onDragStart()
@@ -515,9 +513,24 @@ private struct FilmCell: View {
                 onFinish: onDropFinish
             )
         )
-        .sheet(isPresented: $isPreviewPresented) {
-            VideoPlayer(player: AVPlayer(url: clip.fileURL))
-                .presentationDetents([.medium, .large])
+        // fullScreenCover avoids the _UIReparentingView warning that .sheet causes with VideoPlayer
+        .fullScreenCover(isPresented: $isPreviewPresented) {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                VideoPlayer(player: AVPlayer(url: clip.fileURL))
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button { isPreviewPresented = false } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title)
+                                .foregroundStyle(.white.opacity(0.8))
+                                .padding(16)
+                        }
+                    }
+                    Spacer()
+                }
+            }
         }
     }
 }
@@ -530,9 +543,7 @@ private struct FilmCellDropDelegate: DropDelegate {
     let onEntered: (UUID) -> Void
     let onFinish: () -> Void
 
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
 
     func dropEntered(info: DropInfo) {
         guard let srcID = draggingClipID, srcID != targetID else { return }
@@ -543,20 +554,4 @@ private struct FilmCellDropDelegate: DropDelegate {
         onFinish()
         return true
     }
-}
-
-// MARK: - URL Identifiable
-
-extension URL: @retroactive Identifiable {
-    public var id: String { absoluteString }
-}
-
-// MARK: - ShareSheet
-
-private struct ShareSheet: UIViewControllerRepresentable {
-    let url: URL
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: [url], applicationActivities: nil)
-    }
-    func updateUIViewController(_ uvc: UIActivityViewController, context: Context) {}
 }
