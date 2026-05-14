@@ -6,7 +6,7 @@ final class Project {
     var id: UUID
     var name: String
     var createdAt: Date
-    var updatedAt: Date
+    var updatedAt: Date = Date()
     var isDeleted: Bool
     var deletedAt: Date?
     var coverThumbnailData: Data?
