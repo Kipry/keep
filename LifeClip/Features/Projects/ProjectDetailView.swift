@@ -560,6 +560,10 @@ private struct FilmCell: View {
                 if let p = clipPlayer {
                     VideoLayerView(player: p)
                         .ignoresSafeArea()
+                        .onTapGesture {
+                            p.seek(to: .zero)
+                            p.play()
+                        }
                 }
                 VStack {
                     HStack {

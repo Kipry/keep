@@ -10,6 +10,9 @@ struct ProjectPlayerView: View {
     @State private var currentTime: Double = 0
     @State private var duration: Double = 1
     @State private var isDragging = false
+    @State private var isSeeking = false
+    @State private var scrubTarget: Double? = nil
+    @State private var wasPlayingBeforeScrub = false
     @State private var timeObserver: Any?
 
     var body: some View {
@@ -131,18 +134,39 @@ struct ProjectPlayerView: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { val in
-                        isDragging = true
+                        // Pause once at the start of a scrub so frames update instantly
+                        if !isDragging {
+                            isDragging = true
+                            wasPlayingBeforeScrub = player?.timeControlStatus == .playing
+                            player?.pause()
+                            isPlaying = false
+                        }
                         let p = max(0, min(1, val.location.x / geo.size.width))
                         currentTime = p * duration
+                        // Queue a seek; performScrubSeek() chains them so only one
+                        // is in flight at a time, dropping intermediate targets.
+                        scrubTarget = currentTime
+                        performScrubSeek()
                     }
                     .onEnded { val in
                         let p = max(0, min(1, val.location.x / geo.size.width))
                         currentTime = p * duration
+                        // Final precise seek, then optionally resume playback
                         player?.seek(
                             to: CMTime(seconds: currentTime, preferredTimescale: 600),
                             toleranceBefore: .zero, toleranceAfter: .zero
-                        )
-                        isDragging = false
+                        ) { finished in
+                            guard finished else { return }
+                            DispatchQueue.main.async {
+                                isDragging = false
+                                isSeeking = false
+                                scrubTarget = nil
+                                if wasPlayingBeforeScrub {
+                                    player?.play()
+                                    isPlaying = true
+                                }
+                            }
+                        }
                     }
             )
         }
@@ -157,6 +181,25 @@ struct ProjectPlayerView: View {
             player.pause(); isPlaying = false
         } else {
             player.play(); isPlaying = true
+        }
+    }
+
+    // Throttled seek chain: only one seek in flight at a time.
+    // When a seek completes, checks if a newer target arrived and issues it.
+    private func performScrubSeek() {
+        guard !isSeeking, let target = scrubTarget else { return }
+        isSeeking = true
+        scrubTarget = nil
+        player?.seek(
+            to: CMTime(seconds: target, preferredTimescale: 600),
+            toleranceBefore: CMTime(seconds: 0.1, preferredTimescale: 600),
+            toleranceAfter:  CMTime(seconds: 0.1, preferredTimescale: 600)
+        ) { finished in
+            guard finished else { return }
+            DispatchQueue.main.async {
+                isSeeking = false
+                performScrubSeek()   // drain any queued target
+            }
         }
     }
 
