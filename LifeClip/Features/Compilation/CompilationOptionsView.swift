@@ -191,7 +191,6 @@ struct CompilationOptionsView: View {
                 RoundedRectangle(cornerRadius: 18)
                     .fill(Theme.amber)
                     .frame(width: geo.size.width * holdProgress)
-                    .animation(.linear(duration: 0.04), value: holdProgress)
             }
             .frame(height: 64)
             .clipShape(RoundedRectangle(cornerRadius: 18))
@@ -219,19 +218,23 @@ struct CompilationOptionsView: View {
 
     // MARK: - Hold logic
 
+    // 35 % shorter than the original 2.4 s → 1.56 s.
+    // A single withAnimation drives the fill at native frame rate (60/120 fps)
+    // instead of stepping at 25 fps, which was the source of the jitter.
+    private static let holdDuration: Double = 1.56
+
     private func startHold() {
+        withAnimation(.linear(duration: Self.holdDuration)) {
+            holdProgress = 1.0
+        }
         holdTask = Task {
-            let totalSteps = 60
-            for step in 1...totalSteps {
-                try? await Task.sleep(nanoseconds: 40_000_000)
-                guard !Task.isCancelled else { return }
-                await MainActor.run { holdProgress = CGFloat(step) / CGFloat(totalSteps) }
-                if step == totalSteps {
-                    await MainActor.run {
-                        dismiss()
-                        onExport()
-                    }
-                }
+            try? await Task.sleep(
+                nanoseconds: UInt64(Self.holdDuration * 1_000_000_000)
+            )
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                dismiss()
+                onExport()
             }
         }
     }
@@ -240,7 +243,7 @@ struct CompilationOptionsView: View {
         holdTask?.cancel()
         holdTask = nil
         isHolding = false
-        withAnimation(.spring(response: 0.4)) { holdProgress = 0 }
+        withAnimation(.spring(response: 0.35)) { holdProgress = 0 }
     }
 
     // MARK: - Helpers
