@@ -7,17 +7,16 @@ struct CameraView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var camera = CameraService()
 
-    // Recording
     @State private var recordingStart: Date?
     @State private var elapsed: Double = 0
     @State private var timer: Timer?
-    @State private var durationLimit: Double = 1  // default 1 second
+    @State private var durationLimit: Double = 1
 
-    // UI
     @State private var focusPoint: CGPoint?
     @State private var showFocusRing = false
-    @State private var zoom: CGFloat = 1.0
     @State private var lastZoom: CGFloat = 1.0
+    @State private var showZoomLabel = false
+    @State private var zoomLabelTask: Task<Void, Never>?
     @State private var torchOn = false
     @State private var setupError: String?
 
@@ -34,6 +33,16 @@ struct CameraView: View {
 
             if showFocusRing, let pt = focusPoint {
                 FocusRingView().position(pt)
+            }
+
+            if showZoomLabel {
+                Text(String(format: "%.1f×", camera.currentZoomFactor))
+                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(.black.opacity(0.55), in: Capsule())
+                    .transition(.opacity)
             }
 
             if let err = setupError ?? camera.cameraError?.localizedDescription {
@@ -53,6 +62,7 @@ struct CameraView: View {
             finishRecording(url: url)
         }
         .statusBarHidden(true)
+        .animation(.easeInOut(duration: 0.25), value: showZoomLabel)
     }
 
     // MARK: - Top bar
@@ -70,13 +80,18 @@ struct CameraView: View {
             Spacer()
 
             if camera.isRecording {
-                Text(String(format: "%.1f / %.0fs", elapsed, durationLimit))
-                    .font(.headline.monospacedDigit())
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(.red.opacity(0.8), in: Capsule())
-                    .transition(.scale.combined(with: .opacity))
+                HStack(spacing: 7) {
+                    Circle()
+                        .fill(Theme.amber)
+                        .frame(width: 8, height: 8)
+                    Text(String(format: "%.1fs", elapsed))
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.black.opacity(0.55), in: Capsule())
+                .transition(.scale.combined(with: .opacity))
             }
 
             Spacer()
@@ -87,7 +102,7 @@ struct CameraView: View {
             } label: {
                 Image(systemName: torchOn ? "bolt.fill" : "bolt.slash")
                     .font(.title3.bold())
-                    .foregroundStyle(torchOn ? .yellow : .white)
+                    .foregroundStyle(torchOn ? Theme.amber : .white)
                     .padding(12)
                     .background(.black.opacity(0.4), in: Circle())
             }
@@ -106,30 +121,29 @@ struct CameraView: View {
                 durationPicker.transition(.opacity)
             }
 
-            // Lens picker — only shown for back camera with multiple lenses
-            if camera.availableLenses.count > 1 && !camera.isRecording {
-                lensPicker.transition(.opacity)
-            }
+            HStack {
+                Color.clear.frame(width: 52, height: 52)
 
-            HStack(spacing: 48) {
-                // Flip camera
+                Spacer()
+
+                RecordButton(isRecording: camera.isRecording) {
+                    Task { await handleRecordTap() }
+                }
+
+                Spacer()
+
                 Button {
                     Task { try? await camera.switchCamera() }
                 } label: {
                     Image(systemName: "arrow.triangle.2.circlepath.camera")
                         .font(.title2)
                         .foregroundStyle(.white)
-                        .padding(14)
+                        .frame(width: 52, height: 52)
                         .background(.black.opacity(0.4), in: Circle())
                 }
                 .disabled(camera.isRecording)
-
-                RecordButton(isRecording: camera.isRecording) {
-                    Task { await handleRecordTap() }
-                }
-
-                Color.clear.frame(width: 52, height: 52)
             }
+            .padding(.horizontal, 36)
         }
         .padding(.bottom, 48)
         .animation(.easeInOut(duration: 0.2), value: camera.isRecording)
@@ -138,54 +152,26 @@ struct CameraView: View {
     // MARK: - Duration picker
 
     private var durationPicker: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 6) {
             ForEach([1.0, 3.0, 5.0], id: \.self) { d in
                 Button {
                     durationLimit = d
                 } label: {
                     Text("\(Int(d))s")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(durationLimit == d ? .black : .white)
-                        .frame(width: 52, height: 32)
-                        .background(durationLimit == d ? .white : .clear,
-                                    in: RoundedRectangle(cornerRadius: 8))
-                }
-            }
-        }
-        .padding(4)
-        .background(.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 12))
-    }
-
-    // MARK: - Lens picker
-
-    private var lensPicker: some View {
-        HStack(spacing: 4) {
-            ForEach(camera.availableLenses) { lens in
-                Button {
-                    Task { try? await camera.switchLens(to: lens) }
-                } label: {
-                    Text(lens.rawValue)
-                        .font(.caption.bold())
-                        .foregroundStyle(camera.currentLens == lens ? .black : .white)
-                        .frame(width: 46, height: 32)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(durationLimit == d ? Theme.ink : .white)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 8)
                         .background(
-                            camera.currentLens == lens
-                                ? Color.white
-                                : Color.black.opacity(0.4),
-                            in: RoundedRectangle(cornerRadius: 8)
+                            durationLimit == d ? .white : Color.black.opacity(0.35),
+                            in: Capsule()
                         )
-                        // Active lens gets a subtle golden ring like the native Camera app
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(camera.currentLens == lens ? Color.yellow.opacity(0.6) : .clear,
-                                        lineWidth: 1)
+                            Capsule().stroke(durationLimit == d ? .clear : .white.opacity(0.4), lineWidth: 1)
                         )
                 }
-                .disabled(camera.isRecording)
             }
         }
-        .padding(4)
-        .background(.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Gestures
@@ -205,11 +191,19 @@ struct CameraView: View {
     private var pinchToZoomGesture: some Gesture {
         MagnificationGesture()
             .onChanged { scale in
-                let newZoom = lastZoom * scale
-                zoom = max(1.0, min(newZoom, 5.0))
-                camera.setZoom(zoom)
+                camera.setZoom(lastZoom * scale)
+                showZoomLabel = true
+                zoomLabelTask?.cancel()
             }
-            .onEnded { _ in lastZoom = zoom }
+            .onEnded { _ in
+                lastZoom = camera.currentZoomFactor
+                zoomLabelTask = Task {
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    if !Task.isCancelled {
+                        withAnimation { showZoomLabel = false }
+                    }
+                }
+            }
     }
 
     // MARK: - Actions
@@ -282,25 +276,42 @@ private struct RecordButton: View {
     let isRecording: Bool
     let action: () -> Void
 
+    @State private var pulseScale: CGFloat = 1.0
+
     var body: some View {
         Button(action: action) {
             ZStack {
-                // Pulse ring while recording
                 if isRecording {
                     Circle()
-                        .stroke(.red.opacity(0.3), lineWidth: 6)
+                        .stroke(Theme.amber.opacity(0.22), lineWidth: 10)
+                        .frame(width: 96, height: 96)
+                        .scaleEffect(pulseScale)
+
+                    Circle()
+                        .strokeBorder(
+                            style: StrokeStyle(lineWidth: 2, dash: [5, 4])
+                        )
+                        .foregroundStyle(Theme.amber.opacity(0.55))
                         .frame(width: 84, height: 84)
-                        .scaleEffect(isRecording ? 1.15 : 1)
-                        .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true),
-                                   value: isRecording)
                 }
+
                 Circle()
                     .stroke(.white, lineWidth: 4)
                     .frame(width: 72, height: 72)
+
                 RoundedRectangle(cornerRadius: isRecording ? 8 : 36)
-                    .fill(.red)
-                    .frame(width: isRecording ? 30 : 58, height: isRecording ? 30 : 58)
+                    .fill(isRecording ? Theme.amber : .red)
+                    .frame(width: isRecording ? 28 : 56, height: isRecording ? 28 : 56)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isRecording)
+            }
+        }
+        .onChange(of: isRecording) { _, recording in
+            if recording {
+                withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                    pulseScale = 1.18
+                }
+            } else {
+                withAnimation(.easeInOut(duration: 0.2)) { pulseScale = 1.0 }
             }
         }
     }

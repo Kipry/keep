@@ -22,6 +22,7 @@
 		A100000000000000000003AB /* VideoTransferable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000003AA /* VideoTransferable.swift */; };
 		A100000000000000000004AB /* CompilationOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000004AA /* CompilationOptionsView.swift */; };
 		A100000000000000000007AB /* ProjectPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000007AA /* ProjectPlayerView.swift */; };
+		A100000000000000000009AB /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000009AA /* Theme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 		A100000000000000000003AA /* VideoTransferable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoTransferable.swift; sourceTree = "<group>"; };
 		A100000000000000000004AA /* CompilationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompilationOptionsView.swift; sourceTree = "<group>"; };
 		A100000000000000000007AA /* ProjectPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPlayerView.swift; sourceTree = "<group>"; };
+		A100000000000000000009AA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		A1000000000000000000000C /* LifeClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -89,6 +91,7 @@
 			children = (
 				A1000000000000000000010A /* Models */,
 				A1000000000000000000011A /* Services */,
+				A100000000000000000009AA /* Theme.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -249,6 +252,7 @@
 				A100000000000000000003AB /* VideoTransferable.swift in Sources */,
 				A100000000000000000004AB /* CompilationOptionsView.swift in Sources */,
 				A100000000000000000007AB /* ProjectPlayerView.swift in Sources */,
+				A100000000000000000009AB /* Theme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -33,41 +33,20 @@ enum CameraPosition {
     var avPosition: AVCaptureDevice.Position { self == .front ? .front : .back }
 }
 
-// MARK: - Lens Type
-
-enum LensType: String, CaseIterable, Identifiable {
-    case ultraWide = "0.5×"
-    case wide      = "1×"
-    case tele      = "2×"
-
-    var id: String { rawValue }
-
-    var avDeviceType: AVCaptureDevice.DeviceType {
-        switch self {
-        case .ultraWide: return .builtInUltraWideCamera
-        case .wide:      return .builtInWideAngleCamera
-        case .tele:      return .builtInTelephotoCamera
-        }
-    }
-
-    var isAvailable: Bool {
-        AVCaptureDevice.default(avDeviceType, for: .video, position: .back) != nil
-    }
-}
-
 // MARK: - CameraService
 
 /// Manages the AVCaptureSession lifecycle for recording video clips with audio.
 ///
+/// Uses virtual multi-lens device types (builtInTripleCamera, builtInDualWideCamera, etc.)
+/// so that setting videoZoomFactor seamlessly switches physical lenses — exactly like the
+/// native Camera app. No manual lens-switch calls needed from the UI layer.
+///
 /// Root cause of the Glimpse audio bug: AVAudioSession category was set once at
 /// app launch and the audio input was never verified before each individual
-/// recording start. We fix this by:
-///   1. Configuring AVAudioSession.sharedInstance() with .playAndRecord / .videoRecording
-///      before every session start.
-///   2. Re-verifying and re-enabling the audio connection on the movie output before
-///      every call to startRecording(to:).
-///   3. Never reusing a stopped session — teardown is explicit and a fresh session
-///      is built for each camera-screen visit.
+/// recording start. Fixed by:
+///   1. Configuring AVAudioSession before every session start.
+///   2. Re-verifying and re-enabling the audio output connection before every recording.
+///   3. Never reusing a stopped session.
 @MainActor
 final class CameraService: NSObject, ObservableObject {
 
@@ -76,23 +55,16 @@ final class CameraService: NSObject, ObservableObject {
     @Published var isRunning = false
     @Published var isRecording = false
     @Published var cameraPosition: CameraPosition = .back
-    @Published var currentLens: LensType = .wide
     @Published var cameraError: CameraError?
     @Published var lastRecordedURL: URL?
+    @Published var currentZoomFactor: CGFloat = 1.0
 
-    /// Lenses available for the active camera position.
-    var availableLenses: [LensType] {
-        guard cameraPosition == .back else { return [.wide] }
-        return LensType.allCases.filter { $0.isAvailable }
-    }
-
-    // MARK: Private AVFoundation objects
+    // MARK: Private objects
 
     private(set) var session: AVCaptureSession?
     private var videoDeviceInput: AVCaptureDeviceInput?
     private var audioDeviceInput: AVCaptureDeviceInput?
     private var movieOutput: AVCaptureMovieFileOutput?
-
     private var recordingContinuation: CheckedContinuation<URL, Error>?
 
     // MARK: - Session lifecycle
@@ -109,7 +81,7 @@ final class CameraService: NSObject, ObservableObject {
         s.beginConfiguration()
         s.sessionPreset = .high
 
-        let videoInput = try makeVideoInput(lens: .wide, position: position)
+        let videoInput = try makeVideoInput(position: position)
         guard s.canAddInput(videoInput) else { throw CameraError.sessionSetupFailed }
         s.addInput(videoInput)
         videoDeviceInput = videoInput
@@ -130,6 +102,7 @@ final class CameraService: NSObject, ObservableObject {
 
         s.commitConfiguration()
         session = s
+        currentZoomFactor = videoInput.device.videoZoomFactor
 
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
             DispatchQueue.global(qos: .userInitiated).async { s.startRunning(); c.resume() }
@@ -161,27 +134,12 @@ final class CameraService: NSObject, ObservableObject {
 
     func stopRecording() { movieOutput?.stopRecording() }
 
-    // MARK: - Lens switching
-
-    func switchLens(to lens: LensType) async throws {
-        guard !isRecording, let s = session, cameraPosition == .back else { return }
-        let newInput = try makeVideoInput(lens: lens, position: .back)
-        s.beginConfiguration()
-        if let old = videoDeviceInput { s.removeInput(old) }
-        guard s.canAddInput(newInput) else { s.commitConfiguration(); throw CameraError.deviceNotFound }
-        s.addInput(newInput)
-        s.commitConfiguration()
-        videoDeviceInput = newInput
-        currentLens = lens
-    }
-
     // MARK: - Front/back flip
 
     func switchCamera() async throws {
         guard !isRecording, let s = session else { return }
         let newPosition: CameraPosition = cameraPosition == .back ? .front : .back
-        // Front camera only has wide lens
-        let newInput = try makeVideoInput(lens: .wide, position: newPosition)
+        let newInput = try makeVideoInput(position: newPosition)
         s.beginConfiguration()
         if let old = videoDeviceInput { s.removeInput(old) }
         guard s.canAddInput(newInput) else { s.commitConfiguration(); throw CameraError.deviceNotFound }
@@ -189,17 +147,22 @@ final class CameraService: NSObject, ObservableObject {
         s.commitConfiguration()
         videoDeviceInput = newInput
         cameraPosition = newPosition
-        currentLens = .wide
+        currentZoomFactor = newInput.device.videoZoomFactor
     }
 
-    // MARK: - Zoom / focus / torch
+    // MARK: - Zoom (auto-switches lenses via virtual device)
 
     func setZoom(_ factor: CGFloat) {
         guard let device = videoDeviceInput?.device else { return }
+        let clamped = max(device.minAvailableVideoZoomFactor,
+                          min(factor, device.maxAvailableVideoZoomFactor))
         try? device.lockForConfiguration()
-        device.videoZoomFactor = max(1, min(factor, device.activeFormat.videoMaxZoomFactor))
+        device.videoZoomFactor = clamped
         device.unlockForConfiguration()
+        currentZoomFactor = clamped
     }
+
+    // MARK: - Focus / Torch
 
     func focusAt(_ point: CGPoint) {
         guard let device = videoDeviceInput?.device,
@@ -224,20 +187,26 @@ final class CameraService: NSObject, ObservableObject {
     // MARK: - Private helpers
 
     private func configureAudioSession() throws {
-        let as_ = AVAudioSession.sharedInstance()
-        try as_.setCategory(.playAndRecord, mode: .videoRecording,
-                            options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP])
-        try as_.setActive(true)
+        let a = AVAudioSession.sharedInstance()
+        try a.setCategory(.playAndRecord, mode: .videoRecording,
+                          options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP])
+        try a.setActive(true)
     }
 
-    private func makeVideoInput(lens: LensType, position: CameraPosition) throws -> AVCaptureDeviceInput {
-        // For front camera always fall back to wide angle
-        let deviceType = position == .front ? AVCaptureDevice.DeviceType.builtInWideAngleCamera : lens.avDeviceType
-        guard let device = AVCaptureDevice.default(deviceType, for: .video, position: position.avPosition) else {
-            throw CameraError.deviceNotFound
+    /// Prefers virtual multi-lens cameras (builtInTripleCamera, builtInDualWideCamera, etc.)
+    /// so iOS handles seamless lens switching when videoZoomFactor is changed.
+    private func makeVideoInput(position: CameraPosition) throws -> AVCaptureDeviceInput {
+        let candidates: [AVCaptureDevice.DeviceType] = position == .back
+            ? [.builtInTripleCamera, .builtInDualWideCamera, .builtInDualCamera, .builtInWideAngleCamera]
+            : [.builtInWideAngleCamera]
+
+        for type in candidates {
+            if let device = AVCaptureDevice.default(type, for: .video, position: position.avPosition),
+               let input = try? AVCaptureDeviceInput(device: device) {
+                return input
+            }
         }
-        guard let input = try? AVCaptureDeviceInput(device: device) else { throw CameraError.sessionSetupFailed }
-        return input
+        throw CameraError.deviceNotFound
     }
 
     private func makeAudioInput() throws -> AVCaptureDeviceInput {
