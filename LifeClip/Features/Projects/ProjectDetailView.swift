@@ -107,55 +107,60 @@ struct ProjectDetailView: View {
     // MARK: - Nav bar
 
     private var navBar: some View {
-        HStack {
+        HStack(alignment: .center) {
+            // Back
             Button { dismiss() } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
-                    Text("Library")
-                        .font(.system(size: 17))
-                }
-                .foregroundStyle(.white)
-            }
-
-            Spacer()
-
-            if !project.activeClips.isEmpty {
-                Button { isPlayerPresented = true } label: {
-                    Image(systemName: "play.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                }
-                .padding(.trailing, 12)
-            }
-
-            Menu {
-                PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
-                    Label("Import from Library", systemImage: "photo.on.rectangle")
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 20))
+                Text("‹")
+                    .font(.hand(28))
                     .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
             }
+
+            // Centre: title + subtitle
+            VStack(spacing: 2) {
+                Text(project.name)
+                    .font(.navTitle)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Text("\(project.activeClips.count) CLIPS · \(durationLabel)")
+                    .font(.monoCaption)
+                    .tracking(0.5)
+                    .foregroundStyle(.white.opacity(0.4))
+            }
+            .frame(maxWidth: .infinity)
+
+            // Right actions
+            HStack(spacing: 4) {
+                if !project.activeClips.isEmpty {
+                    Button { isPlayerPresented = true } label: {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
+                            .background(.white.opacity(0.1), in: Circle())
+                    }
+                }
+                Menu {
+                    PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
+                        Label("Import from Library", systemImage: "photo.on.rectangle")
+                    }
+                } label: {
+                    Text("•••")
+                        .font(.hand(20))
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                }
+            }
+            .frame(width: 80, alignment: .trailing)
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 
-    // MARK: - Title block
+    // MARK: - Title block (collapsed into navBar — kept as spacer stub)
 
     private var titleBlock: some View {
-        VStack(spacing: 4) {
-            Text(project.name)
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(.white)
-            Text("\(project.activeClips.count) CLIPS · \(durationLabel)")
-                .font(.system(size: 10, design: .monospaced))
-                .tracking(0.8)
-                .foregroundStyle(.white.opacity(0.38))
-        }
-        .padding(.bottom, 16)
+        Color.clear.frame(height: 4)
     }
 
     // MARK: - Filmstrip scroll view
@@ -183,11 +188,8 @@ struct ProjectDetailView: View {
                                 style: StrokeStyle(lineWidth: 1.4, dash: [6]))
                         .frame(height: 88)
                         .overlay {
-                            HStack(spacing: 6) {
-                                Image(systemName: "plus")
-                                Text("add to the reel")
-                                    .font(.system(size: 15))
-                            }
+                            Text("+ add to the reel")
+                                .font(.scrawl(22))
                             .foregroundStyle(.white.opacity(0.25))
                         }
                 }
@@ -206,7 +208,7 @@ struct ProjectDetailView: View {
                 HStack(spacing: 10) {
                     Image(systemName: "film.stack")
                     Text("Wind the reel · Export")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.handBody)
                     Spacer()
                     Image(systemName: "arrow.right")
                 }
@@ -218,7 +220,7 @@ struct ProjectDetailView: View {
             }
 
             Text("\(project.activeClips.count) CLIPS → 1 VIDEO · ~\(durationLabel)")
-                .font(.system(size: 9, design: .monospaced))
+                .font(.monoCaption)
                 .foregroundStyle(.white.opacity(0.3))
                 .tracking(0.5)
         }
@@ -485,7 +487,7 @@ private struct FilmCell: View {
             .clipShape(RoundedRectangle(cornerRadius: 2))
 
             Text(String(format: "%.0fs", clip.duration))
-                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                .font(.durBadge)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 5)
                 .padding(.vertical, 2)
