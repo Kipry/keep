@@ -95,7 +95,11 @@ struct ProjectDetailView: View {
             titleVisibility: .visible
         ) {
             Button("Move to Trash", role: .destructive) {
-                if let c = clipToDelete { c.softDelete(); clipToDelete = nil }
+                if let c = clipToDelete {
+                    c.softDelete()
+                    try? modelContext.save()
+                    clipToDelete = nil
+                }
             }
             Button("Cancel", role: .cancel) { clipToDelete = nil }
         } message: { Text("You can restore it within 30 days.") }
