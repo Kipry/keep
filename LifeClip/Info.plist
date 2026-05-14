@@ -51,5 +51,18 @@
         <key>UIApplicationSupportsMultipleScenes</key>
         <false/>
     </dict>
+
+    <!-- Launch screen (required for full-size rendering on iPhone) -->
+    <key>UILaunchScreen</key>
+    <dict>
+        <key>UIImageRespectsSafeAreaInsets</key>
+        <true/>
+    </dict>
+
+    <!-- Supported interface orientations -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
 </dict>
 </plist>

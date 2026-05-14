@@ -26,6 +26,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A1000000000000000000000C /* LifeClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000000000000000000001A /* LifeClipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeClipApp.swift; sourceTree = "<group>"; };
 		A1000000000000000000002A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000000000000000000003A /* Clip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clip.swift; sourceTree = "<group>"; };
@@ -43,7 +44,6 @@
 		A100000000000000000004AA /* CompilationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompilationOptionsView.swift; sourceTree = "<group>"; };
 		A100000000000000000007AA /* ProjectPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPlayerView.swift; sourceTree = "<group>"; };
 		A100000000000000000009AA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
-		A1000000000000000000000C /* LifeClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,20 +57,12 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A100000000000000000000DA /* MainGroup */ = {
+		A100000000000000000000DA = {
 			isa = PBXGroup;
 			children = (
 				A100000000000000000000EA /* LifeClip */,
 				A1000000000000000000016A /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		A1000000000000000000016A /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				A1000000000000000000000C /* LifeClip.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 		A100000000000000000000EA /* LifeClip */ = {
@@ -135,22 +127,6 @@
 			path = Camera;
 			sourceTree = "<group>";
 		};
-		A100000000000000000005AA /* Import */ = {
-			isa = PBXGroup;
-			children = (
-				A100000000000000000003AA /* VideoTransferable.swift */,
-			);
-			path = Import;
-			sourceTree = "<group>";
-		};
-		A100000000000000000006AA /* Compilation */ = {
-			isa = PBXGroup;
-			children = (
-				A100000000000000000004AA /* CompilationOptionsView.swift */,
-			);
-			path = Compilation;
-			sourceTree = "<group>";
-		};
 		A1000000000000000000014A /* Clips */ = {
 			isa = PBXGroup;
 			children = (
@@ -167,6 +143,30 @@
 				A100000000000000000007AA /* ProjectPlayerView.swift */,
 			);
 			path = Projects;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000016A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000000C /* LifeClip.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A100000000000000000005AA /* Import */ = {
+			isa = PBXGroup;
+			children = (
+				A100000000000000000003AA /* VideoTransferable.swift */,
+			);
+			path = Import;
+			sourceTree = "<group>";
+		};
+		A100000000000000000006AA /* Compilation */ = {
+			isa = PBXGroup;
+			children = (
+				A100000000000000000004AA /* CompilationOptionsView.swift */,
+			);
+			path = Compilation;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -380,6 +380,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PAZWVYN25U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = LifeClip/Info.plist;
@@ -407,6 +408,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PAZWVYN25U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = LifeClip/Info.plist;
@@ -449,7 +451,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = A1000000000000000000000A /* Project object */;
 }

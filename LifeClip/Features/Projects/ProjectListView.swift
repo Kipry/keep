@@ -14,82 +14,87 @@ struct ProjectListView: View {
     @State private var isCreatingProject = false
     @State private var newProjectName = ""
     @State private var projectToDelete: Project?
+    @State private var selectedProject: Project?   // drives full-screen detail
 
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .bottomTrailing) {
-                Theme.background.ignoresSafeArea()
+        ZStack(alignment: .bottomTrailing) {
+            Theme.background.ignoresSafeArea()
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        // ── Header ──────────────────────────────────────────
-                        HStack(alignment: .bottom) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("YOUR LIBRARY")
-                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                                    .tracking(2)
-                                    .foregroundStyle(.white.opacity(0.35))
-                                Text("LifeClip")
-                                    .font(.system(size: 36, weight: .bold))
-                                    .foregroundStyle(.white)
-                            }
-                            Spacer()
-                            Button {} label: {
-                                Image(systemName: "magnifyingglass")
-                                    .font(.body.bold())
-                                    .foregroundStyle(.white)
-                                    .frame(width: 36, height: 36)
-                                    .background(.white.opacity(0.1), in: Circle())
-                            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // ── Header ───────────────────────────────────────────
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("YOUR LIBRARY")
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .tracking(2)
+                                .foregroundStyle(.white.opacity(0.35))
+                            Text("LifeClip")
+                                .font(.system(size: 36, weight: .bold))
+                                .foregroundStyle(.white)
                         }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 20)
-                        .padding(.bottom, 24)
+                        Spacer()
+                        Button {} label: {
+                            Image(systemName: "magnifyingglass")
+                                .font(.body.bold())
+                                .foregroundStyle(.white)
+                                .frame(width: 36, height: 36)
+                                .background(.white.opacity(0.1), in: Circle())
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 20)
+                    .padding(.bottom, 24)
 
-                        // ── Grid ─────────────────────────────────────────────
-                        if projects.isEmpty {
-                            emptyState
-                        } else {
-                            LazyVGrid(
-                                columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
-                                spacing: 14
-                            ) {
-                                ForEach(projects) { project in
-                                    NavigationLink(destination: ProjectDetailView(project: project)) {
-                                        ProjectCard(project: project)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .contextMenu {
-                                        Button(role: .destructive) {
-                                            projectToDelete = project
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
+                    // ── Grid ─────────────────────────────────────────────
+                    if projects.isEmpty {
+                        emptyState
+                    } else {
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.flexible(), spacing: 14),
+                                GridItem(.flexible(), spacing: 14)
+                            ],
+                            spacing: 14
+                        ) {
+                            ForEach(projects) { project in
+                                Button { selectedProject = project } label: {
+                                    ProjectCard(project: project)
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        projectToDelete = project
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
                                     }
                                 }
                             }
-                            .padding(.horizontal, 24)
                         }
-
-                        Spacer(minLength: 110)
+                        .padding(.horizontal, 24)
                     }
-                }
 
-                // ── Amber FAB ─────────────────────────────────────────────
-                Button { isCreatingProject = true } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 26, weight: .bold))
-                        .foregroundStyle(Theme.ink)
-                        .frame(width: 58, height: 58)
-                        .background(Theme.amber, in: Circle())
-                        .shadow(color: Theme.ink.opacity(0.55), radius: 0, x: 2, y: 3)
+                    Spacer(minLength: 110)
                 }
-                .padding(.trailing, 20)
-                .padding(.bottom, 36)
             }
-            .toolbar(.hidden, for: .navigationBar)
+
+            // ── Amber FAB ────────────────────────────────────────────────
+            Button { isCreatingProject = true } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+                    .frame(width: 58, height: 58)
+                    .background(Theme.amber, in: Circle())
+                    .shadow(color: Theme.ink.opacity(0.55), radius: 0, x: 2, y: 3)
+            }
+            .padding(.trailing, 20)
+            .padding(.bottom, 36)
         }
         .preferredColorScheme(.dark)
+        // ── Project detail — full-screen so it owns the entire layout ──
+        .fullScreenCover(item: $selectedProject) { project in
+            ProjectDetailView(project: project)
+        }
         .alert("New Project", isPresented: $isCreatingProject) {
             TextField("Project name", text: $newProjectName)
             Button("Create") { createProject() }
@@ -141,13 +146,12 @@ struct ProjectListView: View {
     private func createProject() {
         let name = newProjectName.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
-        let project = Project(name: name)
-        modelContext.insert(project)
+        modelContext.insert(Project(name: name))
         newProjectName = ""
     }
 }
 
-// MARK: - Project Card (1-a style)
+// MARK: - Project Card
 
 struct ProjectCard: View {
     let project: Project
@@ -155,7 +159,6 @@ struct ProjectCard: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ZStack(alignment: .bottomLeading) {
-                // Thumbnail
                 Group {
                     if let data = project.coverThumbnailData,
                        let img = UIImage(data: data) {
@@ -175,7 +178,6 @@ struct ProjectCard: View {
                 .frame(height: 196)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
 
-                // Gradient overlay (clear → black 72% at bottom)
                 LinearGradient(
                     colors: [.clear, .black.opacity(0.72)],
                     startPoint: .center,
@@ -183,7 +185,6 @@ struct ProjectCard: View {
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 14))
 
-                // Name + date
                 VStack(alignment: .leading, spacing: 2) {
                     Text(project.name)
                         .font(.system(size: 15, weight: .semibold))
@@ -196,7 +197,6 @@ struct ProjectCard: View {
                 .padding(10)
             }
 
-            // Clip count badge — top-right
             Text("\(project.activeClips.count)")
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
                 .foregroundStyle(Theme.paper)
