@@ -63,8 +63,27 @@ struct ProjectDetailView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
+            // Camera FAB — primary capture action, floating above the export bar
             if !project.activeClips.isEmpty {
-                rightEdgeToolbar
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button { isCameraPresented = true } label: {
+                            Circle()
+                                .fill(Theme.amber)
+                                .frame(width: 64, height: 64)
+                                .overlay {
+                                    Image(systemName: "camera.fill")
+                                        .font(.system(size: 22, weight: .semibold))
+                                        .foregroundStyle(Theme.ink)
+                                }
+                                .shadow(color: Theme.amber.opacity(0.45), radius: 14, y: 4)
+                        }
+                        .padding(.trailing, 22)
+                        .padding(.bottom, 116)  // clears the export bar
+                    }
+                }
             }
 
             if isExporting {
@@ -94,15 +113,15 @@ struct ProjectDetailView: View {
             isPresented: Binding(get: { clipToDelete != nil }, set: { if !$0 { clipToDelete = nil } }),
             titleVisibility: .visible
         ) {
-            Button("Move to Trash", role: .destructive) {
+            Button("Delete Clip", role: .destructive) {
                 if let c = clipToDelete {
-                    c.softDelete()
+                    modelContext.delete(c)
                     try? modelContext.save()
                     clipToDelete = nil
                 }
             }
             Button("Cancel", role: .cancel) { clipToDelete = nil }
-        } message: { Text("You can restore it within 30 days.") }
+        }
         .alert("Export Failed",
                isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
             Button("OK", role: .cancel) {}
@@ -149,15 +168,12 @@ struct ProjectDetailView: View {
                             .background(.white.opacity(0.1), in: Circle())
                     }
                 }
-                Menu {
-                    PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
-                        Label("Import from Library", systemImage: "photo.on.rectangle")
-                    }
-                } label: {
-                    Text("•••")
-                        .font(.hand(20))
+                PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
+                    Image(systemName: "plus")
+                        .font(.title3.bold())
                         .foregroundStyle(.white)
                         .frame(width: 36, height: 36)
+                        .background(.white.opacity(0.1), in: Circle())
                 }
             }
             .frame(width: 80, alignment: .trailing)
@@ -192,14 +208,14 @@ struct ProjectDetailView: View {
                 }
 
                 Button { isCameraPresented = true } label: {
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(.white.opacity(0.12),
-                                style: StrokeStyle(lineWidth: 1.4, dash: [6]))
-                        .frame(height: 88)
-                        .overlay {
-                            Text("+ add to the reel")
-                                .font(.scrawl(22))
-                            .foregroundStyle(.white.opacity(0.25))
+                    Text("+ add to the reel")
+                        .font(.scrawl(22))
+                        .foregroundStyle(.white.opacity(0.25))
+                        .frame(maxWidth: .infinity, minHeight: 88)
+                        .background {
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(.white.opacity(0.12),
+                                        style: StrokeStyle(lineWidth: 1.4, dash: [6]))
                         }
                 }
                 .padding(.horizontal, 14)
@@ -243,47 +259,6 @@ struct ProjectDetailView: View {
                 endPoint: .bottom
             )
         )
-    }
-
-    // MARK: - Right-edge toolbar
-
-    private var rightEdgeToolbar: some View {
-        VStack(spacing: 10) {
-            Button { isCameraPresented = true } label: {
-                Circle()
-                    .fill(Theme.amber)
-                    .frame(width: 36, height: 36)
-                    .overlay {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Theme.ink)
-                    }
-            }
-
-            PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
-                toolbarIcon("square.and.arrow.down")
-            }
-
-            Button { isExportOptionsPresented = true } label: {
-                toolbarIcon("arrow.up.circle")
-            }
-        }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 8)
-        .background(Theme.paper, in: RoundedRectangle(cornerRadius: 22))
-        .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.ink.opacity(0.18), lineWidth: 1.2))
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
-        .padding(.trailing, -4)
-        .padding(.top, 130)
-        .padding(.bottom, 130)
-        .allowsHitTesting(true)
-    }
-
-    private func toolbarIcon(_ name: String) -> some View {
-        Image(systemName: name)
-            .font(.system(size: 14))
-            .foregroundStyle(Theme.ink)
-            .frame(width: 30, height: 30)
     }
 
     // MARK: - Empty state
