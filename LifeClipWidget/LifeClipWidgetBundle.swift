@@ -1,9 +1,1 @@
-import WidgetKit
-import SwiftUI
-
-@main
-struct LifeClipWidgetBundle: WidgetBundle {
-    var body: some Widget {
-        LifeClipWidget()
-    }
-}
+// Replaced by LifeClipWidget.swift — this file intentionally left empty.

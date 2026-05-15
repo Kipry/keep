@@ -2,6 +2,18 @@ import SwiftUI
 import SwiftData
 import CoreText
 
+// MARK: - Deep-link state
+
+/// Shared observable that any view in the hierarchy can read/write.
+/// Set by LifeClipApp.onOpenURL; consumed by ProjectListView /
+/// ProjectDetailView to navigate straight into the camera.
+@Observable
+final class AppDeepLink {
+    var pendingRecordProjectID: UUID?
+}
+
+// MARK: - App entry point
+
 @main
 struct LifeClipApp: App {
 
