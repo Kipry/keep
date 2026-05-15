@@ -1,7 +1,7 @@
 import WidgetKit
 import SwiftUI
 
-// MARK: - Shared data model (mirrors WidgetDataStore.Snapshot)
+// MARK: - Shared data model
 
 private struct ProjectSnapshot: Codable {
     let id: String
@@ -22,7 +22,7 @@ private func loadSnapshot() -> ProjectSnapshot? {
 
 struct LifeClipEntry: TimelineEntry {
     let date: Date
-    fileprivate let snapshot: ProjectSnapshot?
+    let snapshot: ProjectSnapshot?
 }
 
 struct LifeClipProvider: TimelineProvider {
@@ -31,171 +31,215 @@ struct LifeClipProvider: TimelineProvider {
             id: "preview", name: "Summer 2026",
             clipCount: 12, totalDuration: 36, thumbnailData: nil))
     }
-
     func getSnapshot(in context: Context, completion: @escaping (LifeClipEntry) -> Void) {
         completion(LifeClipEntry(date: .now, snapshot: loadSnapshot()))
     }
-
     func getTimeline(in context: Context, completion: @escaping (Timeline<LifeClipEntry>) -> Void) {
         let entry = LifeClipEntry(date: .now, snapshot: loadSnapshot())
         completion(Timeline(entries: [entry], policy: .never))
     }
 }
 
-// MARK: - Colours (mirrors Theme, no dependency on main app module)
+// MARK: - Colours (hardcoded — no dependency on main app module)
 
-private let bgColor    = Color(red: 0.051, green: 0.051, blue: 0.051)
-private let filmColor  = Color(red: 0.122, green: 0.122, blue: 0.122)
-private let amberColor = Color(red: 0.941, green: 0.529, blue: 0.227)
-private let inkColor   = Color(red: 0.102, green: 0.102, blue: 0.102)
-
-// MARK: - Deep-link URL helper
+private let amber = Color(red: 0.941, green: 0.529, blue: 0.227)
+private let ink   = Color(red: 0.102, green: 0.102, blue: 0.102)
 
 private func recordURL(for id: String) -> URL {
     URL(string: "lifeclip://record/\(id)")!
 }
 
-// MARK: - Widget Views
+private func durationLabel(_ t: Double) -> String {
+    guard t > 0 else { return "—" }
+    return t < 60 ? String(format: "%.0fs", t)
+                  : String(format: "%d:%02d", Int(t) / 60, Int(t) % 60)
+}
 
-struct LifeClipWidgetView: View {
-    @Environment(\.widgetFamily) var family
+// MARK: - Home-screen widget view
+
+struct HomeWidgetView: View {
+    @Environment(\.widgetFamily) private var family
     let entry: LifeClipEntry
 
     var body: some View {
         switch family {
-        case .systemSmall:  smallView
-        case .systemMedium: mediumView
-        default:            smallView
+        case .systemMedium: medium
+        default:            small
         }
     }
 
-    private var smallView: some View {
-        ZStack {
-            bgColor
+    // MARK: Small
+
+    private var small: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // App label
+            Text("LIFECLIP")
+                .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                .tracking(2.5)
+                .foregroundStyle(.white.opacity(0.3))
+
+            Spacer()
+
+            if let snap = entry.snapshot {
+                Text(snap.name)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("\(snap.clipCount) clip\(snap.clipCount == 1 ? "" : "s")")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.45))
+                    .padding(.top, 3)
+            } else {
+                Text("No project")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+
+            Spacer()
+
+            recButton(label: "REC", compact: true)
+        }
+        .padding(14)
+        .widgetURL(entry.snapshot.map { recordURL(for: $0.id) })
+    }
+
+    // MARK: Medium
+
+    private var medium: some View {
+        HStack(spacing: 0) {
+            // Thumbnail pane — left half
+            Group {
+                if let data = entry.snapshot?.thumbnailData,
+                   let img = UIImage(data: data) {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Color.white.opacity(0.05)
+                        .overlay(
+                            Image(systemName: "film")
+                                .font(.system(size: 24))
+                                .foregroundStyle(.white.opacity(0.12))
+                        )
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
+
+            // Info pane — right half
             VStack(alignment: .leading, spacing: 0) {
                 Text("LIFECLIP")
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                    .tracking(2)
+                    .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                    .tracking(2.5)
                     .foregroundStyle(.white.opacity(0.3))
 
                 Spacer()
 
                 if let snap = entry.snapshot {
                     Text(snap.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(2)
-                    Text("\(snap.clipCount) clip\(snap.clipCount == 1 ? "" : "s")")
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.4))
-                        .padding(.top, 2)
+
+                    Text("\(snap.clipCount) clips · \(durationLabel(snap.totalDuration))")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .padding(.top, 3)
                 } else {
-                    Text("No project yet")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.4))
+                    Text("Open LifeClip\nto get started")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.3))
                 }
 
                 Spacer()
-
-                recordButton(compact: true)
+                recButton(label: "Record Clip", compact: false)
             }
             .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .widgetURL(entry.snapshot.map { recordURL(for: $0.id) })
     }
 
-    private var mediumView: some View {
-        ZStack {
-            bgColor
-            HStack(spacing: 0) {
-                thumbnailPane
-                    .frame(maxWidth: .infinity)
+    // MARK: Shared button
 
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("LIFECLIP")
-                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                        .tracking(2)
-                        .foregroundStyle(.white.opacity(0.3))
-
-                    Spacer()
-
-                    if let snap = entry.snapshot {
-                        Text(snap.name)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .lineLimit(2)
-                        Text("\(snap.clipCount) clips · \(durationLabel(snap.totalDuration))")
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.4))
-                            .padding(.top, 3)
-                    } else {
-                        Text("Open LifeClip\nto get started")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.4))
-                            .lineLimit(2)
-                    }
-
-                    Spacer()
-                    recordButton(compact: false)
-                }
-                .padding(14)
-                .frame(maxWidth: .infinity)
-            }
-        }
-        .widgetURL(entry.snapshot.map { recordURL(for: $0.id) })
-    }
-
-    @ViewBuilder
-    private var thumbnailPane: some View {
-        if let snap = entry.snapshot,
-           let data = snap.thumbnailData,
-           let uiImg = UIImage(data: data) {
-            Image(uiImage: uiImg)
-                .resizable()
-                .scaledToFill()
-                .clipped()
-        } else {
-            filmColor
-                .overlay(
-                    Image(systemName: "film")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.white.opacity(0.15))
-                )
-        }
-    }
-
-    private func recordButton(compact: Bool) -> some View {
-        HStack(spacing: 6) {
+    private func recButton(label: String, compact: Bool) -> some View {
+        HStack(spacing: 5) {
             Circle()
-                .fill(.white.opacity(0.85))
-                .frame(width: 7, height: 7)
-            Text(compact ? "REC" : "Record Clip")
-                .font(.system(size: compact ? 13 : 14, weight: .semibold))
-                .foregroundStyle(inkColor)
+                .fill(ink.opacity(0.7))
+                .frame(width: 6, height: 6)
+            Text(label)
+                .font(.system(size: compact ? 12 : 13, weight: .semibold))
+                .foregroundStyle(ink)
         }
-        .padding(.horizontal, compact ? 12 : 14)
-        .padding(.vertical, compact ? 8 : 9)
-        .background(amberColor, in: Capsule())
-    }
-
-    private func durationLabel(_ t: Double) -> String {
-        guard t > 0 else { return "0s" }
-        return t < 60
-            ? String(format: "%.0fs", t)
-            : String(format: "%d:%02d", Int(t) / 60, Int(t) % 60)
+        .padding(.horizontal, compact ? 11 : 13)
+        .padding(.vertical, compact ? 7 : 8)
+        .background(amber, in: Capsule())
     }
 }
 
-// MARK: - Widget configuration
+// MARK: - Lock-screen widget view (accessoryCircular)
 
-struct LifeClipWidget: Widget {
+struct LockWidgetView: View {
+    let entry: LifeClipEntry
+
+    var body: some View {
+        ZStack {
+            // Outer ring
+            Circle()
+                .strokeBorder(amber.opacity(0.55), lineWidth: 2)
+
+            VStack(spacing: 2) {
+                // Record dot
+                Circle()
+                    .fill(amber)
+                    .frame(width: 10, height: 10)
+                Text("REC")
+                    .font(.system(size: 7, weight: .bold, design: .monospaced))
+                    .foregroundStyle(amber)
+            }
+        }
+        .widgetURL(entry.snapshot.map { recordURL(for: $0.id) })
+    }
+}
+
+// MARK: - Widget configurations
+
+// Home-screen widget (small + medium)
+struct LifeClipHomeWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "LifeClipWidget", provider: LifeClipProvider()) { entry in
-            LifeClipWidgetView(entry: entry)
-                .containerBackground(bgColor, for: .widget)
+        StaticConfiguration(kind: "LifeClipHomeWidget", provider: LifeClipProvider()) { entry in
+            HomeWidgetView(entry: entry)
+                .containerBackground(
+                    Color(red: 0.051, green: 0.051, blue: 0.051),
+                    for: .widget
+                )
         }
         .configurationDisplayName("LifeClip")
         .description("Tap to record a clip into your latest project.")
         .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
+// Lock-screen widget (circular)
+struct LifeClipLockWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "LifeClipLockWidget", provider: LifeClipProvider()) { entry in
+            LockWidgetView(entry: entry)
+                .containerBackground(.clear, for: .widget)
+        }
+        .configurationDisplayName("LifeClip · REC")
+        .description("Quick-record into your latest project from the Lock Screen.")
+        .supportedFamilies([.accessoryCircular])
+    }
+}
+
+// Bundle — registers both widgets
+@main
+struct LifeClipWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        LifeClipHomeWidget()
+        LifeClipLockWidget()
     }
 }

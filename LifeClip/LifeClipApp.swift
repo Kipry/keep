@@ -5,25 +5,26 @@ import CoreText
 @main
 struct LifeClipApp: App {
 
-    @State private var deepLinkProjectID: UUID?
+    @State private var deepLink = AppDeepLink()
 
     init() { Self.registerFonts() }
 
     var body: some Scene {
         WindowGroup {
-            ContentView(deepLinkProjectID: $deepLinkProjectID)
+            ContentView()
+                .environment(deepLink)
                 .onOpenURL { url in handleDeepLink(url) }
         }
         .modelContainer(for: [Project.self, Clip.self])
     }
 
-    // Handles: lifeclip://record/<UUID>
+    // lifeclip://record/<UUID>
     private func handleDeepLink(_ url: URL) {
         guard url.scheme == "lifeclip",
               url.host == "record",
               let idString = url.pathComponents.dropFirst().first,
               let id = UUID(uuidString: idString) else { return }
-        deepLinkProjectID = id
+        deepLink.pendingRecordProjectID = id
     }
 
     private static func registerFonts() {

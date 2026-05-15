@@ -3,8 +3,7 @@ import SwiftData
 
 struct ProjectListView: View {
     @Environment(\.modelContext) private var modelContext
-
-    @Binding var deepLinkProjectID: UUID?
+    @Environment(AppDeepLink.self) private var deepLink
 
     @Query(
         filter: #Predicate<Project> { !$0.isDeleted },
@@ -103,14 +102,19 @@ struct ProjectListView: View {
         .onChange(of: projects) { _, updated in
             if let first = updated.first { WidgetDataStore.save(project: first) }
         }
-        // ── Deep link from widget tap ──
-        .onChange(of: deepLinkProjectID) { _, id in
+        // ── Deep link: open the right project and start recording ──
+        .onChange(of: deepLink.pendingRecordProjectID) { _, id in
             guard let id else { return }
-            if let project = projects.first(where: { $0.id == id }) {
+            guard let project = projects.first(where: { $0.id == id }) else {
+                deepLink.pendingRecordProjectID = nil; return
+            }
+            // If that project's detail is already open, ProjectDetailView handles it.
+            // Otherwise open it now with camera auto-start.
+            if selectedProject?.id != id {
                 recordOnNextOpen = true
                 selectedProject = project
             }
-            deepLinkProjectID = nil
+            // Don't nil out pendingID here — ProjectDetailView will consume it.
         }
         .alert("New Project", isPresented: $isCreatingProject) {
             TextField("Project name", text: $newProjectName)

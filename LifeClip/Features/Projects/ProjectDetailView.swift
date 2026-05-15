@@ -9,6 +9,7 @@ struct ProjectDetailView: View {
     let recordOnAppear: Bool
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppDeepLink.self) private var deepLink
 
     // Presentation
     @State private var isCameraPresented = false
@@ -98,10 +99,18 @@ struct ProjectDetailView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             if recordOnAppear {
-                // Brief delay so the view is fully on screen before presenting camera
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                     isCameraPresented = true
+                    deepLink.pendingRecordProjectID = nil
                 }
+            }
+        }
+        // Handles deep link when this view is already on screen
+        .onChange(of: deepLink.pendingRecordProjectID) { _, id in
+            guard let id, id == project.id else { return }
+            deepLink.pendingRecordProjectID = nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isCameraPresented = true
             }
         }
         .fullScreenCover(isPresented: $isCameraPresented) {
