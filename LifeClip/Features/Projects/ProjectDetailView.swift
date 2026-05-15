@@ -21,7 +21,7 @@ struct ProjectDetailView: View {
     @State private var importSelections: [PhotosPickerItem] = []
     @State private var isImporting = false
     @State private var clipToDelete: Clip?
-    @State private var selectedTransition: TransitionStyle = .crossFade
+    @State private var selectedTransition: TransitionStyle = .cut
     @State private var selectedQuality: ExportQuality = .p1080
 
     // Drag-and-drop reorder

@@ -47,9 +47,6 @@ enum CompositionError: LocalizedError {
 }
 
 // MARK: - ProgressBox
-// Shared mutable value passed across the actor boundary for UI progress polling.
-// Declared @unchecked Sendable because reads/writes race, which is acceptable
-// for a coarse progress indicator (worst case: one stale frame).
 
 final class ProgressBox: @unchecked Sendable {
     var value: Double = 0
@@ -68,13 +65,15 @@ actor VideoComposer {
         progressBox: ProgressBox? = nil
     ) async throws -> URL {
         guard !clips.isEmpty else { throw CompositionError.noClips }
-
         let pairs = try await loadAssets(urls: clips)
-
         switch transition {
         case .cut:
             return try await composeCut(pairs: pairs, quality: quality, progressBox: progressBox)
         case .crossFade:
+            // A single clip has nothing to fade into — treat as cut.
+            guard pairs.count >= 2 else {
+                return try await composeCut(pairs: pairs, quality: quality, progressBox: progressBox)
+            }
             return try await composeCrossFade(pairs: pairs, quality: quality, progressBox: progressBox)
         }
     }
@@ -97,7 +96,7 @@ actor VideoComposer {
         }
     }
 
-    // MARK: - Cut composition (single track, no overlap)
+    // MARK: - Cut composition
 
     private func composeCut(
         pairs: [(AVURLAsset, CMTime)],
@@ -116,28 +115,47 @@ actor VideoComposer {
             let srcVideos = try await asset.loadTracks(withMediaType: .video)
             let srcAudios = try await asset.loadTracks(withMediaType: .audio)
             guard let srcVideo = srcVideos.first else { throw CompositionError.assetUnreadable(asset.url) }
-
             let range = CMTimeRange(start: .zero, duration: duration)
             try videoTrack.insertTimeRange(range, of: srcVideo, at: cursor)
-            if let srcAudio = srcAudios.first { try? audioTrack.insertTimeRange(range, of: srcAudio, at: cursor) }
+            if let a = srcAudios.first { try? audioTrack.insertTimeRange(range, of: a, at: cursor) }
             cursor = CMTimeAdd(cursor, duration)
         }
 
-        applyPreferredTransform(to: videoTrack, from: pairs[0].0)
+        await applyPreferredTransform(to: videoTrack, from: pairs[0].0)
         return try await export(composition: composition, videoComposition: nil,
                                 quality: quality, progressBox: progressBox)
     }
 
-    // MARK: - Cross-fade composition (two alternating tracks with opacity ramps)
+    // MARK: - Cross-fade composition
+    //
+    // Clips alternate between trackA (even indices) and trackB (odd indices),
+    // overlapping by `fade` seconds so opacity ramps blend them.
+    //
+    // Timeline for 2 clips D0, D1 with fade f:
+    //
+    //   trackA  |<──── D0 ────>|
+    //   trackB         |<──── D1 ────>|
+    //                  ^
+    //                D0-f
+    //
+    // AVMutableVideoCompositionInstruction time ranges MUST be consecutive
+    // and non-overlapping. Correct partition:
+    //   [0,    D0-f ]  → trackA body
+    //   [D0-f, D0   ]  → A→B crossfade
+    //   [D0,   D0+D1-f] → trackB body
+    //
+    // Per clip i:
+    //   bodyStart = clipStart + fade  (0 for i==0, skips the incoming fade zone)
+    //   bodyEnd   = clipEnd   - fade  (clipEnd for last clip, skips outgoing zone)
+    //   fade-out  [clipEnd-fade, clipEnd]  if not last
 
     private func composeCrossFade(
         pairs: [(AVURLAsset, CMTime)],
         quality: ExportQuality,
         progressBox: ProgressBox?
     ) async throws -> URL {
-        let minDuration = pairs.map { $0.1.seconds }.min() ?? 1.0
-        let fadeSecs = min(0.5, minDuration / 2)
-        let fadeDuration = CMTime(seconds: fadeSecs, preferredTimescale: 600)
+        let minSecs = pairs.map { $0.1.seconds }.min() ?? 1.0
+        let fade    = CMTime(seconds: min(0.4, minSecs * 0.3), preferredTimescale: 600)
 
         let composition = AVMutableComposition()
         guard let trackA = composition.addMutableTrack(withMediaType: .video,
@@ -148,105 +166,111 @@ actor VideoComposer {
                                                            preferredTrackID: kCMPersistentTrackID_Invalid)
         else { throw CompositionError.trackInsertionFailed }
 
-        let videoTracks = [trackA, trackB]
-        var clipTimeRanges: [(range: CMTimeRange, trackIndex: Int)] = []
-        var cursor = CMTime.zero
+        let vTracks    = [trackA, trackB]
+        var clipStarts = [CMTime]()
+        var cursor     = CMTime.zero
 
-        for (index, (asset, duration)) in pairs.enumerated() {
-            let srcVideos = try await asset.loadTracks(withMediaType: .video)
-            let srcAudios = try await asset.loadTracks(withMediaType: .audio)
-            guard let srcVideo = srcVideos.first else { throw CompositionError.assetUnreadable(asset.url) }
-
-            let trackIndex = index % 2
-            let destTrack = videoTracks[trackIndex]
-            let srcRange = CMTimeRange(start: .zero, duration: duration)
-
-            try destTrack.insertTimeRange(srcRange, of: srcVideo, at: cursor)
-            if let srcAudio = srcAudios.first { try? audioTrack.insertTimeRange(srcRange, of: srcAudio, at: cursor) }
-
-            clipTimeRanges.append((CMTimeRange(start: cursor, duration: duration), trackIndex))
-
-            if index < pairs.count - 1 {
-                cursor = CMTimeAdd(cursor, CMTimeSubtract(duration, fadeDuration))
+        for (i, (asset, duration)) in pairs.enumerated() {
+            let srcVid = try await asset.loadTracks(withMediaType: .video)
+            let srcAud = try await asset.loadTracks(withMediaType: .audio)
+            guard let v = srcVid.first else { throw CompositionError.assetUnreadable(asset.url) }
+            try vTracks[i % 2].insertTimeRange(CMTimeRange(start: .zero, duration: duration),
+                                               of: v, at: cursor)
+            if let a = srcAud.first {
+                try? audioTrack.insertTimeRange(CMTimeRange(start: .zero, duration: duration),
+                                                of: a, at: cursor)
+            }
+            clipStarts.append(cursor)
+            if i < pairs.count - 1 {
+                cursor = CMTimeAdd(cursor, CMTimeSubtract(duration, fade))
             }
         }
 
-        let renderSize = await renderSize(for: pairs[0].0)
-        var instructions: [AVMutableVideoCompositionInstruction] = []
+        // Transform must be awaited before export starts.
+        await applyPreferredTransform(to: trackA, from: pairs[0].0)
 
-        for (i, (clipRange, trackIndex)) in clipTimeRanges.enumerated() {
-            let thisTrack = videoTracks[trackIndex]
+        var instructions = [AVMutableVideoCompositionInstruction]()
 
-            if i < clipTimeRanges.count - 1 {
-                let nextTrack = videoTracks[clipTimeRanges[i + 1].trackIndex]
-                let nonFadeDur = CMTimeSubtract(clipRange.duration, fadeDuration)
-                let nonFadeRange = CMTimeRange(start: clipRange.start, duration: nonFadeDur)
-                let fadeStart = CMTimeAdd(clipRange.start, nonFadeDur)
-                let fadeRange = CMTimeRange(start: fadeStart, duration: fadeDuration)
+        for i in 0..<pairs.count {
+            let clipStart = clipStarts[i]
+            let clipEnd   = CMTimeAdd(clipStart, pairs[i].1)
+            let track     = vTracks[i % 2]
+            let isFirst   = i == 0
+            let isLast    = i == pairs.count - 1
 
-                if nonFadeDur.seconds > 0 {
-                    let instr = AVMutableVideoCompositionInstruction()
-                    instr.timeRange = nonFadeRange
-                    instr.layerInstructions = [AVMutableVideoCompositionLayerInstruction(assetTrack: thisTrack)]
-                    instructions.append(instr)
-                }
+            // Body instruction: skip the fade-in zone (except first clip) and
+            // the fade-out zone (except last clip).
+            let bodyStart = isFirst ? clipStart : CMTimeAdd(clipStart, fade)
+            let bodyEnd   = isLast  ? clipEnd   : CMTimeSubtract(clipEnd, fade)
 
-                let fadeInstr = AVMutableVideoCompositionInstruction()
-                fadeInstr.timeRange = fadeRange
+            if CMTimeCompare(bodyEnd, bodyStart) > 0 {
+                let instr = AVMutableVideoCompositionInstruction()
+                instr.timeRange = CMTimeRange(start: bodyStart,
+                                              duration: CMTimeSubtract(bodyEnd, bodyStart))
+                instr.layerInstructions = [
+                    AVMutableVideoCompositionLayerInstruction(assetTrack: track)
+                ]
+                instructions.append(instr)
+            }
 
-                let outLayer = AVMutableVideoCompositionLayerInstruction(assetTrack: thisTrack)
+            // Fade-out instruction into next clip.
+            if !isLast {
+                let nextTrack = vTracks[(i + 1) % 2]
+                let fadeStart = CMTimeSubtract(clipEnd, fade)
+                let fadeRange = CMTimeRange(start: fadeStart, duration: fade)
+
+                let outLayer = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
                 outLayer.setOpacityRamp(fromStartOpacity: 1, toEndOpacity: 0, timeRange: fadeRange)
 
                 let inLayer = AVMutableVideoCompositionLayerInstruction(assetTrack: nextTrack)
                 inLayer.setOpacityRamp(fromStartOpacity: 0, toEndOpacity: 1, timeRange: fadeRange)
 
+                let fadeInstr = AVMutableVideoCompositionInstruction()
+                fadeInstr.timeRange       = fadeRange
                 fadeInstr.layerInstructions = [inLayer, outLayer]
                 instructions.append(fadeInstr)
-            } else {
-                let instr = AVMutableVideoCompositionInstruction()
-                instr.timeRange = clipRange
-                instr.layerInstructions = [AVMutableVideoCompositionLayerInstruction(assetTrack: thisTrack)]
-                instructions.append(instr)
             }
         }
 
-        let videoComposition = AVMutableVideoComposition()
-        videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
-        videoComposition.renderSize = renderSize
-        videoComposition.instructions = instructions
+        let size = await renderSize(for: pairs[0].0)
+        let vc   = AVMutableVideoComposition()
+        vc.frameDuration = CMTime(value: 1, timescale: 30)
+        vc.renderSize    = size
+        vc.instructions  = instructions
 
-        return try await export(composition: composition, videoComposition: videoComposition,
+        return try await export(composition: composition, videoComposition: vc,
                                 quality: quality, progressBox: progressBox)
     }
 
     // MARK: - Helpers
 
     private func loadAssets(urls: [URL]) async throws -> [(AVURLAsset, CMTime)] {
-        var result: [(AVURLAsset, CMTime)] = []
+        var result = [(AVURLAsset, CMTime)]()
         for url in urls {
-            let asset = AVURLAsset(url: url)
+            let asset    = AVURLAsset(url: url)
             let duration = try await asset.load(.duration)
             result.append((asset, duration))
         }
         return result
     }
 
-    private func applyPreferredTransform(to track: AVMutableCompositionTrack, from asset: AVURLAsset) {
-        Task {
-            if let srcTrack = try? await asset.loadTracks(withMediaType: .video).first,
-               let transform = try? await srcTrack.load(.preferredTransform) {
-                track.preferredTransform = transform
-            }
+    // Awaited so the transform is set before export begins (a fire-and-forget
+    // Task would race with AVAssetExportSession startup).
+    private func applyPreferredTransform(to track: AVMutableCompositionTrack,
+                                         from asset: AVURLAsset) async {
+        if let src = try? await asset.loadTracks(withMediaType: .video).first,
+           let t   = try? await src.load(.preferredTransform) {
+            track.preferredTransform = t
         }
     }
 
     private func renderSize(for asset: AVURLAsset) async -> CGSize {
         guard let track = try? await asset.loadTracks(withMediaType: .video).first,
-              let size = try? await track.load(.naturalSize),
-              let transform = try? await track.load(.preferredTransform) else {
+              let size  = try? await track.load(.naturalSize),
+              let xform = try? await track.load(.preferredTransform) else {
             return CGSize(width: 1080, height: 1920)
         }
-        let isPortrait = transform.b == 1.0 || transform.b == -1.0
+        let isPortrait = xform.b == 1.0 || xform.b == -1.0
         return isPortrait ? CGSize(width: size.height, height: size.width) : size
     }
 
@@ -256,12 +280,13 @@ actor VideoComposer {
         quality: ExportQuality,
         progressBox: ProgressBox?
     ) async throws -> URL {
-        guard let session = AVAssetExportSession(asset: composition, presetName: quality.presetName) else {
+        guard let session = AVAssetExportSession(asset: composition,
+                                                 presetName: quality.presetName) else {
             throw CompositionError.exportSessionFailed
         }
         let outputURL = makeExportURL()
-        session.outputURL = outputURL
-        session.outputFileType = .mp4
+        session.outputURL                   = outputURL
+        session.outputFileType              = .mp4
         session.shouldOptimizeForNetworkUse = true
         if let vc = videoComposition { session.videoComposition = vc }
 
@@ -273,14 +298,13 @@ actor VideoComposer {
                 default:         continuation.resume(throwing: session.error ?? CompositionError.exportSessionFailed)
                 }
             }
-            // Poll session.progress ~12 fps and write into the shared box.
             if let box = progressBox {
                 Task {
                     while session.status != .completed
                             && session.status != .failed
                             && session.status != .cancelled {
                         box.value = Double(session.progress)
-                        try? await Task.sleep(nanoseconds: 80_000_000) // 80 ms
+                        try? await Task.sleep(nanoseconds: 80_000_000)
                     }
                 }
             }
@@ -288,7 +312,7 @@ actor VideoComposer {
     }
 
     private func makeExportURL() -> URL {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let docs   = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let folder = docs.appendingPathComponent("Exports", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder.appendingPathComponent(UUID().uuidString).appendingPathExtension("mp4")
