@@ -112,10 +112,6 @@ final class CameraService: NSObject, ObservableObject {
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
             DispatchQueue.global(qos: .userInitiated).async { s.startRunning(); c.resume() }
         }
-        // Re-apply after startRunning — the capture session can still reset the
-        // audio session category even with automaticallyConfiguresApplicationAudioSession = false
-        // on some iOS versions.
-        try? configureAudioSession()
         isRunning = true
     }
 
@@ -137,14 +133,6 @@ final class CameraService: NSObject, ObservableObject {
         return try await withCheckedThrowingContinuation { continuation in
             recordingContinuation = continuation
             output.startRecording(to: url, recordingDelegate: self)
-            // AVCaptureMovieFileOutput.startRecording() activates the audio pipeline and
-            // can silently reset the AVAudioSession category, stripping .mixWithOthers.
-            // Calling setCategory (NOT setActive — that would itself cause an interruption)
-            // immediately after re-asserts the option on the already-active session.
-            try? AVAudioSession.sharedInstance().setCategory(
-                .playAndRecord, mode: .videoRecording,
-                options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP, .mixWithOthers]
-            )
             Task { @MainActor in self.isRecording = true }
         }
     }
