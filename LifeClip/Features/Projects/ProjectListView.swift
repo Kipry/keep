@@ -15,6 +15,8 @@ struct ProjectListView: View {
     @State private var isCreatingProject = false
     @State private var newProjectName = ""
     @State private var projectToDelete: Project?
+    @State private var projectToRename: Project?
+    @State private var renameText = ""
     @State private var selectedProject: Project?
     @State private var recordOnNextOpen = false
 
@@ -65,6 +67,12 @@ struct ProjectListView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .contextMenu {
+                                    Button {
+                                        renameText = project.name
+                                        projectToRename = project
+                                    } label: {
+                                        Label("Rename", systemImage: "pencil")
+                                    }
                                     Button(role: .destructive) {
                                         projectToDelete = project
                                     } label: {
@@ -104,14 +112,25 @@ struct ProjectListView: View {
             handlePendingDeepLink()
         }
         // ── Deep link: fired on cold launch and when already running ──
-        .onAppear { handlePendingDeepLink() }
+        .onAppear { handlePendingDeepLink(); handlePendingOpen() }
         .onChange(of: deepLink.pendingRecordProjectID) { _, _ in handlePendingDeepLink() }
+        .onChange(of: deepLink.pendingOpenProjectID)   { _, _ in handlePendingOpen() }
         .alert("New Project", isPresented: $isCreatingProject) {
             TextField("Project name", text: $newProjectName)
             Button("Create") { createProject() }
             Button("Cancel", role: .cancel) { newProjectName = "" }
         } message: {
             Text("Give your project a name — e.g. \"Summer 2026\".")
+        }
+        .alert("Rename Project", isPresented: Binding(
+            get: { projectToRename != nil },
+            set: { if !$0 { projectToRename = nil } }
+        )) {
+            TextField("Project name", text: $renameText)
+            Button("Rename") { renameProject() }
+            Button("Cancel", role: .cancel) { projectToRename = nil }
+        } message: {
+            Text("Enter a new name for \"\(projectToRename?.name ?? "")\".")
         }
         .confirmationDialog(
             "Delete \"\(projectToDelete?.name ?? "")\"?",
@@ -154,6 +173,13 @@ struct ProjectListView: View {
 
     // MARK: - Actions
 
+    private func handlePendingOpen() {
+        guard let id = deepLink.pendingOpenProjectID else { return }
+        guard let project = projects.first(where: { $0.id == id }) else { return }
+        deepLink.pendingOpenProjectID = nil
+        if selectedProject?.id != id { selectedProject = project }
+    }
+
     private func handlePendingDeepLink() {
         guard let id = deepLink.pendingRecordProjectID else { return }
         guard let project = projects.first(where: { $0.id == id }) else {
@@ -165,6 +191,14 @@ struct ProjectListView: View {
             selectedProject = project
         }
         // Don't nil out pendingID here — ProjectDetailView will consume it.
+    }
+
+    private func renameProject() {
+        let name = renameText.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty, let project = projectToRename else { return }
+        project.name = name
+        project.updatedAt = Date()
+        projectToRename = nil
     }
 
     private func createProject() {

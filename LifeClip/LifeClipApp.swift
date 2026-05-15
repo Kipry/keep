@@ -10,6 +10,7 @@ import CoreText
 @Observable
 final class AppDeepLink {
     var pendingRecordProjectID: UUID?
+    var pendingOpenProjectID: UUID?
 }
 
 // MARK: - App entry point
@@ -30,13 +31,17 @@ struct LifeClipApp: App {
         .modelContainer(for: [Project.self, Clip.self])
     }
 
-    // lifeclip://record/<UUID>
+    // lifeclip://record/<UUID>  →  open project + start recording
+    // lifeclip://open/<UUID>    →  just open project detail
     private func handleDeepLink(_ url: URL) {
         guard url.scheme == "lifeclip",
-              url.host == "record",
               let idString = url.pathComponents.dropFirst().first,
               let id = UUID(uuidString: idString) else { return }
-        deepLink.pendingRecordProjectID = id
+        switch url.host {
+        case "record": deepLink.pendingRecordProjectID = id
+        case "open":   deepLink.pendingOpenProjectID   = id
+        default: break
+        }
     }
 
     private static func registerFonts() {

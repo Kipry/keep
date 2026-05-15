@@ -49,6 +49,10 @@ private func recordURL(for id: String) -> URL {
     URL(string: "lifeclip://record/\(id)")!
 }
 
+private func openURL(for id: String) -> URL {
+    URL(string: "lifeclip://open/\(id)")!
+}
+
 private func durationLabel(_ t: Double) -> String {
     guard t > 0 else { return "—" }
     return t < 60 ? String(format: "%.0fs", t)
@@ -72,37 +76,37 @@ struct HomeWidgetView: View {
 
     private var small: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // App label
-            Text("LIFECLIP")
-                .font(.system(size: 8, weight: .semibold, design: .monospaced))
-                .tracking(2.5)
-                .foregroundStyle(.white.opacity(0.3))
-
-            Spacer()
-
             if let snap = entry.snapshot {
                 Text(snap.name)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(.white)
-                    .lineLimit(2)
+                    .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text("\(snap.clipCount) clip\(snap.clipCount == 1 ? "" : "s")")
-                    .font(.system(size: 10, design: .monospaced))
+                Text("\(snap.clipCount) clip\(snap.clipCount == 1 ? "" : "s") · \(durationLabel(snap.totalDuration))")
+                    .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.45))
-                    .padding(.top, 3)
+                    .padding(.top, 5)
             } else {
                 Text("No project")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.3))
             }
 
             Spacer()
 
-            recButton(label: "REC", compact: true)
+            // Only the REC button triggers record deep-link; tapping elsewhere opens the project.
+            if let snap = entry.snapshot {
+                Link(destination: recordURL(for: snap.id)) {
+                    recButton(label: "⏺ REC", compact: false)
+                }
+            } else {
+                recButton(label: "⏺ REC", compact: false)
+            }
         }
-        .padding(14)
-        .widgetURL(entry.snapshot.map { recordURL(for: $0.id) })
+        .padding(16)
+        .widgetURL(entry.snapshot.map { openURL(for: $0.id) })
     }
 
     // MARK: Medium
@@ -154,28 +158,30 @@ struct HomeWidgetView: View {
                 }
 
                 Spacer()
-                recButton(label: "Record Clip", compact: false)
+                if let snap = entry.snapshot {
+                    Link(destination: recordURL(for: snap.id)) {
+                        recButton(label: "⏺ Record Clip", compact: false)
+                    }
+                } else {
+                    recButton(label: "⏺ Record Clip", compact: false)
+                }
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .widgetURL(entry.snapshot.map { recordURL(for: $0.id) })
+        .widgetURL(entry.snapshot.map { openURL(for: $0.id) })
     }
 
     // MARK: Shared button
 
     private func recButton(label: String, compact: Bool) -> some View {
-        HStack(spacing: 5) {
-            Circle()
-                .fill(ink.opacity(0.7))
-                .frame(width: 6, height: 6)
-            Text(label)
-                .font(.system(size: compact ? 12 : 13, weight: .semibold))
-                .foregroundStyle(ink)
-        }
-        .padding(.horizontal, compact ? 11 : 13)
-        .padding(.vertical, compact ? 7 : 8)
-        .background(amber, in: Capsule())
+        Text(label)
+            .font(.system(size: 15, weight: .bold))
+            .foregroundStyle(ink)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(amber, in: Capsule())
     }
 }
 

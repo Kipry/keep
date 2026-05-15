@@ -100,6 +100,7 @@ final class CameraService: NSObject, ObservableObject {
         // Explicitly enable the audio connection — AVFoundation does not always
         // do this automatically after the app resumes from background.
         try verifyAudioConnection(on: output)
+        enableStabilization(on: output)
 
         s.commitConfiguration()
         session = s
@@ -148,6 +149,7 @@ final class CameraService: NSObject, ObservableObject {
         s.commitConfiguration()
         videoDeviceInput = newInput
         cameraPosition = newPosition
+        if let out = movieOutput { enableStabilization(on: out) }
         if newPosition == .back {
             setDefaultZoom(on: newInput.device)
         } else {
@@ -251,6 +253,12 @@ final class CameraService: NSObject, ObservableObject {
         guard let device = AVCaptureDevice.default(for: .audio),
               let input = try? AVCaptureDeviceInput(device: device) else { throw CameraError.audioDeviceNotFound }
         return input
+    }
+
+    private func enableStabilization(on output: AVCaptureMovieFileOutput) {
+        guard let conn = output.connection(with: .video),
+              conn.isVideoStabilizationSupported else { return }
+        conn.preferredVideoStabilizationMode = .cinematicExtended
     }
 
     private func verifyAudioConnection(on output: AVCaptureMovieFileOutput) throws {
