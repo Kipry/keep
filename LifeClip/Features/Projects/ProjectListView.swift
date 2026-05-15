@@ -101,21 +101,11 @@ struct ProjectListView: View {
         // ── Widget snapshot: keep it fresh whenever projects change ──
         .onChange(of: projects) { _, updated in
             if let first = updated.first { WidgetDataStore.save(project: first) }
+            handlePendingDeepLink()
         }
-        // ── Deep link: open the right project and start recording ──
-        .onChange(of: deepLink.pendingRecordProjectID) { _, id in
-            guard let id else { return }
-            guard let project = projects.first(where: { $0.id == id }) else {
-                deepLink.pendingRecordProjectID = nil; return
-            }
-            // If that project's detail is already open, ProjectDetailView handles it.
-            // Otherwise open it now with camera auto-start.
-            if selectedProject?.id != id {
-                recordOnNextOpen = true
-                selectedProject = project
-            }
-            // Don't nil out pendingID here — ProjectDetailView will consume it.
-        }
+        // ── Deep link: fired on cold launch and when already running ──
+        .onAppear { handlePendingDeepLink() }
+        .onChange(of: deepLink.pendingRecordProjectID) { _, _ in handlePendingDeepLink() }
         .alert("New Project", isPresented: $isCreatingProject) {
             TextField("Project name", text: $newProjectName)
             Button("Create") { createProject() }
@@ -163,6 +153,19 @@ struct ProjectListView: View {
     }
 
     // MARK: - Actions
+
+    private func handlePendingDeepLink() {
+        guard let id = deepLink.pendingRecordProjectID else { return }
+        guard let project = projects.first(where: { $0.id == id }) else {
+            // Projects not loaded yet — will retry when `projects` changes.
+            return
+        }
+        if selectedProject?.id != id {
+            recordOnNextOpen = true
+            selectedProject = project
+        }
+        // Don't nil out pendingID here — ProjectDetailView will consume it.
+    }
 
     private func createProject() {
         let name = newProjectName.trimmingCharacters(in: .whitespaces)

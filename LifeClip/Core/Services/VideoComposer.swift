@@ -158,15 +158,18 @@ actor VideoComposer {
         let fade    = CMTime(seconds: min(0.4, minSecs * 0.3), preferredTimescale: 600)
 
         let composition = AVMutableComposition()
-        guard let trackA = composition.addMutableTrack(withMediaType: .video,
-                                                        preferredTrackID: kCMPersistentTrackID_Invalid),
-              let trackB = composition.addMutableTrack(withMediaType: .video,
-                                                        preferredTrackID: kCMPersistentTrackID_Invalid),
-              let audioTrack = composition.addMutableTrack(withMediaType: .audio,
-                                                           preferredTrackID: kCMPersistentTrackID_Invalid)
+        guard let trackA  = composition.addMutableTrack(withMediaType: .video,
+                                                         preferredTrackID: kCMPersistentTrackID_Invalid),
+              let trackB  = composition.addMutableTrack(withMediaType: .video,
+                                                         preferredTrackID: kCMPersistentTrackID_Invalid),
+              let audioTrackA = composition.addMutableTrack(withMediaType: .audio,
+                                                             preferredTrackID: kCMPersistentTrackID_Invalid),
+              let audioTrackB = composition.addMutableTrack(withMediaType: .audio,
+                                                             preferredTrackID: kCMPersistentTrackID_Invalid)
         else { throw CompositionError.trackInsertionFailed }
 
         let vTracks    = [trackA, trackB]
+        let aTracks    = [audioTrackA, audioTrackB]
         var clipStarts = [CMTime]()
         var cursor     = CMTime.zero
 
@@ -177,8 +180,8 @@ actor VideoComposer {
             try vTracks[i % 2].insertTimeRange(CMTimeRange(start: .zero, duration: duration),
                                                of: v, at: cursor)
             if let a = srcAud.first {
-                try? audioTrack.insertTimeRange(CMTimeRange(start: .zero, duration: duration),
-                                                of: a, at: cursor)
+                try? aTracks[i % 2].insertTimeRange(CMTimeRange(start: .zero, duration: duration),
+                                                     of: a, at: cursor)
             }
             clipStarts.append(cursor)
             if i < pairs.count - 1 {
@@ -186,8 +189,9 @@ actor VideoComposer {
             }
         }
 
-        // Transform must be awaited before export starts.
+        // Both video tracks need the preferred transform so portrait clips render correctly.
         await applyPreferredTransform(to: trackA, from: pairs[0].0)
+        await applyPreferredTransform(to: trackB, from: pairs[0].0)
 
         var instructions = [AVMutableVideoCompositionInstruction]()
 
