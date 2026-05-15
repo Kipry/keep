@@ -4,6 +4,8 @@ import SwiftData
 struct ProjectListView: View {
     @Environment(\.modelContext) private var modelContext
 
+    @Binding var deepLinkProjectID: UUID?
+
     @Query(
         filter: #Predicate<Project> { !$0.isDeleted },
         sort: \Project.updatedAt,
@@ -14,7 +16,8 @@ struct ProjectListView: View {
     @State private var isCreatingProject = false
     @State private var newProjectName = ""
     @State private var projectToDelete: Project?
-    @State private var selectedProject: Project?   // drives full-screen detail
+    @State private var selectedProject: Project?
+    @State private var recordOnNextOpen = false
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -93,7 +96,21 @@ struct ProjectListView: View {
         .preferredColorScheme(.dark)
         // ── Project detail — full-screen so it owns the entire layout ──
         .fullScreenCover(item: $selectedProject) { project in
-            ProjectDetailView(project: project)
+            ProjectDetailView(project: project, recordOnAppear: recordOnNextOpen)
+                .onDisappear { recordOnNextOpen = false }
+        }
+        // ── Widget snapshot: keep it fresh whenever projects change ──
+        .onChange(of: projects) { _, updated in
+            if let first = updated.first { WidgetDataStore.save(project: first) }
+        }
+        // ── Deep link from widget tap ──
+        .onChange(of: deepLinkProjectID) { _, id in
+            guard let id else { return }
+            if let project = projects.first(where: { $0.id == id }) {
+                recordOnNextOpen = true
+                selectedProject = project
+            }
+            deepLinkProjectID = nil
         }
         .alert("New Project", isPresented: $isCreatingProject) {
             TextField("Project name", text: $newProjectName)

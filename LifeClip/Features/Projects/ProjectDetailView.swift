@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 
 struct ProjectDetailView: View {
     @Bindable var project: Project
+    let recordOnAppear: Bool
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
@@ -95,6 +96,14 @@ struct ProjectDetailView: View {
         }
         // fullScreenCover presentation — owns the full screen, no nav bar involved
         .preferredColorScheme(.dark)
+        .onAppear {
+            if recordOnAppear {
+                // Brief delay so the view is fully on screen before presenting camera
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    isCameraPresented = true
+                }
+            }
+        }
         .fullScreenCover(isPresented: $isCameraPresented) {
             CameraView { url, dur in addClip(fileURL: url, duration: dur) }
         }
@@ -341,6 +350,7 @@ struct ProjectDetailView: View {
                 clip.thumbnailData = data
                 if project.activeClips.count == 1 { project.coverThumbnailData = data }
             }
+            WidgetDataStore.save(project: project)
         }
     }
 
