@@ -79,6 +79,9 @@ final class CameraService: NSObject, ObservableObject {
         try configureAudioSession()
 
         let s = AVCaptureSession()
+        // Prevent AVCaptureSession from overwriting our AVAudioSession configuration
+        // (it strips .mixWithOthers by default, which pauses background music).
+        s.automaticallyConfiguresApplicationAudioSession = false
         s.beginConfiguration()
         s.sessionPreset = .high
 
@@ -109,6 +112,10 @@ final class CameraService: NSObject, ObservableObject {
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
             DispatchQueue.global(qos: .userInitiated).async { s.startRunning(); c.resume() }
         }
+        // Re-apply after startRunning — the capture session can still reset the
+        // audio session category even with automaticallyConfiguresApplicationAudioSession = false
+        // on some iOS versions.
+        try? configureAudioSession()
         isRunning = true
     }
 
