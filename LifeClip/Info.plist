@@ -45,6 +45,19 @@
         <string>microphone</string>
     </array>
 
+    <!-- URL scheme for widget deep links -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>lifeclip</string>
+            </array>
+            <key>CFBundleURLName</key>
+            <string>com.lifeclip.app</string>
+        </dict>
+    </array>
+
     <!-- Scene support -->
     <key>UIApplicationSceneManifest</key>
     <dict>

@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Binding var deepLinkProjectID: UUID?
+
     var body: some View {
-        ProjectListView()
+        ProjectListView(deepLinkProjectID: $deepLinkProjectID)
     }
 }

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -28,8 +28,37 @@
 		A10000000000000000000A3B /* JetBrainsMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */; };
 		A10000000000000000000A4B /* Caveat-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A4A /* Caveat-Regular.ttf */; };
 		A10000000000000000000B1B /* ExportProgressOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000B1A /* ExportProgressOverlay.swift */; };
+		C328CD4A2FB728B300443F80 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD492FB728B300443F80 /* WidgetKit.framework */; };
+		C328CD4C2FB728B300443F80 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD4B2FB728B300443F80 /* SwiftUI.framework */; };
+		C328CD592FB728B400443F80 /* LifeClipWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C328CD472FB728B300443F80 /* LifeClipWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C328CD622FB72AD700443F80 /* WidgetDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C328CD612FB72AD700443F80 /* WidgetDataStore.swift */; };
+		C328CD632FB72B1700443F80 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD492FB728B300443F80 /* WidgetKit.framework */; };
 		C3B3F5412FB67E7A00518F91 /* AppIcon-1024.png in Resources */ = {isa = PBXBuildFile; fileRef = C3B3F5402FB67E7A00518F91 /* AppIcon-1024.png */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C328CD572FB728B400443F80 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1000000000000000000000A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C328CD462FB728B300443F80;
+			remoteInfo = LifeClipWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C328CD5A2FB728B400443F80 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C328CD592FB728B400443F80 /* LifeClipWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A1000000000000000000000C /* LifeClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -55,14 +84,44 @@
 		A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Medium.ttf"; sourceTree = "<group>"; };
 		A10000000000000000000A4A /* Caveat-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Caveat-Regular.ttf"; sourceTree = "<group>"; };
 		A10000000000000000000B1A /* ExportProgressOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExportProgressOverlay.swift; path = LifeClip/Features/Compilation/ExportProgressOverlay.swift; sourceTree = SOURCE_ROOT; };
+		C328CD472FB728B300443F80 /* LifeClipWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LifeClipWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C328CD492FB728B300443F80 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		C328CD4B2FB728B300443F80 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		C328CD5F2FB729B900443F80 /* LifeClip.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LifeClip.entitlements; sourceTree = "<group>"; };
+		C328CD602FB729E000443F80 /* LifeClipWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LifeClipWidgetExtension.entitlements; sourceTree = "<group>"; };
+		C328CD612FB72AD700443F80 /* WidgetDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataStore.swift; sourceTree = "<group>"; };
 		C3B3F5402FB67E7A00518F91 /* AppIcon-1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon-1024.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C328CD5D2FB728B400443F80 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C328CD462FB728B300443F80 /* LifeClipWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		C328CD4D2FB728B300443F80 /* LifeClipWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (C328CD5D2FB728B400443F80 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = LifeClipWidget; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A1000000000000000000018A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C328CD632FB72B1700443F80 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C328CD442FB728B300443F80 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C328CD4C2FB728B300443F80 /* SwiftUI.framework in Frameworks */,
+				C328CD4A2FB728B300443F80 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,7 +131,10 @@
 		A100000000000000000000DA = {
 			isa = PBXGroup;
 			children = (
+				C328CD602FB729E000443F80 /* LifeClipWidgetExtension.entitlements */,
 				A100000000000000000000EA /* LifeClip */,
+				C328CD4D2FB728B300443F80 /* LifeClipWidget */,
+				C328CD482FB728B300443F80 /* Frameworks */,
 				A1000000000000000000016A /* Products */,
 				C3B3F53F2FB67D5A00518F91 /* Recovered References */,
 			);
@@ -81,6 +143,7 @@
 		A100000000000000000000EA /* LifeClip */ = {
 			isa = PBXGroup;
 			children = (
+				C328CD5F2FB729B900443F80 /* LifeClip.entitlements */,
 				A1000000000000000000001A /* LifeClipApp.swift */,
 				A1000000000000000000002A /* ContentView.swift */,
 				A100000000000000000000CA /* Info.plist */,
@@ -114,6 +177,7 @@
 		A1000000000000000000011A /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				C328CD612FB72AD700443F80 /* WidgetDataStore.swift */,
 				A1000000000000000000005A /* CameraService.swift */,
 				A1000000000000000000006A /* VideoComposer.swift */,
 			);
@@ -163,6 +227,7 @@
 			isa = PBXGroup;
 			children = (
 				A1000000000000000000000C /* LifeClip.app */,
+				C328CD472FB728B300443F80 /* LifeClipWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -203,6 +268,15 @@
 			path = Fonts;
 			sourceTree = "<group>";
 		};
+		C328CD482FB728B300443F80 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C328CD492FB728B300443F80 /* WidgetKit.framework */,
+				C328CD4B2FB728B300443F80 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		C3B3F53F2FB67D5A00518F91 /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
@@ -221,15 +295,39 @@
 				A1000000000000000000017A /* Sources */,
 				A1000000000000000000018A /* Frameworks */,
 				A1000000000000000000019A /* Resources */,
+				C328CD5A2FB728B400443F80 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C328CD582FB728B400443F80 /* PBXTargetDependency */,
 			);
 			name = LifeClip;
 			productName = LifeClip;
 			productReference = A1000000000000000000000C /* LifeClip.app */;
 			productType = "com.apple.product-type.application";
+		};
+		C328CD462FB728B300443F80 /* LifeClipWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C328CD5E2FB728B400443F80 /* Build configuration list for PBXNativeTarget "LifeClipWidgetExtension" */;
+			buildPhases = (
+				C328CD432FB728B300443F80 /* Sources */,
+				C328CD442FB728B300443F80 /* Frameworks */,
+				C328CD452FB728B300443F80 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C328CD4D2FB728B300443F80 /* LifeClipWidget */,
+			);
+			name = LifeClipWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = LifeClipWidgetExtension;
+			productReference = C328CD472FB728B300443F80 /* LifeClipWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -238,11 +336,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1500;
+				LastSwiftUpdateCheck = 2650;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					A1000000000000000000000B = {
 						CreatedOnToolsVersion = 15.0;
+					};
+					C328CD462FB728B300443F80 = {
+						CreatedOnToolsVersion = 26.5;
 					};
 				};
 			};
@@ -260,6 +361,7 @@
 			projectRoot = "";
 			targets = (
 				A1000000000000000000000B /* LifeClip */,
+				C328CD462FB728B300443F80 /* LifeClipWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -278,6 +380,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C328CD452FB728B300443F80 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -292,6 +401,7 @@
 				A1000000000000000000005B /* CameraService.swift in Sources */,
 				A1000000000000000000006B /* VideoComposer.swift in Sources */,
 				A1000000000000000000007B /* CameraView.swift in Sources */,
+				C328CD622FB72AD700443F80 /* WidgetDataStore.swift in Sources */,
 				A1000000000000000000008B /* CameraPreviewView.swift in Sources */,
 				A1000000000000000000009B /* ClipCell.swift in Sources */,
 				A100000000000000000000AB /* ProjectListView.swift in Sources */,
@@ -304,7 +414,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C328CD432FB728B300443F80 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C328CD582FB728B400443F80 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C328CD462FB728B300443F80 /* LifeClipWidgetExtension */;
+			targetProxy = C328CD572FB728B400443F80 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A100000000000000000001AA /* Debug */ = {
@@ -427,6 +552,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = LifeClip/LifeClip.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PAZWVYN25U;
@@ -457,6 +583,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = LifeClip/LifeClip.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PAZWVYN25U;
@@ -481,6 +608,77 @@
 			};
 			name = Release;
 		};
+		C328CD5B2FB728B400443F80 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CODE_SIGN_ENTITLEMENTS = LifeClipWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PAZWVYN25U;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LifeClipWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = LifeClipWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lifeclip.app.LifeClipWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C328CD5C2FB728B400443F80 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CODE_SIGN_ENTITLEMENTS = LifeClipWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PAZWVYN25U;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LifeClipWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = LifeClipWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lifeclip.app.LifeClipWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -498,6 +696,15 @@
 			buildConfigurations = (
 				A100000000000000000001CA /* Debug */,
 				A100000000000000000001DA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C328CD5E2FB728B400443F80 /* Build configuration list for PBXNativeTarget "LifeClipWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C328CD5B2FB728B400443F80 /* Debug */,
+				C328CD5C2FB728B400443F80 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
