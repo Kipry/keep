@@ -229,7 +229,8 @@ final class CameraService: NSObject, ObservableObject {
     private func configureAudioSession() throws {
         let a = AVAudioSession.sharedInstance()
         try a.setCategory(.playAndRecord, mode: .videoRecording,
-                          options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP])
+                          options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP,
+                                    .mixWithOthers])
         try a.setActive(true)
     }
 

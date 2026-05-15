@@ -11,6 +11,10 @@ struct CameraView: View {
     @State private var elapsed: Double = 0
     @State private var timer: Timer?
     @State private var durationLimit: Double = 1
+    @State private var isHoldRecording = false
+    @State private var holdStartTask: Task<Void, Never>?
+
+    private let holdThreshold: TimeInterval = 0.25
 
     @State private var focusPoint: CGPoint?
     @State private var showFocusRing = false
@@ -128,12 +132,11 @@ struct CameraView: View {
 
                 RecordButton(
                     isRecording: camera.isRecording,
-                    progress: durationLimit > 0
-                        ? CGFloat(min(elapsed / durationLimit, 1.0))
-                        : 0
-                ) {
-                    Task { await handleRecordTap() }
-                }
+                    progress: isHoldRecording ? 0
+                        : (durationLimit > 0 ? CGFloat(min(elapsed / durationLimit, 1.0)) : 0),
+                    onPressDown: { handlePressDown() },
+                    onRelease:   { handleRelease() }
+                )
 
                 Spacer()
 
@@ -223,6 +226,37 @@ struct CameraView: View {
         camera.stopSession()
     }
 
+    // Called on every finger-down on the shutter button.
+    // Schedules a hold-mode start after the threshold; quick releases cancel it.
+    private func handlePressDown() {
+        guard holdStartTask == nil, !camera.isRecording else { return }
+        holdStartTask = Task {
+            try? await Task.sleep(nanoseconds: UInt64(holdThreshold * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            isHoldRecording = true
+            startTimer()
+            do { _ = try await camera.startRecording() }
+            catch { isHoldRecording = false; stopTimer(); setupError = error.localizedDescription }
+        }
+    }
+
+    // Called on finger-up. Decides tap vs. hold based on whether hold mode activated.
+    private func handleRelease() {
+        if let task = holdStartTask {
+            task.cancel()
+            holdStartTask = nil
+            if isHoldRecording {
+                isHoldRecording = false
+                camera.stopRecording()
+                stopTimer()
+            } else {
+                Task { await handleRecordTap() }
+            }
+        } else if camera.isRecording {
+            Task { await handleRecordTap() }
+        }
+    }
+
     private func handleRecordTap() async {
         if camera.isRecording {
             camera.stopRecording()
@@ -252,7 +286,7 @@ struct CameraView: View {
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
             guard let start = recordingStart else { return }
             elapsed = Date().timeIntervalSince(start)
-            if elapsed >= durationLimit {
+            if !isHoldRecording && elapsed >= durationLimit {
                 camera.stopRecording()
                 stopTimer()
             }
@@ -280,40 +314,56 @@ struct CameraView: View {
 private struct RecordButton: View {
     let isRecording: Bool
     let progress: CGFloat   // 0.0 – 1.0, drives the amber ring
-    let action: () -> Void
+    let onPressDown: () -> Void
+    let onRelease: () -> Void
+
+    @State private var isPressing = false
 
     var body: some View {
-        Button(action: action) {
-            ZStack {
-                // Amber progress arc, sits just outside the white ring — replaces the dashed guide circle
-                if isRecording {
-                    Circle()
-                        .trim(from: 0, to: progress)
-                        .stroke(
-                            Theme.amber,
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                        )
-                        .frame(width: 82, height: 82)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 0.06), value: progress)
-                        .shadow(color: Theme.amber.opacity(0.6), radius: 4)
-                }
-
-                // White border ring
+        ZStack {
+            // Amber progress arc, sits just outside the white ring
+            if isRecording {
                 Circle()
-                    .stroke(.white, lineWidth: 4)
-                    .frame(width: 72, height: 72)
-
-                // Inner fill: circle → rounded square when recording
-                RoundedRectangle(cornerRadius: isRecording ? 8 : 36)
-                    .fill(isRecording ? Theme.amber : .red)
-                    .frame(
-                        width:  isRecording ? 28 : 56,
-                        height: isRecording ? 28 : 56
+                    .trim(from: 0, to: progress)
+                    .stroke(
+                        Theme.amber,
+                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
                     )
-                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isRecording)
+                    .frame(width: 82, height: 82)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear(duration: 0.06), value: progress)
+                    .shadow(color: Theme.amber.opacity(0.6), radius: 4)
             }
+
+            // White border ring
+            Circle()
+                .stroke(.white, lineWidth: 4)
+                .frame(width: 72, height: 72)
+
+            // Inner fill: circle → rounded square when recording
+            RoundedRectangle(cornerRadius: isRecording ? 8 : 36)
+                .fill(isRecording ? Theme.amber : .red)
+                .frame(
+                    width:  isRecording ? 28 : 56,
+                    height: isRecording ? 28 : 56
+                )
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isRecording)
         }
+        .contentShape(Circle().size(CGSize(width: 82, height: 82)))
+        .scaleEffect(isPressing ? 0.94 : 1.0)
+        .animation(.easeInOut(duration: 0.1), value: isPressing)
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    guard !isPressing else { return }
+                    isPressing = true
+                    onPressDown()
+                }
+                .onEnded { _ in
+                    isPressing = false
+                    onRelease()
+                }
+        )
     }
 }
 
