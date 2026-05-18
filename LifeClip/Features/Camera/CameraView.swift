@@ -14,6 +14,7 @@ struct CameraView: View {
     @State private var isHoldRecording = false
     @State private var holdStartTask: Task<Void, Never>?
     @State private var holdZoomStart: CGFloat = 1.0
+    @State private var pendingCameraFlip = false
 
     private let holdThreshold: TimeInterval = 0.25
 
@@ -221,10 +222,18 @@ struct CameraView: View {
     // MARK: - Actions
 
     private func handleCameraFlip() {
-        Task {
-            try? await camera.switchCamera()
-            // Reset hold-zoom baseline so drag-to-zoom continues from new camera's zoom.
-            if isHoldRecording { holdZoomStart = camera.currentZoomFactor }
+        if camera.isRecording {
+            // AVCaptureMovieFileOutput cannot switch inputs mid-recording.
+            // Stop the current clip, set a flag, then finishRecording() will
+            // flip and restart automatically.
+            pendingCameraFlip = true
+            camera.stopRecording()
+            stopTimer()
+        } else {
+            Task {
+                try? await camera.switchCamera()
+                if isHoldRecording { holdZoomStart = camera.currentZoomFactor }
+            }
         }
     }
 
@@ -304,7 +313,18 @@ struct CameraView: View {
     private func finishRecording(url: URL) {
         stopTimer()
         onSave(url, elapsed > 0 ? elapsed : durationLimit)
-        dismiss()
+        guard pendingCameraFlip else { dismiss(); return }
+        // A camera flip was requested mid-recording: switch camera now, then
+        // restart recording automatically if the user is still holding.
+        pendingCameraFlip = false
+        Task {
+            try? await camera.switchCamera()
+            holdZoomStart = camera.currentZoomFactor
+            guard isHoldRecording else { return }
+            startTimer()
+            do { _ = try await camera.startRecording() }
+            catch { isHoldRecording = false; setupError = error.localizedDescription; dismiss() }
+        }
     }
 
     // MARK: - Timer
