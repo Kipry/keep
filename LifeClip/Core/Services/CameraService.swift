@@ -153,12 +153,7 @@ final class CameraService: NSObject, ObservableObject {
         videoDeviceInput = newInput
         cameraPosition = newPosition
         if let out = movieOutput { enableStabilization(on: out) }
-        if newPosition == .back {
-            setDefaultZoom(on: newInput.device)
-        } else {
-            currentZoomFactor = newInput.device.videoZoomFactor
-            displayZoomFactor = Self.computeDisplayZoom(newInput.device.videoZoomFactor, device: newInput.device)
-        }
+        setDefaultZoom(on: newInput.device)
     }
 
     // MARK: - Zoom (auto-switches lenses via virtual device)
@@ -199,15 +194,11 @@ final class CameraService: NSObject, ObservableObject {
     // MARK: - Private helpers
 
     // Maps internal videoZoomFactor to the conventional camera-app multiplier.
-    // Devices with an ultra-wide lens (triple / dual-wide): the first switch-over
-    // factor is where the wide-angle (1×) activates, so dividing by it gives
-    // 0.5× for ultra-wide, 1× for wide, 2-3× for telephoto.
-    // Devices without an ultra-wide: factor is used as-is (starts at 1×).
+    // If the device has virtualDeviceSwitchOverVideoZoomFactors, the first entry
+    // is where the "1×" lens activates — dividing by it normalises any camera
+    // (back triple/dual-wide OR front wide+ultrawide) to the familiar 0.5×/1×/2× scale.
     private func setDefaultZoom(on device: AVCaptureDevice) {
-        let hasUltraWide = device.deviceType == .builtInTripleCamera
-                        || device.deviceType == .builtInDualWideCamera
-        guard hasUltraWide,
-              let wideStart = device.virtualDeviceSwitchOverVideoZoomFactors.first else {
+        guard let wideStart = device.virtualDeviceSwitchOverVideoZoomFactors.first else {
             currentZoomFactor = device.videoZoomFactor
             displayZoomFactor = Self.computeDisplayZoom(device.videoZoomFactor, device: device)
             return
@@ -221,9 +212,7 @@ final class CameraService: NSObject, ObservableObject {
     }
 
     private static func computeDisplayZoom(_ factor: CGFloat, device: AVCaptureDevice) -> CGFloat {
-        let hasUltraWide = device.deviceType == .builtInTripleCamera
-                        || device.deviceType == .builtInDualWideCamera
-        if hasUltraWide, let first = device.virtualDeviceSwitchOverVideoZoomFactors.first {
+        if let first = device.virtualDeviceSwitchOverVideoZoomFactors.first {
             return factor / CGFloat(first)
         }
         return factor

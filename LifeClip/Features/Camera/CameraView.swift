@@ -24,6 +24,8 @@ struct CameraView: View {
     @State private var showZoomLabel = false
     @State private var zoomLabelTask: Task<Void, Never>?
     @State private var torchOn = false
+    @State private var screenFlashOn = false
+    @State private var savedBrightness: CGFloat = UIScreen.main.brightness
     @State private var setupError: String?
 
     var body: some View {
@@ -54,6 +56,14 @@ struct CameraView: View {
 
             if let err = setupError ?? camera.cameraError?.localizedDescription {
                 errorBanner(err)
+            }
+
+            // Screen flash: bright white fill-light for front camera.
+            // Sits below the controls so buttons remain visible and tappable.
+            if screenFlashOn {
+                Color.white
+                    .ignoresSafeArea()
+                    .transition(.opacity)
             }
 
             VStack {
@@ -105,7 +115,11 @@ struct CameraView: View {
 
             Button {
                 torchOn.toggle()
-                camera.setTorch(torchOn)
+                if camera.cameraPosition == .front {
+                    torchOn ? activateScreenFlash() : deactivateScreenFlash()
+                } else {
+                    camera.setTorch(torchOn)
+                }
             } label: {
                 Image(systemName: torchOn ? "bolt.fill" : "bolt.slash")
                     .font(.title3.bold())
@@ -113,7 +127,6 @@ struct CameraView: View {
                     .padding(12)
                     .background(.black.opacity(0.4), in: Circle())
             }
-            .disabled(camera.cameraPosition == .front)
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -222,6 +235,7 @@ struct CameraView: View {
     // MARK: - Actions
 
     private func handleCameraFlip() {
+        if screenFlashOn { torchOn = false; deactivateScreenFlash() }
         if camera.isRecording {
             // AVCaptureMovieFileOutput cannot switch inputs mid-recording.
             // Stop the current clip, set a flag, then finishRecording() will
@@ -244,6 +258,7 @@ struct CameraView: View {
 
     private func teardown() {
         stopTimer()
+        if screenFlashOn { deactivateScreenFlash() }
         camera.stopSession()
     }
 
@@ -293,6 +308,17 @@ struct CameraView: View {
         camera.setZoom(newZoom)
         zoomLabelTask?.cancel()
         showZoomLabel = true
+    }
+
+    private func activateScreenFlash() {
+        savedBrightness = UIScreen.main.brightness
+        UIScreen.main.brightness = 1.0
+        withAnimation(.easeIn(duration: 0.1)) { screenFlashOn = true }
+    }
+
+    private func deactivateScreenFlash() {
+        UIScreen.main.brightness = savedBrightness
+        withAnimation(.easeOut(duration: 0.2)) { screenFlashOn = false }
     }
 
     private func handleRecordTap() async {
