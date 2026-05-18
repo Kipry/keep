@@ -13,6 +13,7 @@ struct CameraView: View {
     @State private var durationLimit: Double = 1
     @State private var isHoldRecording = false
     @State private var holdStartTask: Task<Void, Never>?
+    @State private var holdZoomStart: CGFloat = 1.0
 
     private let holdThreshold: TimeInterval = 0.25
 
@@ -135,7 +136,8 @@ struct CameraView: View {
                     progress: isHoldRecording ? 0
                         : (durationLimit > 0 ? CGFloat(min(elapsed / durationLimit, 1.0)) : 0),
                     onPressDown: { handlePressDown() },
-                    onRelease:   { handleRelease() }
+                    onRelease:   { handleRelease() },
+                    onDrag:      { handleDrag($0) }
                 )
 
                 Spacer()
@@ -233,6 +235,7 @@ struct CameraView: View {
         holdStartTask = Task {
             try? await Task.sleep(nanoseconds: UInt64(holdThreshold * 1_000_000_000))
             guard !Task.isCancelled else { return }
+            holdZoomStart = camera.currentZoomFactor  // snapshot zoom at hold start
             isHoldRecording = true
             startTimer()
             do { _ = try await camera.startRecording() }
@@ -249,12 +252,28 @@ struct CameraView: View {
                 isHoldRecording = false
                 camera.stopRecording()
                 stopTimer()
+                lastZoom = camera.currentZoomFactor
+                zoomLabelTask?.cancel()
+                zoomLabelTask = Task {
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    if !Task.isCancelled { withAnimation { showZoomLabel = false } }
+                }
             } else {
                 Task { await handleRecordTap() }
             }
         } else if camera.isRecording {
             Task { await handleRecordTap() }
         }
+    }
+
+    // Called while finger is held and dragged. Only active in hold-recording mode.
+    // Dragging up (negative y translation) zooms in; dragging down zooms out.
+    private func handleDrag(_ verticalTranslation: CGFloat) {
+        guard isHoldRecording else { return }
+        let newZoom = holdZoomStart - verticalTranslation * 0.013
+        camera.setZoom(newZoom)
+        zoomLabelTask?.cancel()
+        showZoomLabel = true
     }
 
     private func handleRecordTap() async {
@@ -316,6 +335,7 @@ private struct RecordButton: View {
     let progress: CGFloat   // 0.0 – 1.0, drives the amber ring
     let onPressDown: () -> Void
     let onRelease: () -> Void
+    let onDrag: (CGFloat) -> Void   // vertical translation (negative = up = zoom in)
 
     @State private var isPressing = false
 
@@ -354,10 +374,13 @@ private struct RecordButton: View {
         .animation(.easeInOut(duration: 0.1), value: isPressing)
         .gesture(
             DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    guard !isPressing else { return }
-                    isPressing = true
-                    onPressDown()
+                .onChanged { value in
+                    if !isPressing {
+                        isPressing = true
+                        onPressDown()
+                    } else {
+                        onDrag(value.translation.height)
+                    }
                 }
                 .onEnded { _ in
                     isPressing = false
