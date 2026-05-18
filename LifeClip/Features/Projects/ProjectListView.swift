@@ -6,7 +6,7 @@ struct ProjectListView: View {
     @Environment(AppDeepLink.self) private var deepLink
 
     @Query(
-        filter: #Predicate<Project> { !$0.isDeleted },
+        filter: #Predicate<Project> { !$0.isDeleted && !$0.isArchived },
         sort: \Project.updatedAt,
         order: .reverse
     )
@@ -72,6 +72,11 @@ struct ProjectListView: View {
                                         projectToRename = project
                                     } label: {
                                         Label("Rename", systemImage: "pencil")
+                                    }
+                                    Button {
+                                        project.archive()
+                                    } label: {
+                                        Label("Archivieren", systemImage: "archivebox")
                                     }
                                     Button(role: .destructive) {
                                         projectToDelete = project

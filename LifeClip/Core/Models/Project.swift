@@ -9,6 +9,7 @@ final class Project {
     var updatedAt: Date = Date()
     var isDeleted: Bool
     var deletedAt: Date?
+    var isArchived: Bool = false
     var coverThumbnailData: Data?
 
     @Relationship(deleteRule: .cascade)
@@ -20,6 +21,7 @@ final class Project {
         self.createdAt = Date()
         self.updatedAt = Date()
         self.isDeleted = false
+        self.isArchived = false
         self.clips = []
     }
 
@@ -43,5 +45,13 @@ final class Project {
     func restore() {
         isDeleted = false
         deletedAt = nil
+    }
+
+    func archive() {
+        isArchived = true
+    }
+
+    func unarchive() {
+        isArchived = false
     }
 }
