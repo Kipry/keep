@@ -231,9 +231,15 @@ final class CameraService: NSObject, ObservableObject {
 
     private func configureAudioSession() throws {
         let a = AVAudioSession.sharedInstance()
-        try a.setCategory(.playAndRecord, mode: .videoRecording,
-                          options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP,
-                                    .mixWithOthers])
+        // .measurement mode disables all DSP (AEC, noise reduction, AGC).
+        // .videoRecording activates Acoustic Echo Cancellation which treats background
+        // music as "echo" and aggressively cancels it from the mic — causing severe
+        // degradation when the user records while music is playing.
+        // .measurement gives raw mic input with no echo cancellation or voice processing.
+        // .defaultToSpeaker is omitted: we never play audio ourselves, and having it set
+        // activates the AEC reference path even for other apps' speaker output.
+        try a.setCategory(.playAndRecord, mode: .measurement,
+                          options: [.allowBluetooth, .allowBluetoothA2DP, .mixWithOthers])
         try a.setActive(true)
     }
 
