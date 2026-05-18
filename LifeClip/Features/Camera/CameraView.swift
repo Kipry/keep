@@ -58,12 +58,28 @@ struct CameraView: View {
                 errorBanner(err)
             }
 
-            // Screen flash: bright white fill-light for front camera.
-            // Sits below the controls so buttons remain visible and tappable.
+            // Screen flash: bright white border fill-light for front camera.
+            // Edge gradients glow white while keeping the camera preview
+            // visible in the centre — the same technique Snapchat uses.
             if screenFlashOn {
-                Color.white
-                    .ignoresSafeArea()
-                    .transition(.opacity)
+                GeometryReader { geo in
+                    ZStack {
+                        LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom)
+                            .frame(height: geo.size.height * 0.4)
+                            .frame(maxHeight: .infinity, alignment: .top)
+                        LinearGradient(colors: [.white, .clear], startPoint: .bottom, endPoint: .top)
+                            .frame(height: geo.size.height * 0.4)
+                            .frame(maxHeight: .infinity, alignment: .bottom)
+                        LinearGradient(colors: [.white, .clear], startPoint: .leading, endPoint: .trailing)
+                            .frame(width: geo.size.width * 0.28)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        LinearGradient(colors: [.white, .clear], startPoint: .trailing, endPoint: .leading)
+                            .frame(width: geo.size.width * 0.28)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                }
+                .ignoresSafeArea()
+                .transition(.opacity)
             }
 
             VStack {
