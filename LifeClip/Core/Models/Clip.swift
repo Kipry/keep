@@ -54,4 +54,24 @@ final class Clip {
         isDeleted = false
         deletedAt = nil
     }
+
+    /// Copies this clip's video file to a new location and inserts a new Clip
+    /// into `targetProject`. File and model record are fully independent —
+    /// deleting one will not affect the other.
+    func copy(into targetProject: Project, context: ModelContext) {
+        let src = fileURL
+        let ext = src.pathExtension.isEmpty ? "mov" : src.pathExtension
+        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let dst = docs.appendingPathComponent(UUID().uuidString + "." + ext)
+        do {
+            try FileManager.default.copyItem(at: src, to: dst)
+        } catch {
+            return
+        }
+        let newClip = Clip(fileURL: dst, duration: duration, order: targetProject.activeClips.count)
+        newClip.thumbnailData = thumbnailData
+        newClip.project = targetProject
+        targetProject.updatedAt = Date()
+        context.insert(newClip)
+    }
 }

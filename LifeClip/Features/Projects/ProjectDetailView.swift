@@ -21,6 +21,8 @@ struct ProjectDetailView: View {
     @State private var importSelections: [PhotosPickerItem] = []
     @State private var isImporting = false
     @State private var clipToDelete: Clip?
+    @State private var clipToCopy: Clip?
+    @State private var showCopyToast = false
     @State private var selectedTransition: TransitionStyle = .cut
     @State private var selectedQuality: ExportQuality = .p1080
 
@@ -94,6 +96,20 @@ struct ProjectDetailView: View {
                     .animation(.easeInOut(duration: 0.3), value: isExporting)
             }
             if isImporting { progressOverlay(text: "Importing videos…") }
+
+            if showCopyToast {
+                VStack {
+                    Spacer()
+                    Label("Clip kopiert", systemImage: "checkmark.circle.fill")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(.black.opacity(0.85), in: Capsule())
+                        .padding(.bottom, 120)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         // fullScreenCover presentation — owns the full screen, no nav bar involved
         .preferredColorScheme(.dark)
@@ -147,6 +163,16 @@ struct ProjectDetailView: View {
         .onChange(of: importSelections) { _, items in
             guard !items.isEmpty else { return }
             Task { await importVideos(from: items) }
+        }
+        .sheet(item: $clipToCopy) { clip in
+            ProjectPickerSheet(clip: clip, currentProjectID: project.id) {
+                clipToCopy = nil
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showCopyToast = true }
+                Task {
+                    try? await Task.sleep(nanoseconds: 2_200_000_000)
+                    withAnimation { showCopyToast = false }
+                }
+            }
         }
     }
 
@@ -221,7 +247,8 @@ struct ProjectDetailView: View {
                         },
                         onReorder: reorderDragClips,
                         onDropFinish: commitDragOrder,
-                        onDelete: { clipToDelete = $0 }
+                        onDelete: { clipToDelete = $0 },
+                        onCopyToProject: { clipToCopy = $0 }
                     )
                 }
 
@@ -429,6 +456,7 @@ private struct FilmstripRow: View {
     let onReorder: (UUID, UUID) -> Void
     let onDropFinish: () -> Void
     let onDelete: (Clip) -> Void
+    let onCopyToProject: (Clip) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -441,7 +469,8 @@ private struct FilmstripRow: View {
                         onDragStart: { onDragStart(clip) },
                         onDropEntered: { srcID in onReorder(srcID, clip.id) },
                         onDropFinish: onDropFinish,
-                        onDelete: { onDelete(clip) }
+                        onDelete: { onDelete(clip) },
+                        onCopyToProject: { onCopyToProject(clip) }
                     )
                 }
                 let padCount = 4 - min(clips.count, 4)
@@ -482,6 +511,7 @@ private struct FilmCell: View {
     let onDropEntered: (UUID) -> Void
     let onDropFinish: () -> Void
     let onDelete: () -> Void
+    let onCopyToProject: () -> Void
 
     @State private var isPreviewPresented = false
     @State private var clipPlayer: AVPlayer?
@@ -538,6 +568,11 @@ private struct FilmCell: View {
         )
         .animation(.easeInOut(duration: 0.18), value: isDraggingMe)
         .animation(.easeInOut(duration: 0.18), value: isDraggingOther)
+        .contextMenu {
+            Button { onCopyToProject() } label: {
+                Label("In Projekt kopieren …", systemImage: "doc.on.doc")
+            }
+        }
         .onTapGesture { if draggingClipID == nil { isPreviewPresented = true } }
         .onDrag {
             onDragStart()
@@ -588,6 +623,73 @@ private struct FilmCell: View {
             .onDisappear {
                 clipPlayer?.pause()
                 clipPlayer = nil
+            }
+        }
+    }
+}
+
+// MARK: - ProjectPickerSheet
+
+private struct ProjectPickerSheet: View {
+    let clip: Clip
+    let currentProjectID: UUID
+    let onCopied: () -> Void
+
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
+    @Query(
+        filter: #Predicate<Project> { !$0.isDeleted },
+        sort: \Project.updatedAt,
+        order: .reverse
+    )
+    private var allProjects: [Project]
+
+    private var otherProjects: [Project] {
+        allProjects.filter { $0.id != currentProjectID }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List(otherProjects) { project in
+                Button {
+                    clip.copy(into: project, context: modelContext)
+                    try? modelContext.save()
+                    onCopied()
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(project.name)
+                                .font(.body.bold())
+                                .foregroundStyle(.primary)
+                            Text("\(project.activeClips.count) Clips")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .navigationTitle("In Projekt kopieren")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Abbrechen") { dismiss() }
+                }
+            }
+            .overlay {
+                if otherProjects.isEmpty {
+                    ContentUnavailableView(
+                        "Keine weiteren Projekte",
+                        systemImage: "folder",
+                        description: Text("Erstelle ein weiteres Projekt, um Clips dorthin zu kopieren.")
+                    )
+                }
             }
         }
     }
