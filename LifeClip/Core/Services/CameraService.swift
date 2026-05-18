@@ -142,7 +142,7 @@ final class CameraService: NSObject, ObservableObject {
     // MARK: - Front/back flip
 
     func switchCamera() async throws {
-        guard !isRecording, let s = session else { return }
+        guard let s = session else { return }
         let newPosition: CameraPosition = cameraPosition == .back ? .front : .back
         let newInput = try makeVideoInput(position: newPosition)
         s.beginConfiguration()

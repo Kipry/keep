@@ -99,10 +99,10 @@ struct HomeWidgetView: View {
             // Only the REC button triggers record deep-link; tapping elsewhere opens the project.
             if let snap = entry.snapshot {
                 Link(destination: recordURL(for: snap.id)) {
-                    recButton(label: "⏺ REC", compact: false)
+                    recButton(label: "REC", compact: false)
                 }
             } else {
-                recButton(label: "⏺ REC", compact: false)
+                recButton(label: "REC", compact: false)
             }
         }
         .padding(16)
@@ -160,10 +160,10 @@ struct HomeWidgetView: View {
                 Spacer()
                 if let snap = entry.snapshot {
                     Link(destination: recordURL(for: snap.id)) {
-                        recButton(label: "⏺ Record Clip", compact: false)
+                        recButton(label: "Record Clip", compact: false)
                     }
                 } else {
-                    recButton(label: "⏺ Record Clip", compact: false)
+                    recButton(label: "Record Clip", compact: false)
                 }
             }
             .padding(14)

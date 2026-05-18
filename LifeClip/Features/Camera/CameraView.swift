@@ -32,6 +32,7 @@ struct CameraView: View {
             if let session = camera.session {
                 CameraPreviewView(session: session)
                     .ignoresSafeArea()
+                    .highPriorityGesture(doubleTapToFlipGesture)
                     .gesture(tapToFocusGesture)
                     .gesture(pinchToZoomGesture)
             }
@@ -142,16 +143,13 @@ struct CameraView: View {
 
                 Spacer()
 
-                Button {
-                    Task { try? await camera.switchCamera() }
-                } label: {
+                Button { handleCameraFlip() } label: {
                     Image(systemName: "arrow.triangle.2.circlepath.camera")
                         .font(.title2)
                         .foregroundStyle(.white)
                         .frame(width: 52, height: 52)
                         .background(.black.opacity(0.4), in: Circle())
                 }
-                .disabled(camera.isRecording)
             }
             .padding(.horizontal, 36)
         }
@@ -186,6 +184,10 @@ struct CameraView: View {
 
     // MARK: - Gestures
 
+    private var doubleTapToFlipGesture: some Gesture {
+        TapGesture(count: 2).onEnded { handleCameraFlip() }
+    }
+
     private var tapToFocusGesture: some Gesture {
         SpatialTapGesture().onEnded { value in
             let size = UIScreen.main.bounds.size
@@ -217,6 +219,14 @@ struct CameraView: View {
     }
 
     // MARK: - Actions
+
+    private func handleCameraFlip() {
+        Task {
+            try? await camera.switchCamera()
+            // Reset hold-zoom baseline so drag-to-zoom continues from new camera's zoom.
+            if isHoldRecording { holdZoomStart = camera.currentZoomFactor }
+        }
+    }
 
     private func setupCamera() async {
         do { try await camera.startSession() }
