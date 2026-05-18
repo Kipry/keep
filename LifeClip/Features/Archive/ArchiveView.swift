@@ -102,7 +102,7 @@ struct ArchiveView: View {
                 Text("Noch kein Archiv")
                     .font(.title3.bold())
                     .foregroundStyle(.white)
-                Text("Halte ein Projekt lang gedrückt und wähle\n„Archivieren", um es hier abzulegen.")
+                Text("Halte ein Projekt lang gedrückt und wähle\n„Archivieren\", um es hier abzulegen.")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.38))
                     .multilineTextAlignment(.center)
