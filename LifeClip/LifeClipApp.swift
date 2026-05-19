@@ -20,17 +20,6 @@ struct LifeClipApp: App {
 
     @State private var deepLink = AppDeepLink()
 
-    // CloudKit sync via SwiftData. Falls back to local-only if iCloud is
-    // unavailable (no account, simulator without sign-in, etc.).
-    private static let container: ModelContainer = {
-        do {
-            let config = ModelConfiguration(cloudKitDatabase: .automatic)
-            return try ModelContainer(for: Project.self, Clip.self, configurations: config)
-        } catch {
-            return try! ModelContainer(for: Project.self, Clip.self)
-        }
-    }()
-
     init() { Self.registerFonts() }
 
     var body: some Scene {
@@ -39,7 +28,7 @@ struct LifeClipApp: App {
                 .environment(deepLink)
                 .onOpenURL { url in handleDeepLink(url) }
         }
-        .modelContainer(Self.container)
+        .modelContainer(for: [Project.self, Clip.self])
     }
 
     // lifeclip://record/<UUID>  →  open project + start recording
