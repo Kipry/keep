@@ -105,7 +105,7 @@ actor VideoComposer {
     // MARK: - Cut composition
 
     private func composeCut(
-        pairs: [(AVURLAsset, CMTime)],
+        pairs: [(AVURLAsset, CMTimeRange)],
         quality: ExportQuality,
         progressBox: ProgressBox?
     ) async throws -> URL {
@@ -155,7 +155,7 @@ actor VideoComposer {
     //   fade-out  [clipEnd-fade, clipEnd]  if not last
 
     private func composeCrossFade(
-        pairs: [(AVURLAsset, CMTime)],
+        pairs: [(AVURLAsset, CMTimeRange)],
         quality: ExportQuality,
         progressBox: ProgressBox?
     ) async throws -> URL {
