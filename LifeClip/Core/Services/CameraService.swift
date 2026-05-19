@@ -281,9 +281,11 @@ final class CameraService: NSObject, ObservableObject {
     }
 
     private func makeTemporaryURL() -> URL {
-        FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("mov")
+        let clips = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Clips", isDirectory: true)
+        try? FileManager.default.createDirectory(at: clips, withIntermediateDirectories: true)
+        return clips.appendingPathComponent(UUID().uuidString).appendingPathExtension("mov")
     }
 }
 

@@ -22,6 +22,7 @@ struct ProjectDetailView: View {
     @State private var isImporting = false
     @State private var clipToDelete: Clip?
     @State private var clipToCopy: Clip?
+    @State private var clipToTrim: Clip?
     @State private var showCopyToast = false
     @State private var selectedTransition: TransitionStyle = .cut
     @State private var selectedQuality: ExportQuality = .p1080
@@ -164,6 +165,9 @@ struct ProjectDetailView: View {
             guard !items.isEmpty else { return }
             Task { await importVideos(from: items) }
         }
+        .fullScreenCover(item: $clipToTrim) { clip in
+            ClipTrimView(clip: clip) { clipToTrim = nil }
+        }
         .sheet(item: $clipToCopy) { clip in
             ProjectPickerSheet(clip: clip, currentProjectID: project.id) {
                 clipToCopy = nil
@@ -248,7 +252,9 @@ struct ProjectDetailView: View {
                         onReorder: reorderDragClips,
                         onDropFinish: commitDragOrder,
                         onDelete: { clipToDelete = $0 },
-                        onCopyToProject: { clipToCopy = $0 }
+                        onCopyToProject: { clipToCopy = $0 },
+                        onTrim: { clipToTrim = $0 },
+                        onSetAsCover: { setClipAsCover($0) }
                     )
                 }
 
@@ -390,6 +396,17 @@ struct ProjectDetailView: View {
         }
     }
 
+    private func setClipAsCover(_ clip: Clip) {
+        let offset = CMTime(seconds: clip.trimStart, preferredTimescale: 600)
+        Task {
+            if let img = await composer.thumbnail(from: clip.fileURL, at: offset),
+               let data = img.jpegData(compressionQuality: 0.75) {
+                project.coverThumbnailData = data
+                WidgetDataStore.save(project: project)
+            }
+        }
+    }
+
     private func importVideos(from items: [PhotosPickerItem]) async {
         isImporting = true
         defer { isImporting = false; importSelections = [] }
@@ -412,10 +429,12 @@ struct ProjectDetailView: View {
             } while !Task.isCancelled
         }
 
-        let urls = project.activeClips.map { $0.fileURL }
+        let clipInfos = project.activeClips.map {
+            VideoComposer.ClipInfo(url: $0.fileURL, trimStart: $0.trimStart, trimEnd: $0.trimEnd)
+        }
         do {
             let out = try await composer.compose(
-                clips: urls,
+                clips: clipInfos,
                 transition: selectedTransition,
                 quality: selectedQuality,
                 progressBox: box
@@ -457,6 +476,8 @@ private struct FilmstripRow: View {
     let onDropFinish: () -> Void
     let onDelete: (Clip) -> Void
     let onCopyToProject: (Clip) -> Void
+    let onTrim: (Clip) -> Void
+    let onSetAsCover: (Clip) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -470,7 +491,9 @@ private struct FilmstripRow: View {
                         onDropEntered: { srcID in onReorder(srcID, clip.id) },
                         onDropFinish: onDropFinish,
                         onDelete: { onDelete(clip) },
-                        onCopyToProject: { onCopyToProject(clip) }
+                        onCopyToProject: { onCopyToProject(clip) },
+                        onTrim: { onTrim(clip) },
+                        onSetAsCover: { onSetAsCover(clip) }
                     )
                 }
                 let padCount = 4 - min(clips.count, 4)
@@ -512,6 +535,8 @@ private struct FilmCell: View {
     let onDropFinish: () -> Void
     let onDelete: () -> Void
     let onCopyToProject: () -> Void
+    let onTrim: () -> Void
+    let onSetAsCover: () -> Void
 
     @State private var isPreviewPresented = false
     @State private var clipPlayer: AVPlayer?
@@ -569,6 +594,12 @@ private struct FilmCell: View {
         .animation(.easeInOut(duration: 0.18), value: isDraggingMe)
         .animation(.easeInOut(duration: 0.18), value: isDraggingOther)
         .contextMenu {
+            Button { onTrim() } label: {
+                Label("Trimmen", systemImage: "scissors")
+            }
+            Button { onSetAsCover() } label: {
+                Label("Als Cover setzen", systemImage: "photo")
+            }
             Button { onCopyToProject() } label: {
                 Label("In Projekt kopieren …", systemImage: "doc.on.doc")
             }

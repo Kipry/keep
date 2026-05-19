@@ -13,6 +13,14 @@ final class Clip {
     var isDeleted: Bool
     var deletedAt: Date?
     var thumbnailData: Data?
+    var trimStart: Double = 0
+    var trimEnd: Double? = nil
+
+    /// Duration actually used in the compiled video (respects trim points).
+    var effectiveDuration: Double {
+        let end = trimEnd ?? duration
+        return max(0.1, end - trimStart)
+    }
 
     @Relationship(inverse: \Project.clips)
     var project: Project?

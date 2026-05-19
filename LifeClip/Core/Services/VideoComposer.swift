@@ -58,14 +58,20 @@ actor VideoComposer {
 
     // MARK: Public API
 
+    struct ClipInfo: Sendable {
+        let url: URL
+        let trimStart: Double
+        let trimEnd: Double?
+    }
+
     func compose(
-        clips: [URL],
+        clips: [ClipInfo],
         transition: TransitionStyle = .cut,
         quality: ExportQuality = .p1080,
         progressBox: ProgressBox? = nil
     ) async throws -> URL {
         guard !clips.isEmpty else { throw CompositionError.noClips }
-        let pairs = try await loadAssets(urls: clips)
+        let pairs = try await loadAssets(clips: clips)
         switch transition {
         case .cut:
             return try await composeCut(pairs: pairs, quality: quality, progressBox: progressBox)
@@ -111,14 +117,13 @@ actor VideoComposer {
         else { throw CompositionError.trackInsertionFailed }
 
         var cursor = CMTime.zero
-        for (asset, duration) in pairs {
+        for (asset, range) in pairs {
             let srcVideos = try await asset.loadTracks(withMediaType: .video)
             let srcAudios = try await asset.loadTracks(withMediaType: .audio)
             guard let srcVideo = srcVideos.first else { throw CompositionError.assetUnreadable(asset.url) }
-            let range = CMTimeRange(start: .zero, duration: duration)
             try videoTrack.insertTimeRange(range, of: srcVideo, at: cursor)
             if let a = srcAudios.first { try? audioTrack.insertTimeRange(range, of: a, at: cursor) }
-            cursor = CMTimeAdd(cursor, duration)
+            cursor = CMTimeAdd(cursor, range.duration)
         }
 
         await applyPreferredTransform(to: videoTrack, from: pairs[0].0)
@@ -154,7 +159,7 @@ actor VideoComposer {
         quality: ExportQuality,
         progressBox: ProgressBox?
     ) async throws -> URL {
-        let minSecs = pairs.map { $0.1.seconds }.min() ?? 1.0
+        let minSecs = pairs.map { $0.1.duration.seconds }.min() ?? 1.0
         let fade    = CMTime(seconds: min(0.4, minSecs * 0.3), preferredTimescale: 600)
 
         let composition = AVMutableComposition()
@@ -173,19 +178,17 @@ actor VideoComposer {
         var clipStarts = [CMTime]()
         var cursor     = CMTime.zero
 
-        for (i, (asset, duration)) in pairs.enumerated() {
+        for (i, (asset, range)) in pairs.enumerated() {
             let srcVid = try await asset.loadTracks(withMediaType: .video)
             let srcAud = try await asset.loadTracks(withMediaType: .audio)
             guard let v = srcVid.first else { throw CompositionError.assetUnreadable(asset.url) }
-            try vTracks[i % 2].insertTimeRange(CMTimeRange(start: .zero, duration: duration),
-                                               of: v, at: cursor)
+            try vTracks[i % 2].insertTimeRange(range, of: v, at: cursor)
             if let a = srcAud.first {
-                try? aTracks[i % 2].insertTimeRange(CMTimeRange(start: .zero, duration: duration),
-                                                     of: a, at: cursor)
+                try? aTracks[i % 2].insertTimeRange(range, of: a, at: cursor)
             }
             clipStarts.append(cursor)
             if i < pairs.count - 1 {
-                cursor = CMTimeAdd(cursor, CMTimeSubtract(duration, fade))
+                cursor = CMTimeAdd(cursor, CMTimeSubtract(range.duration, fade))
             }
         }
 
@@ -197,7 +200,7 @@ actor VideoComposer {
 
         for i in 0..<pairs.count {
             let clipStart = clipStarts[i]
-            let clipEnd   = CMTimeAdd(clipStart, pairs[i].1)
+            let clipEnd   = CMTimeAdd(clipStart, pairs[i].1.duration)
             let track     = vTracks[i % 2]
             let isFirst   = i == 0
             let isLast    = i == pairs.count - 1
@@ -248,12 +251,15 @@ actor VideoComposer {
 
     // MARK: - Helpers
 
-    private func loadAssets(urls: [URL]) async throws -> [(AVURLAsset, CMTime)] {
-        var result = [(AVURLAsset, CMTime)]()
-        for url in urls {
-            let asset    = AVURLAsset(url: url)
+    private func loadAssets(clips: [ClipInfo]) async throws -> [(AVURLAsset, CMTimeRange)] {
+        var result = [(AVURLAsset, CMTimeRange)]()
+        for info in clips {
+            let asset    = AVURLAsset(url: info.url)
             let duration = try await asset.load(.duration)
-            result.append((asset, duration))
+            let start = CMTime(seconds: info.trimStart, preferredTimescale: 600)
+            let end   = info.trimEnd.map { CMTime(seconds: $0, preferredTimescale: 600) } ?? duration
+            let range = CMTimeRange(start: start, duration: CMTimeSubtract(end, start))
+            result.append((asset, range))
         }
         return result
     }
