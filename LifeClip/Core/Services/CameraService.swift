@@ -59,6 +59,7 @@ final class CameraService: NSObject, ObservableObject {
     @Published var lastRecordedURL: URL?
     @Published var currentZoomFactor: CGFloat = 1.0
     @Published var displayZoomFactor: CGFloat = 1.0
+    @Published var exposureBias: Float = 0
 
     // MARK: Private objects
 
@@ -154,6 +155,11 @@ final class CameraService: NSObject, ObservableObject {
         cameraPosition = newPosition
         if let out = movieOutput { enableStabilization(on: out) }
         setDefaultZoom(on: newInput.device)
+        // New device starts at 0 EV bias; keep published state in sync.
+        try? newInput.device.lockForConfiguration()
+        newInput.device.setExposureTargetBias(0, completionHandler: nil)
+        newInput.device.unlockForConfiguration()
+        exposureBias = 0
     }
 
     // MARK: - Zoom (auto-switches lenses via virtual device)
@@ -182,6 +188,15 @@ final class CameraService: NSObject, ObservableObject {
             device.exposureMode = .autoExpose
         }
         device.unlockForConfiguration()
+    }
+
+    func setExposureBias(_ bias: Float) {
+        guard let device = videoDeviceInput?.device else { return }
+        let clamped = max(device.minExposureTargetBias, min(bias, device.maxExposureTargetBias))
+        try? device.lockForConfiguration()
+        device.setExposureTargetBias(clamped, completionHandler: nil)
+        device.unlockForConfiguration()
+        exposureBias = clamped
     }
 
     func setTorch(_ on: Bool) {

@@ -23,6 +23,9 @@ struct CameraView: View {
     @State private var lastZoom: CGFloat = 1.0
     @State private var showZoomLabel = false
     @State private var zoomLabelTask: Task<Void, Never>?
+    @State private var showExposureControl = false
+    @State private var exposureHideTask: Task<Void, Never>?
+    @State private var dragStartBias: Float = 0
     @State private var torchOn = false
     @State private var screenFlashOn = false
     @State private var savedBrightness: CGFloat = UIScreen.main.brightness
@@ -42,6 +45,25 @@ struct CameraView: View {
 
             if showFocusRing, let pt = focusPoint {
                 FocusRingView().position(pt)
+            }
+
+            if showExposureControl, let pt = focusPoint {
+                let sw = UIScreen.main.bounds.width
+                let sh = UIScreen.main.bounds.height
+                ExposureSliderView(
+                    bias: camera.exposureBias,
+                    onDragStart: { dragStartBias = camera.exposureBias },
+                    onDragChanged: { translation in
+                        let newBias = dragStartBias + Float(-translation) * (3.5 / 104)
+                        camera.setExposureBias(newBias)
+                        scheduleHideExposureControl()
+                    }
+                )
+                .position(
+                    x: min(pt.x + 62, sw - 26),
+                    y: max(min(pt.y, sh - 90), 90)
+                )
+                .transition(.opacity)
             }
 
             if showZoomLabel {
@@ -96,6 +118,7 @@ struct CameraView: View {
         }
         .statusBarHidden(true)
         .animation(.easeInOut(duration: 0.25), value: showZoomLabel)
+        .animation(.easeInOut(duration: 0.2), value: showExposureControl)
     }
 
     // MARK: - Top bar
@@ -227,6 +250,8 @@ struct CameraView: View {
             focusPoint = value.location
             showFocusRing = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { showFocusRing = false }
+            withAnimation { showExposureControl = true }
+            scheduleHideExposureControl()
         }
     }
 
@@ -252,6 +277,8 @@ struct CameraView: View {
 
     private func handleCameraFlip() {
         if screenFlashOn { torchOn = false; deactivateScreenFlash() }
+        showExposureControl = false
+        exposureHideTask?.cancel()
         if camera.isRecording {
             // AVCaptureMovieFileOutput cannot switch inputs mid-recording.
             // Stop the current clip, set a flag, then finishRecording() will
@@ -274,7 +301,9 @@ struct CameraView: View {
 
     private func teardown() {
         stopTimer()
+        exposureHideTask?.cancel()
         if screenFlashOn { deactivateScreenFlash() }
+        camera.setExposureBias(0)
         camera.stopSession()
     }
 
@@ -324,6 +353,15 @@ struct CameraView: View {
         camera.setZoom(newZoom)
         zoomLabelTask?.cancel()
         showZoomLabel = true
+    }
+
+    private func scheduleHideExposureControl() {
+        exposureHideTask?.cancel()
+        exposureHideTask = Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.25)) { showExposureControl = false }
+        }
     }
 
     private func activateScreenFlash() {
@@ -458,6 +496,62 @@ private struct RecordButton: View {
                     isPressing = false
                     onRelease()
                 }
+        )
+    }
+}
+
+// MARK: - ExposureSliderView
+
+private struct ExposureSliderView: View {
+    let bias: Float
+    let onDragStart: () -> Void
+    let onDragChanged: (CGFloat) -> Void
+
+    private let trackH: CGFloat = 104
+    private let halfH:  CGFloat = 52
+    private let displayRange: Float = 3.5
+
+    @State private var isDragging = false
+
+    /// –1 = full bottom (underexposed), 0 = centre, +1 = full top (overexposed)
+    private var norm: CGFloat {
+        CGFloat(max(-1, min(1, bias / displayRange)))
+    }
+
+    var body: some View {
+        ZStack {
+            // Track background
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(.white.opacity(0.22))
+                .frame(width: 2.5, height: trackH)
+
+            // Amber fill from centre to sun position
+            if abs(norm) > 0.02 {
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(Theme.amber.opacity(0.9))
+                    .frame(width: 2.5, height: abs(norm) * halfH)
+                    .offset(y: norm > 0 ? -(abs(norm) * halfH / 2)
+                                        :  (abs(norm) * halfH / 2))
+            }
+
+            // Sun handle — moves up for positive bias, down for negative
+            Image(systemName: "sun.max.fill")
+                .font(.system(size: 15))
+                .foregroundStyle(Theme.amber)
+                .shadow(color: Theme.amber.opacity(0.55), radius: 4)
+                .offset(y: -norm * halfH)
+        }
+        .frame(width: 28, height: trackH)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(.black.opacity(0.42), in: Capsule())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    if !isDragging { isDragging = true; onDragStart() }
+                    onDragChanged(value.translation.height)
+                }
+                .onEnded { _ in isDragging = false }
         )
     }
 }
