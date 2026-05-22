@@ -191,8 +191,10 @@ struct ProjectListView: View {
             // Projects not loaded yet — will retry when `projects` changes.
             return
         }
+        // Always arm the flag so ProjectDetailView opens the camera regardless
+        // of whether the project was already selected.
+        recordOnNextOpen = true
         if selectedProject?.id != id {
-            recordOnNextOpen = true
             selectedProject = project
         }
         // Don't nil out pendingID here — ProjectDetailView will consume it.

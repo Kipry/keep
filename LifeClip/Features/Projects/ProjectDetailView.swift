@@ -115,7 +115,8 @@ struct ProjectDetailView: View {
         // fullScreenCover presentation — owns the full screen, no nav bar involved
         .preferredColorScheme(.dark)
         .onAppear {
-            if recordOnAppear {
+            let shouldRecord = recordOnAppear || deepLink.pendingRecordProjectID == project.id
+            if shouldRecord {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                     isCameraPresented = true
                     deepLink.pendingRecordProjectID = nil
@@ -398,10 +399,12 @@ struct ProjectDetailView: View {
 
     private func setClipAsCover(_ clip: Clip) {
         let offset = CMTime(seconds: clip.trimStart, preferredTimescale: 600)
-        Task {
-            if let img = await composer.thumbnail(from: clip.fileURL, at: offset),
+        let url = clip.fileURL
+        Task { @MainActor in
+            if let img = await composer.thumbnail(from: url, at: offset),
                let data = img.jpegData(compressionQuality: 0.75) {
                 project.coverThumbnailData = data
+                try? modelContext.save()
                 WidgetDataStore.save(project: project)
             }
         }

@@ -197,7 +197,6 @@ struct LockWidgetView: View {
                 .strokeBorder(amber.opacity(0.55), lineWidth: 2)
 
             VStack(spacing: 2) {
-                // Record dot
                 Circle()
                     .fill(amber)
                     .frame(width: 10, height: 10)
@@ -205,6 +204,7 @@ struct LockWidgetView: View {
                     .font(.system(size: 7, weight: .bold, design: .monospaced))
                     .foregroundStyle(amber)
             }
+            .offset(y: 3)
         }
         .widgetURL(entry.snapshot.map { recordURL(for: $0.id) })
     }
