@@ -70,7 +70,9 @@ final class Clip {
         let src = fileURL
         let ext = src.pathExtension.isEmpty ? "mov" : src.pathExtension
         guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-        let dst = docs.appendingPathComponent(UUID().uuidString + "." + ext)
+        let clipsDir = docs.appendingPathComponent("Clips", isDirectory: true)
+        try? FileManager.default.createDirectory(at: clipsDir, withIntermediateDirectories: true)
+        let dst = clipsDir.appendingPathComponent(UUID().uuidString).appendingPathExtension(ext)
         do {
             try FileManager.default.copyItem(at: src, to: dst)
         } catch {
@@ -78,6 +80,8 @@ final class Clip {
         }
         let newClip = Clip(fileURL: dst, duration: duration, order: targetProject.activeClips.count)
         newClip.thumbnailData = thumbnailData
+        newClip.trimStart = trimStart
+        newClip.trimEnd   = trimEnd
         newClip.project = targetProject
         targetProject.updatedAt = Date()
         context.insert(newClip)

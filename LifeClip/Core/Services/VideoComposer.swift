@@ -254,11 +254,21 @@ actor VideoComposer {
     private func loadAssets(clips: [ClipInfo]) async throws -> [(AVURLAsset, CMTimeRange)] {
         var result = [(AVURLAsset, CMTimeRange)]()
         for info in clips {
-            let asset    = AVURLAsset(url: info.url)
-            let duration = try await asset.load(.duration)
-            let start = CMTime(seconds: info.trimStart, preferredTimescale: 600)
-            let end   = info.trimEnd.map { CMTime(seconds: $0, preferredTimescale: 600) } ?? duration
-            let range = CMTimeRange(start: start, duration: CMTimeSubtract(end, start))
+            let asset = AVURLAsset(url: info.url)
+            // Use the video track's actual time range as the ceiling — the container
+            // duration (asset.load(.duration)) is often a few ms longer due to AAC
+            // encoder padding, which causes insertTimeRange to throw.
+            let videoTracks = try await asset.loadTracks(withMediaType: .video)
+            guard let videoTrack = videoTracks.first else {
+                throw CompositionError.assetUnreadable(info.url)
+            }
+            let trackRange = try await videoTrack.load(.timeRange)
+            let trackEnd   = CMTimeRangeGetEnd(trackRange)
+
+            let start  = CMTime(seconds: info.trimStart, preferredTimescale: 600)
+            let rawEnd = info.trimEnd.map { CMTime(seconds: $0, preferredTimescale: 600) } ?? trackEnd
+            let end    = CMTimeMinimum(rawEnd, trackEnd)
+            let range  = CMTimeRange(start: start, duration: CMTimeSubtract(end, start))
             result.append((asset, range))
         }
         return result
