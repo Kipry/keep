@@ -26,6 +26,8 @@ struct ProjectDetailView: View {
     @State private var showCopyToast = false
     @State private var selectedTransition: TransitionStyle = .cut
     @State private var selectedQuality: ExportQuality = .p1080
+    @State private var missingClipCount = 0
+    @State private var showMissingClipsAlert = false
 
     // Drag-and-drop reorder
     @State private var dragClips: [Clip] = []
@@ -162,6 +164,17 @@ struct ProjectDetailView: View {
                isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
             Button("OK", role: .cancel) {}
         } message: { Text(exportError ?? "") }
+        .alert(
+            missingClipCount == 1
+                ? "1 Clip nicht gefunden"
+                : "\(missingClipCount) Clips nicht gefunden",
+            isPresented: $showMissingClipsAlert
+        ) {
+            Button("Trotzdem exportieren") { isExportOptionsPresented = true }
+            Button("Abbrechen", role: .cancel) {}
+        } message: {
+            Text("Die Videodateien dieser Clips fehlen auf dem Gerät und werden beim Export übersprungen.")
+        }
         .onChange(of: importSelections) { _, items in
             guard !items.isEmpty else { return }
             Task { await importVideos(from: items) }
@@ -281,7 +294,7 @@ struct ProjectDetailView: View {
 
     private var exportBar: some View {
         VStack(spacing: 6) {
-            Button { isExportOptionsPresented = true } label: {
+            Button { openExportIfValid() } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "film.stack")
                     Text("Wind the reel · Export")
@@ -381,6 +394,16 @@ struct ProjectDetailView: View {
 
     // MARK: - Data actions
 
+    private func openExportIfValid() {
+        let missing = project.activeClips.filter { !$0.isAvailable }.count
+        if missing > 0 {
+            missingClipCount = missing
+            showMissingClipsAlert = true
+        } else {
+            isExportOptionsPresented = true
+        }
+    }
+
     private func addClip(fileURL: URL, duration: Double) {
         let order = project.activeClips.count
         let clip = Clip(fileURL: fileURL, duration: duration, order: order)
@@ -432,9 +455,9 @@ struct ProjectDetailView: View {
             } while !Task.isCancelled
         }
 
-        let clipInfos = project.activeClips.map {
-            VideoComposer.ClipInfo(url: $0.fileURL, trimStart: $0.trimStart, trimEnd: $0.trimEnd)
-        }
+        let clipInfos = project.activeClips
+            .filter { $0.isAvailable }
+            .map { VideoComposer.ClipInfo(url: $0.fileURL, trimStart: $0.trimStart, trimEnd: $0.trimEnd) }
         do {
             let out = try await composer.compose(
                 clips: clipInfos,
@@ -576,6 +599,23 @@ private struct FilmCell: View {
                 .padding(.vertical, 2)
                 .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 3))
                 .padding(4)
+        }
+        // Missing-file overlay
+        .overlay {
+            if !clip.isAvailable {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 2).fill(.black.opacity(0.72))
+                    VStack(spacing: 3) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.yellow)
+                        Text("Fehlt")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 2))
+            }
         }
         // Delete badge — top-left corner
         .overlay(alignment: .topLeading) {
