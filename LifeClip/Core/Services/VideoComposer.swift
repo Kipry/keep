@@ -127,7 +127,21 @@ actor VideoComposer {
         }
 
         await applyPreferredTransform(to: videoTrack, from: pairs[0].0)
-        return try await export(composition: composition, videoComposition: nil,
+
+        // Explicit video composition forces re-encoding for every export.
+        // Without it, AVFoundation uses codec passthrough, which throws a
+        // FIGSANDBOX error when clips have mixed codecs (HEVC from the camera
+        // mixed with H.264 from Photos imports or copied clips).
+        let size = await renderSize(for: pairs[0].0)
+        let vc = AVMutableVideoComposition()
+        vc.frameDuration = CMTime(value: 1, timescale: 30)
+        vc.renderSize    = size
+        let instr = AVMutableVideoCompositionInstruction()
+        instr.timeRange       = CMTimeRange(start: .zero, duration: cursor)
+        instr.layerInstructions = [AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)]
+        vc.instructions = [instr]
+
+        return try await export(composition: composition, videoComposition: vc,
                                 quality: quality, progressBox: progressBox)
     }
 
