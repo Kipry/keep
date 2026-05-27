@@ -28,6 +28,9 @@
 		A10000000000000000000A3B /* JetBrainsMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */; };
 		A10000000000000000000A4B /* Caveat-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A4A /* Caveat-Regular.ttf */; };
 		A10000000000000000000B1B /* ExportProgressOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000B1A /* ExportProgressOverlay.swift */; };
+		A10000000000000000000C1B /* OnThisDayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000C1A /* OnThisDayView.swift */; };
+		A10000000000000000000C3B /* ClipTrimView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000C3A /* ClipTrimView.swift */; };
+		A10000000000000000000C5B /* ArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000C5A /* ArchiveView.swift */; };
 		C328CD4A2FB728B300443F80 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD492FB728B300443F80 /* WidgetKit.framework */; };
 		C328CD4C2FB728B300443F80 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD4B2FB728B300443F80 /* SwiftUI.framework */; };
 		C328CD592FB728B400443F80 /* LifeClipWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C328CD472FB728B300443F80 /* LifeClipWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -83,7 +86,10 @@
 		A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Regular.ttf"; sourceTree = "<group>"; };
 		A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Medium.ttf"; sourceTree = "<group>"; };
 		A10000000000000000000A4A /* Caveat-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Caveat-Regular.ttf"; sourceTree = "<group>"; };
-		A10000000000000000000B1A /* ExportProgressOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExportProgressOverlay.swift; path = LifeClip/Features/Compilation/ExportProgressOverlay.swift; sourceTree = SOURCE_ROOT; };
+		A10000000000000000000B1A /* ExportProgressOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportProgressOverlay.swift; sourceTree = "<group>"; };
+		A10000000000000000000C1A /* OnThisDayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnThisDayView.swift; sourceTree = "<group>"; };
+		A10000000000000000000C3A /* ClipTrimView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipTrimView.swift; sourceTree = "<group>"; };
+		A10000000000000000000C5A /* ArchiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveView.swift; sourceTree = "<group>"; };
 		C328CD472FB728B300443F80 /* LifeClipWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LifeClipWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C328CD492FB728B300443F80 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		C328CD4B2FB728B300443F80 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -136,7 +142,6 @@
 				C328CD4D2FB728B300443F80 /* LifeClipWidget */,
 				C328CD482FB728B300443F80 /* Frameworks */,
 				A1000000000000000000016A /* Products */,
-				C3B3F53F2FB67D5A00518F91 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -192,6 +197,9 @@
 				A100000000000000000006AA /* Compilation */,
 				A1000000000000000000014A /* Clips */,
 				A1000000000000000000015A /* Projects */,
+				A10000000000000000000C0A /* Today */,
+				A10000000000000000000C2A /* Trim */,
+				A10000000000000000000C4A /* Archive */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -244,8 +252,33 @@
 			isa = PBXGroup;
 			children = (
 				A100000000000000000004AA /* CompilationOptionsView.swift */,
+				A10000000000000000000B1A /* ExportProgressOverlay.swift */,
 			);
 			path = Compilation;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000C0A /* Today */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000C1A /* OnThisDayView.swift */,
+			);
+			path = Today;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000C2A /* Trim */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000C3A /* ClipTrimView.swift */,
+			);
+			path = Trim;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000C4A /* Archive */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000C5A /* ArchiveView.swift */,
+			);
+			path = Archive;
 			sourceTree = "<group>";
 		};
 		A10000000000000000000A5A /* Resources */ = {
@@ -275,14 +308,6 @@
 				C328CD4B2FB728B300443F80 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		C3B3F53F2FB67D5A00518F91 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				A10000000000000000000B1A /* ExportProgressOverlay.swift */,
-			);
-			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -411,6 +436,9 @@
 				A10000000000000000000B1B /* ExportProgressOverlay.swift in Sources */,
 				A100000000000000000007AB /* ProjectPlayerView.swift in Sources */,
 				A100000000000000000009AB /* Theme.swift in Sources */,
+				A10000000000000000000C1B /* OnThisDayView.swift in Sources */,
+				A10000000000000000000C3B /* ClipTrimView.swift in Sources */,
+				A10000000000000000000C5B /* ArchiveView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
