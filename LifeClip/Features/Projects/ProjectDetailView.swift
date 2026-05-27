@@ -591,13 +591,23 @@ private struct FilmCell: View {
             .aspectRatio(4/5, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 2))
 
-            // Duration badge
-            Text(String(format: "%.0fs", clip.duration))
+            // Duration badge — bottom right
+            Text(String(format: "%.0fs", clip.effectiveDuration))
                 .font(.durBadge)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 5)
                 .padding(.vertical, 2)
                 .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 3))
+                .padding(4)
+        }
+        // Time stamp — bottom left
+        .overlay(alignment: .bottomLeading) {
+            Text(clip.createdAt, format: .dateTime.hour().minute())
+                .font(.system(size: 8, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.7))
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 3))
                 .padding(4)
         }
         // Missing-file overlay
