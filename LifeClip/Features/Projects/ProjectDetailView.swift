@@ -405,7 +405,10 @@ struct ProjectDetailView: View {
     }
 
     private func addClip(fileURL: URL, duration: Double) {
-        let order = project.activeClips.count
+        // Commit any stale drag state so the display stays in sync
+        if !dragClips.isEmpty { commitDragOrder() }
+        // Use max existing order + 1 so deletions don't create duplicate order values
+        let order = (project.activeClips.map(\.order).max() ?? -1) + 1
         let clip = Clip(fileURL: fileURL, duration: duration, order: order)
         clip.project = project
         project.updatedAt = Date()
@@ -600,15 +603,20 @@ private struct FilmCell: View {
                 .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 3))
                 .padding(4)
         }
-        // Time stamp — bottom left
+        // Date + time stamp — bottom left
         .overlay(alignment: .bottomLeading) {
-            Text(clip.createdAt, format: .dateTime.hour().minute())
-                .font(.system(size: 8, weight: .medium, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.7))
-                .padding(.horizontal, 4)
-                .padding(.vertical, 2)
-                .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 3))
-                .padding(4)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(clip.createdAt, format: .dateTime.day().month().locale(Locale(identifier: "de_DE")))
+                    .font(.system(size: 7, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.65))
+                Text(clip.createdAt, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute())
+                    .font(.system(size: 8, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+            .padding(.horizontal, 4)
+            .padding(.vertical, 3)
+            .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 3))
+            .padding(4)
         }
         // Missing-file overlay
         .overlay {
