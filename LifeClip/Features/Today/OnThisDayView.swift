@@ -354,7 +354,7 @@ private struct LookbackClipCell: View {
                     .foregroundStyle(.white.opacity(0.18))
             }
 
-            Text(clip.createdAt, format: .dateTime.hour().minute())
+            Text(clip.createdAt, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
                 .font(.system(size: 9, weight: .medium, design: .monospaced))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 4)

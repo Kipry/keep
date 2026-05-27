@@ -609,7 +609,7 @@ private struct FilmCell: View {
                 Text(clip.createdAt, format: .dateTime.day().month().locale(Locale(identifier: "de_DE")))
                     .font(.system(size: 7, weight: .medium))
                     .foregroundStyle(.white.opacity(0.65))
-                Text(clip.createdAt, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute())
+                Text(clip.createdAt, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
                     .font(.system(size: 8, weight: .medium, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.85))
             }
