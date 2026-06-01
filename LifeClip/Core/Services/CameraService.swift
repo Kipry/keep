@@ -236,15 +236,16 @@ final class CameraService: NSObject, ObservableObject {
     private func configureAudioSession() throws {
         let a = AVAudioSession.sharedInstance()
         // .measurement mode disables all DSP (AEC, noise reduction, AGC).
-        // .videoRecording activates Acoustic Echo Cancellation which treats background
-        // music as "echo" and aggressively cancels it from the mic — causing severe
-        // degradation when the user records while music is playing.
-        // .measurement gives raw mic input with no echo cancellation or voice processing.
-        // .defaultToSpeaker is omitted: we never play audio ourselves, and having it set
-        // activates the AEC reference path even for other apps' speaker output.
-        try a.setCategory(.playAndRecord, mode: .measurement,
-                          options: [.allowBluetooth, .allowBluetoothA2DP, .mixWithOthers])
+        // .allowBluetooth / .allowBluetoothA2DP are intentionally omitted: including them
+        // lets iOS route the mic input to AirPods or other Bluetooth devices, which
+        // have significantly worse microphone quality than the iPhone's built-in mics.
+        try a.setCategory(.playAndRecord, mode: .measurement, options: .mixWithOthers)
         try a.setActive(true)
+        // Explicitly select the built-in mic so AirPods or other connected accessories
+        // can never be chosen as the audio source, regardless of system default routing.
+        if let builtInMic = a.availableInputs?.first(where: { $0.portType == .builtInMic }) {
+            try a.setPreferredInput(builtInMic)
+        }
     }
 
     /// Prefers virtual multi-lens cameras (builtInTripleCamera, builtInDualWideCamera, etc.)
