@@ -76,7 +76,6 @@ actor VideoComposer {
         case .cut:
             return try await composeCut(pairs: pairs, quality: quality, progressBox: progressBox)
         case .crossFade:
-            // A single clip has nothing to fade into — treat as cut.
             guard pairs.count >= 2 else {
                 return try await composeCut(pairs: pairs, quality: quality, progressBox: progressBox)
             }
@@ -126,19 +125,25 @@ actor VideoComposer {
             cursor = CMTimeAdd(cursor, range.duration)
         }
 
-        await applyPreferredTransform(to: videoTrack, from: pairs[0].0)
+        // Using an explicit AVMutableVideoComposition forces re-encoding, which fixes the
+        // FIGSANDBOX error for mixed-codec (HEVC + H.264) compositions. Critically,
+        // track.preferredTransform is IGNORED when an explicit video composition is used,
+        // so we must bake the rotation+scale into each layer instruction explicitly.
+        let renderSize = await self.renderSize(for: pairs[0].0)
+        let layerInstr = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
+        var cur = CMTime.zero
+        for (asset, range) in pairs {
+            let xform = await clipTransform(for: asset, into: renderSize)
+            layerInstr.setTransform(xform, at: cur)
+            cur = CMTimeAdd(cur, range.duration)
+        }
 
-        // Explicit video composition forces re-encoding for every export.
-        // Without it, AVFoundation uses codec passthrough, which throws a
-        // FIGSANDBOX error when clips have mixed codecs (HEVC from the camera
-        // mixed with H.264 from Photos imports or copied clips).
-        let size = await renderSize(for: pairs[0].0)
         let vc = AVMutableVideoComposition()
         vc.frameDuration = CMTime(value: 1, timescale: 30)
-        vc.renderSize    = size
+        vc.renderSize    = renderSize
         let instr = AVMutableVideoCompositionInstruction()
         instr.timeRange       = CMTimeRange(start: .zero, duration: cursor)
-        instr.layerInstructions = [AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)]
+        instr.layerInstructions = [layerInstr]
         vc.instructions = [instr]
 
         return try await export(composition: composition, videoComposition: vc,
@@ -146,27 +151,6 @@ actor VideoComposer {
     }
 
     // MARK: - Cross-fade composition
-    //
-    // Clips alternate between trackA (even indices) and trackB (odd indices),
-    // overlapping by `fade` seconds so opacity ramps blend them.
-    //
-    // Timeline for 2 clips D0, D1 with fade f:
-    //
-    //   trackA  |<──── D0 ────>|
-    //   trackB         |<──── D1 ────>|
-    //                  ^
-    //                D0-f
-    //
-    // AVMutableVideoCompositionInstruction time ranges MUST be consecutive
-    // and non-overlapping. Correct partition:
-    //   [0,    D0-f ]  → trackA body
-    //   [D0-f, D0   ]  → A→B crossfade
-    //   [D0,   D0+D1-f] → trackB body
-    //
-    // Per clip i:
-    //   bodyStart = clipStart + fade  (0 for i==0, skips the incoming fade zone)
-    //   bodyEnd   = clipEnd   - fade  (clipEnd for last clip, skips outgoing zone)
-    //   fade-out  [clipEnd-fade, clipEnd]  if not last
 
     private func composeCrossFade(
         pairs: [(AVURLAsset, CMTimeRange)],
@@ -187,8 +171,8 @@ actor VideoComposer {
                                                              preferredTrackID: kCMPersistentTrackID_Invalid)
         else { throw CompositionError.trackInsertionFailed }
 
-        let vTracks    = [trackA, trackB]
-        let aTracks    = [audioTrackA, audioTrackB]
+        let vTracks = [trackA, trackB]
+        let aTracks = [audioTrackA, audioTrackB]
         var clipStarts = [CMTime]()
         var cursor     = CMTime.zero
 
@@ -206,10 +190,7 @@ actor VideoComposer {
             }
         }
 
-        // Both video tracks need the preferred transform so portrait clips render correctly.
-        await applyPreferredTransform(to: trackA, from: pairs[0].0)
-        await applyPreferredTransform(to: trackB, from: pairs[0].0)
-
+        let renderSize = await self.renderSize(for: pairs[0].0)
         var instructions = [AVMutableVideoCompositionInstruction]()
 
         for i in 0..<pairs.count {
@@ -218,32 +199,34 @@ actor VideoComposer {
             let track     = vTracks[i % 2]
             let isFirst   = i == 0
             let isLast    = i == pairs.count - 1
+            let xform     = await clipTransform(for: pairs[i].0, into: renderSize)
 
-            // Body instruction: skip the fade-in zone (except first clip) and
-            // the fade-out zone (except last clip).
             let bodyStart = isFirst ? clipStart : CMTimeAdd(clipStart, fade)
             let bodyEnd   = isLast  ? clipEnd   : CMTimeSubtract(clipEnd, fade)
 
             if CMTimeCompare(bodyEnd, bodyStart) > 0 {
+                let bodyLayer = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
+                bodyLayer.setTransform(xform, at: bodyStart)
+
                 let instr = AVMutableVideoCompositionInstruction()
                 instr.timeRange = CMTimeRange(start: bodyStart,
                                               duration: CMTimeSubtract(bodyEnd, bodyStart))
-                instr.layerInstructions = [
-                    AVMutableVideoCompositionLayerInstruction(assetTrack: track)
-                ]
+                instr.layerInstructions = [bodyLayer]
                 instructions.append(instr)
             }
 
-            // Fade-out instruction into next clip.
             if !isLast {
+                let nextXform = await clipTransform(for: pairs[i + 1].0, into: renderSize)
                 let nextTrack = vTracks[(i + 1) % 2]
                 let fadeStart = CMTimeSubtract(clipEnd, fade)
                 let fadeRange = CMTimeRange(start: fadeStart, duration: fade)
 
                 let outLayer = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
+                outLayer.setTransform(xform, at: fadeStart)
                 outLayer.setOpacityRamp(fromStartOpacity: 1, toEndOpacity: 0, timeRange: fadeRange)
 
                 let inLayer = AVMutableVideoCompositionLayerInstruction(assetTrack: nextTrack)
+                inLayer.setTransform(nextXform, at: fadeStart)
                 inLayer.setOpacityRamp(fromStartOpacity: 0, toEndOpacity: 1, timeRange: fadeRange)
 
                 let fadeInstr = AVMutableVideoCompositionInstruction()
@@ -253,10 +236,9 @@ actor VideoComposer {
             }
         }
 
-        let size = await renderSize(for: pairs[0].0)
-        let vc   = AVMutableVideoComposition()
+        let vc = AVMutableVideoComposition()
         vc.frameDuration = CMTime(value: 1, timescale: 30)
-        vc.renderSize    = size
+        vc.renderSize    = renderSize
         vc.instructions  = instructions
 
         return try await export(composition: composition, videoComposition: vc,
@@ -269,9 +251,6 @@ actor VideoComposer {
         var result = [(AVURLAsset, CMTimeRange)]()
         for info in clips {
             let asset = AVURLAsset(url: info.url)
-            // Use the video track's actual time range as the ceiling — the container
-            // duration (asset.load(.duration)) is often a few ms longer due to AAC
-            // encoder padding, which causes insertTimeRange to throw.
             let videoTracks = try await asset.loadTracks(withMediaType: .video)
             guard let videoTrack = videoTracks.first else {
                 throw CompositionError.assetUnreadable(info.url)
@@ -288,24 +267,57 @@ actor VideoComposer {
         return result
     }
 
-    // Awaited so the transform is set before export begins (a fire-and-forget
-    // Task would race with AVAssetExportSession startup).
-    private func applyPreferredTransform(to track: AVMutableCompositionTrack,
-                                         from asset: AVURLAsset) async {
-        if let src = try? await asset.loadTracks(withMediaType: .video).first,
-           let t   = try? await src.load(.preferredTransform) {
-            track.preferredTransform = t
+    // Returns a transform that maps the clip's native video frame into `renderSize`,
+    // filling the canvas and centering (crops edges if the aspect ratio doesn't match).
+    // When an AVMutableVideoComposition is used, track.preferredTransform is ignored,
+    // so the rotation and scale MUST be embedded in the layer instruction.
+    private func clipTransform(for asset: AVURLAsset, into renderSize: CGSize) async -> CGAffineTransform {
+        guard let track = try? await asset.loadTracks(withMediaType: .video).first,
+              let naturalSize = try? await track.load(.naturalSize),
+              let preferredTransform = try? await track.load(.preferredTransform) else {
+            return .identity
         }
+        return transformFilling(naturalSize: naturalSize,
+                                preferredTransform: preferredTransform,
+                                into: renderSize)
     }
 
+    // Builds a combined transform: preferredTransform → uniform scale to fill canvas → center.
+    private func transformFilling(naturalSize: CGSize,
+                                  preferredTransform: CGAffineTransform,
+                                  into renderSize: CGSize) -> CGAffineTransform {
+        // Display dimensions after applying the rotation/flip from preferredTransform.
+        // CGSize.applying ignores the translation component and takes absolute values.
+        let display = naturalSize.applying(preferredTransform)
+        let dw = abs(display.width)
+        let dh = abs(display.height)
+        guard dw > 0, dh > 0 else { return preferredTransform }
+
+        // Scale to fill: the larger scale dimension fills the canvas; edges are cropped if
+        // the aspect ratio differs. Use min() here for letterbox instead.
+        let scale = max(renderSize.width / dw, renderSize.height / dh)
+
+        // Center offset: shifts the scaled frame so it's centered in the render canvas.
+        let ox = (renderSize.width  - dw * scale) / 2
+        let oy = (renderSize.height - dh * scale) / 2
+
+        // Concatenation order: preferredTransform → scale → translate.
+        return preferredTransform
+            .concatenating(CGAffineTransform(scaleX: scale, y: scale))
+            .concatenating(CGAffineTransform(translationX: ox, y: oy))
+    }
+
+    // Returns the display-oriented render size for the given asset's first video track.
+    // Accounts for the preferredTransform so portrait iPhone videos return (1080, 1920)
+    // rather than the raw sensor size (1920, 1080).
     private func renderSize(for asset: AVURLAsset) async -> CGSize {
         guard let track = try? await asset.loadTracks(withMediaType: .video).first,
               let size  = try? await track.load(.naturalSize),
               let xform = try? await track.load(.preferredTransform) else {
             return CGSize(width: 1080, height: 1920)
         }
-        let isPortrait = xform.b == 1.0 || xform.b == -1.0
-        return isPortrait ? CGSize(width: size.height, height: size.width) : size
+        let display = size.applying(xform)
+        return CGSize(width: abs(display.width), height: abs(display.height))
     }
 
     private func export(
