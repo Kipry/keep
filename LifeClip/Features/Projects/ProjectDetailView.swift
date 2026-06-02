@@ -33,10 +33,25 @@ struct ProjectDetailView: View {
     @State private var dragClips: [Clip] = []
     @State private var draggingClipID: UUID? = nil
 
+    // Multi-select
+    @State private var isSelectMode = false
+    @State private var selectedClipIDs: Set<UUID> = []
+
+    // Clip preview carousel
+    @State private var previewingClipIndex: Int? = nil
+
+    // Bulk copy
+    @State private var clipsToBulkCopy: [Clip]? = nil
+    @State private var copyToastText = "Clip kopiert"
+
     private let composer = VideoComposer()
 
     private var displayClips: [Clip] {
         dragClips.isEmpty ? project.activeClips : dragClips
+    }
+
+    private var selectedClips: [Clip] {
+        displayClips.filter { selectedClipIDs.contains($0.id) }
     }
 
     private var filmRows: [[Clip]] {
@@ -71,7 +86,7 @@ struct ProjectDetailView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
             // Camera FAB — primary capture action, floating above the export bar
-            if !project.activeClips.isEmpty {
+            if !project.activeClips.isEmpty && !isSelectMode {
                 VStack {
                     Spacer()
                     HStack {
@@ -103,7 +118,7 @@ struct ProjectDetailView: View {
             if showCopyToast {
                 VStack {
                     Spacer()
-                    Label("Clip kopiert", systemImage: "checkmark.circle.fill")
+                    Label(copyToastText, systemImage: "checkmark.circle.fill")
                         .font(.subheadline.bold())
                         .foregroundStyle(.white)
                         .padding(.horizontal, 20)
@@ -185,11 +200,38 @@ struct ProjectDetailView: View {
         .sheet(item: $clipToCopy) { clip in
             ProjectPickerSheet(clip: clip, currentProjectID: project.id) {
                 clipToCopy = nil
+                copyToastText = "Clip kopiert"
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showCopyToast = true }
                 Task {
                     try? await Task.sleep(nanoseconds: 2_200_000_000)
                     withAnimation { showCopyToast = false }
                 }
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { clipsToBulkCopy != nil },
+            set: { if !$0 { clipsToBulkCopy = nil } }
+        )) {
+            if let clips = clipsToBulkCopy {
+                BulkProjectPickerSheet(clips: clips, currentProjectID: project.id) {
+                    clipsToBulkCopy = nil
+                    isSelectMode = false
+                    selectedClipIDs.removeAll()
+                    copyToastText = "\(clips.count) Clips kopiert"
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showCopyToast = true }
+                    Task {
+                        try? await Task.sleep(nanoseconds: 2_200_000_000)
+                        withAnimation { showCopyToast = false }
+                    }
+                }
+            }
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { previewingClipIndex != nil },
+            set: { if !$0 { previewingClipIndex = nil } }
+        )) {
+            if let idx = previewingClipIndex {
+                ClipPreviewCarousel(clips: displayClips, initialIndex: idx)
             }
         }
     }
@@ -220,25 +262,41 @@ struct ProjectDetailView: View {
             .frame(maxWidth: .infinity)
 
             // Right actions
-            HStack(spacing: 4) {
-                if !project.activeClips.isEmpty {
-                    Button { isPlayerPresented = true } label: {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 13))
+            HStack(spacing: 2) {
+                if isSelectMode {
+                    Button("Fertig") {
+                        isSelectMode = false
+                        selectedClipIDs.removeAll()
+                    }
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.amber)
+                } else {
+                    if !project.activeClips.isEmpty {
+                        Button { isPlayerPresented = true } label: {
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.white)
+                                .frame(width: 32, height: 32)
+                                .background(.white.opacity(0.1), in: Circle())
+                        }
+                        Button { isSelectMode = true } label: {
+                            Image(systemName: "checkmark.circle")
+                                .font(.system(size: 14))
+                                .foregroundStyle(.white)
+                                .frame(width: 32, height: 32)
+                                .background(.white.opacity(0.1), in: Circle())
+                        }
+                    }
+                    PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(.white)
-                            .frame(width: 36, height: 36)
+                            .frame(width: 32, height: 32)
                             .background(.white.opacity(0.1), in: Circle())
                     }
                 }
-                PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
-                    Image(systemName: "plus")
-                        .font(.title3.bold())
-                        .foregroundStyle(.white)
-                        .frame(width: 36, height: 36)
-                        .background(.white.opacity(0.1), in: Circle())
-                }
             }
-            .frame(width: 80, alignment: .trailing)
+            .frame(width: 100, alignment: .trailing)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -259,6 +317,8 @@ struct ProjectDetailView: View {
                     FilmstripRow(
                         clips: filmRows[rowIdx],
                         draggingClipID: $draggingClipID,
+                        isSelectMode: isSelectMode,
+                        selectedClipIDs: $selectedClipIDs,
                         onDragStart: { clip in
                             if dragClips.isEmpty { dragClips = project.activeClips }
                             draggingClipID = clip.id
@@ -268,26 +328,39 @@ struct ProjectDetailView: View {
                         onDelete: { clipToDelete = $0 },
                         onCopyToProject: { clipToCopy = $0 },
                         onTrim: { clipToTrim = $0 },
-                        onSetAsCover: { setClipAsCover($0) }
+                        onSetAsCover: { setClipAsCover($0) },
+                        onPreview: { clip in
+                            if let idx = displayClips.firstIndex(where: { $0.id == clip.id }) {
+                                previewingClipIndex = idx
+                            }
+                        }
                     )
                 }
 
-                Button { isCameraPresented = true } label: {
-                    Text("+ add to the reel")
-                        .font(.scrawl(22))
-                        .foregroundStyle(.white.opacity(0.25))
-                        .frame(maxWidth: .infinity, minHeight: 88)
-                        .background {
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(.white.opacity(0.12),
-                                        style: StrokeStyle(lineWidth: 1.4, dash: [6]))
-                        }
+                if !isSelectMode {
+                    Button { isCameraPresented = true } label: {
+                        Text("+ add to the reel")
+                            .font(.scrawl(22))
+                            .foregroundStyle(.white.opacity(0.25))
+                            .frame(maxWidth: .infinity, minHeight: 88)
+                            .background {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(.white.opacity(0.12),
+                                            style: StrokeStyle(lineWidth: 1.4, dash: [6]))
+                            }
+                    }
+                    .padding(.horizontal, 14)
                 }
-                .padding(.horizontal, 14)
             }
             .padding(.top, 4)
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) { exportBar }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if isSelectMode {
+                selectionActionBar
+            } else {
+                exportBar
+            }
+        }
     }
 
     // MARK: - Export bar
@@ -310,6 +383,64 @@ struct ProjectDetailView: View {
             }
 
             Text("\(project.activeClips.count) CLIPS → 1 VIDEO · ~\(durationLabel)")
+                .font(.monoCaption)
+                .foregroundStyle(.white.opacity(0.3))
+                .tracking(0.5)
+        }
+        .padding(.horizontal, 22)
+        .padding(.top, 12)
+        .padding(.bottom, 16)
+        .background(
+            LinearGradient(
+                colors: [Theme.background.opacity(0), Theme.background],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+    }
+
+    // MARK: - Selection action bar
+
+    private var selectionActionBar: some View {
+        VStack(spacing: 6) {
+            if selectedClipIDs.isEmpty {
+                Text("Clips antippen zum Auswählen")
+                    .font(.monoCaption)
+                    .foregroundStyle(.white.opacity(0.35))
+                    .tracking(0.4)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+            } else {
+                HStack(spacing: 10) {
+                    Button {
+                        for clip in selectedClips { clip.softDelete() }
+                        try? modelContext.save()
+                        selectedClipIDs.removeAll()
+                        isSelectMode = false
+                    } label: {
+                        Label("\(selectedClipIDs.count) löschen", systemImage: "trash")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(Color.red.opacity(0.75), in: RoundedRectangle(cornerRadius: 12))
+                    }
+
+                    Button {
+                        clipsToBulkCopy = selectedClips
+                    } label: {
+                        Label("\(selectedClipIDs.count) kopieren", systemImage: "doc.on.doc")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Theme.ink)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(Theme.amber, in: RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+            }
+            Text(selectedClipIDs.isEmpty
+                 ? "0 AUSGEWÄHLT"
+                 : "\(selectedClipIDs.count) VON \(displayClips.count) AUSGEWÄHLT")
                 .font(.monoCaption)
                 .foregroundStyle(.white.opacity(0.3))
                 .tracking(0.5)
@@ -500,6 +631,8 @@ struct ProjectDetailView: View {
 private struct FilmstripRow: View {
     let clips: [Clip]
     @Binding var draggingClipID: UUID?
+    let isSelectMode: Bool
+    @Binding var selectedClipIDs: Set<UUID>
     let onDragStart: (Clip) -> Void
     let onReorder: (UUID, UUID) -> Void
     let onDropFinish: () -> Void
@@ -507,6 +640,7 @@ private struct FilmstripRow: View {
     let onCopyToProject: (Clip) -> Void
     let onTrim: (Clip) -> Void
     let onSetAsCover: (Clip) -> Void
+    let onPreview: (Clip) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -516,13 +650,23 @@ private struct FilmstripRow: View {
                     FilmCell(
                         clip: clip,
                         draggingClipID: $draggingClipID,
+                        isSelectMode: isSelectMode,
+                        isSelected: selectedClipIDs.contains(clip.id),
                         onDragStart: { onDragStart(clip) },
                         onDropEntered: { srcID in onReorder(srcID, clip.id) },
                         onDropFinish: onDropFinish,
                         onDelete: { onDelete(clip) },
                         onCopyToProject: { onCopyToProject(clip) },
                         onTrim: { onTrim(clip) },
-                        onSetAsCover: { onSetAsCover(clip) }
+                        onSetAsCover: { onSetAsCover(clip) },
+                        onPreview: { onPreview(clip) },
+                        onToggleSelect: {
+                            if selectedClipIDs.contains(clip.id) {
+                                selectedClipIDs.remove(clip.id)
+                            } else {
+                                selectedClipIDs.insert(clip.id)
+                            }
+                        }
                     )
                 }
                 let padCount = 4 - min(clips.count, 4)
@@ -559,6 +703,8 @@ private struct FilmstripRow: View {
 private struct FilmCell: View {
     let clip: Clip
     @Binding var draggingClipID: UUID?
+    let isSelectMode: Bool
+    let isSelected: Bool
     let onDragStart: () -> Void
     let onDropEntered: (UUID) -> Void
     let onDropFinish: () -> Void
@@ -566,9 +712,8 @@ private struct FilmCell: View {
     let onCopyToProject: () -> Void
     let onTrim: () -> Void
     let onSetAsCover: () -> Void
-
-    @State private var isPreviewPresented = false
-    @State private var clipPlayer: AVPlayer?
+    let onPreview: () -> Void
+    let onToggleSelect: () -> Void
 
     private var isDraggingMe: Bool { draggingClipID == clip.id }
     private var isDraggingOther: Bool { draggingClipID != nil && !isDraggingMe }
@@ -635,38 +780,68 @@ private struct FilmCell: View {
                 .clipShape(RoundedRectangle(cornerRadius: 2))
             }
         }
-        // Delete badge — top-left corner
+        // Top-left badge: delete (normal) or selection indicator (select mode)
         .overlay(alignment: .topLeading) {
-            Button { onDelete() } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 7, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.85))
-                    .frame(width: 18, height: 18)
-                    .background(.black.opacity(0.55), in: Circle())
+            if isSelectMode {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? Theme.amber : Color.black.opacity(0.45))
+                    Circle()
+                        .strokeBorder(isSelected ? Theme.amber : .white.opacity(0.6), lineWidth: 1.5)
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.black)
+                    }
+                }
+                .frame(width: 18, height: 18)
+                .padding(4)
+            } else {
+                Button { onDelete() } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .frame(width: 18, height: 18)
+                        .background(.black.opacity(0.55), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .padding(3)
             }
-            .buttonStyle(.plain)
-            .padding(3)
         }
-        .opacity(isDraggingMe ? 0.3 : 1.0)
+        .opacity(isDraggingMe ? 0.3 : (!isSelectMode || isSelected) ? 1.0 : 0.55)
         .overlay(
             RoundedRectangle(cornerRadius: 2)
-                .stroke(Theme.amber.opacity(isDraggingOther ? 0.35 : 0), lineWidth: 1.5)
+                .stroke(
+                    isSelectMode && isSelected ? Theme.amber :
+                        !isSelectMode && isDraggingOther ? Theme.amber.opacity(0.35) : Color.clear,
+                    lineWidth: isSelectMode && isSelected ? 2 : 1.5
+                )
         )
         .animation(.easeInOut(duration: 0.18), value: isDraggingMe)
         .animation(.easeInOut(duration: 0.18), value: isDraggingOther)
+        .animation(.easeInOut(duration: 0.15), value: isSelected)
         .contextMenu {
-            Button { onTrim() } label: {
-                Label("Trimmen", systemImage: "scissors")
-            }
-            Button { onSetAsCover() } label: {
-                Label("Als Cover setzen", systemImage: "photo")
-            }
-            Button { onCopyToProject() } label: {
-                Label("In Projekt kopieren …", systemImage: "doc.on.doc")
+            if !isSelectMode {
+                Button { onTrim() } label: {
+                    Label("Trimmen", systemImage: "scissors")
+                }
+                Button { onSetAsCover() } label: {
+                    Label("Als Cover setzen", systemImage: "photo")
+                }
+                Button { onCopyToProject() } label: {
+                    Label("In Projekt kopieren …", systemImage: "doc.on.doc")
+                }
             }
         }
-        .onTapGesture { if draggingClipID == nil { isPreviewPresented = true } }
+        .onTapGesture {
+            if isSelectMode {
+                onToggleSelect()
+            } else if draggingClipID == nil {
+                onPreview()
+            }
+        }
         .onDrag {
+            guard !isSelectMode else { return NSItemProvider() }
             onDragStart()
             return NSItemProvider(object: clip.id.uuidString as NSString)
         }
@@ -679,44 +854,6 @@ private struct FilmCell: View {
                 onFinish: onDropFinish
             )
         )
-        // Clip preview — raw AVPlayerLayer, no AVKit chrome
-        .fullScreenCover(isPresented: $isPreviewPresented) {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                if let p = clipPlayer {
-                    VideoLayerView(player: p)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            p.seek(to: .zero)
-                            p.play()
-                        }
-                }
-                VStack {
-                    HStack {
-                        Button { isPreviewPresented = false } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.title3.bold())
-                                .foregroundStyle(.white)
-                                .padding(12)
-                                .background(.black.opacity(0.5), in: Circle())
-                        }
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    Spacer()
-                }
-            }
-            .onAppear {
-                let p = AVPlayer(url: clip.fileURL)
-                clipPlayer = p
-                p.play()
-            }
-            .onDisappear {
-                clipPlayer?.pause()
-                clipPlayer = nil
-            }
-        }
     }
 }
 
@@ -768,6 +905,175 @@ private struct ProjectPickerSheet: View {
                 .buttonStyle(.plain)
             }
             .navigationTitle("In Projekt kopieren")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Abbrechen") { dismiss() }
+                }
+            }
+            .overlay {
+                if otherProjects.isEmpty {
+                    ContentUnavailableView(
+                        "Keine weiteren Projekte",
+                        systemImage: "folder",
+                        description: Text("Erstelle ein weiteres Projekt, um Clips dorthin zu kopieren.")
+                    )
+                }
+            }
+        }
+    }
+}
+
+// MARK: - ClipPreviewCarousel
+
+private struct ClipPreviewCarousel: View {
+    let clips: [Clip]
+    let initialIndex: Int
+    @Environment(\.dismiss) private var dismiss
+    @State private var currentIndex: Int
+    @State private var players: [UUID: AVPlayer] = [:]
+
+    init(clips: [Clip], initialIndex: Int) {
+        self.clips = clips
+        self.initialIndex = initialIndex
+        _currentIndex = State(initialValue: initialIndex)
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            TabView(selection: $currentIndex) {
+                ForEach(clips.indices, id: \.self) { idx in
+                    playerPage(for: clips[idx], index: idx)
+                        .tag(idx)
+                        .ignoresSafeArea()
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .ignoresSafeArea()
+
+            // Chrome overlay
+            VStack {
+                HStack {
+                    Button { dismiss() } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.title3.bold())
+                            .foregroundStyle(.white)
+                            .padding(12)
+                            .background(.black.opacity(0.5), in: Circle())
+                    }
+                    Spacer()
+                    if clips.count > 1 {
+                        Text("\(currentIndex + 1) / \(clips.count)")
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.65))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(.black.opacity(0.4), in: Capsule())
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                Spacer()
+                // Date + time of current clip
+                if currentIndex < clips.count {
+                    let clip = clips[currentIndex]
+                    HStack(spacing: 6) {
+                        Text(clip.createdAt, format: .dateTime.day().month().locale(Locale(identifier: "de_DE")))
+                        Text(clip.createdAt, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
+                            .fontDesign(.monospaced)
+                    }
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .padding(.bottom, 32)
+                }
+            }
+        }
+        .onChange(of: currentIndex) { old, new in
+            if old < clips.count { players[clips[old].id]?.pause() }
+            if new < clips.count {
+                let p = players[clips[new].id]
+                p?.seek(to: .zero)
+                p?.play()
+            }
+        }
+    }
+
+    private func playerPage(for clip: Clip, index: Int) -> some View {
+        ZStack {
+            Color.black
+            if let player = players[clip.id] {
+                VideoLayerView(player: player)
+                    .onTapGesture {
+                        if player.timeControlStatus == .playing { player.pause() }
+                        else { player.play() }
+                    }
+            }
+        }
+        .onAppear {
+            if players[clip.id] == nil {
+                let p = AVPlayer(url: clip.fileURL)
+                players[clip.id] = p
+                if index == currentIndex { p.play() }
+            }
+        }
+        .onDisappear {
+            players[clip.id]?.pause()
+        }
+    }
+}
+
+// MARK: - BulkProjectPickerSheet
+
+private struct BulkProjectPickerSheet: View {
+    let clips: [Clip]
+    let currentProjectID: UUID
+    let onCopied: () -> Void
+
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
+    @Query(
+        filter: #Predicate<Project> { !$0.isDeleted },
+        sort: \Project.updatedAt,
+        order: .reverse
+    )
+    private var allProjects: [Project]
+
+    private var otherProjects: [Project] {
+        allProjects.filter { $0.id != currentProjectID }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List(otherProjects) { project in
+                Button {
+                    for clip in clips {
+                        clip.copy(into: project, context: modelContext)
+                    }
+                    try? modelContext.save()
+                    onCopied()
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(project.name)
+                                .font(.body.bold())
+                                .foregroundStyle(.primary)
+                            Text("\(project.activeClips.count) Clips")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .navigationTitle("\(clips.count) Clips kopieren")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -6,7 +6,7 @@ struct OnThisDayView: View {
     @Query(filter: #Predicate<Clip> { !$0.isDeleted })
     private var allClips: [Clip]
 
-    @Query(filter: #Predicate<Project> { !$0.isDeleted && !$0.isArchived })
+    @Query(filter: #Predicate<Project> { !$0.isDeleted })
     private var projects: [Project]
 
     private var cal: Calendar { .current }
