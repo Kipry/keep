@@ -150,7 +150,7 @@ struct ProjectListView: View {
             }
             Button("Cancel", role: .cancel) { projectToDelete = nil }
         } message: {
-            Text("You can restore it within 30 days.")
+            Text("Das Projekt wird in den Papierkorb verschoben und kann jederzeit wiederhergestellt werden.")
         }
     }
 
