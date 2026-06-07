@@ -976,28 +976,47 @@ private struct ClipPreviewCarousel: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
                 Spacer()
-                // Date + time of current clip
-                if currentIndex < clips.count {
-                    let clip = clips[currentIndex]
-                    HStack(spacing: 6) {
-                        Text(clip.createdAt, format: .dateTime.day().month().locale(Locale(identifier: "de_DE")))
-                        Text(clip.createdAt, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
-                            .fontDesign(.monospaced)
+                // Bottom bar: date/time left, replay button right
+                HStack(alignment: .center) {
+                    if currentIndex < clips.count {
+                        let clip = clips[currentIndex]
+                        HStack(spacing: 6) {
+                            Text(clip.createdAt, format: .dateTime.day().month().locale(Locale(identifier: "de_DE")))
+                            Text(clip.createdAt, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
+                                .fontDesign(.monospaced)
+                        }
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.55))
                     }
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .padding(.bottom, 32)
+                    Spacer()
+                    Button { replayCurrentClip() } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.title3.bold())
+                            .foregroundStyle(.white)
+                            .padding(12)
+                            .background(.black.opacity(0.5), in: Circle())
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 32)
             }
         }
         .onChange(of: currentIndex) { old, new in
             if old < clips.count { players[clips[old].id]?.pause() }
-            if new < clips.count {
-                let p = players[clips[new].id]
-                p?.seek(to: .zero)
-                p?.play()
-            }
+            if new < clips.count { seekAndPlay(clips[new]) }
         }
+    }
+
+    private func replayCurrentClip() {
+        guard currentIndex < clips.count else { return }
+        seekAndPlay(clips[currentIndex])
+    }
+
+    private func seekAndPlay(_ clip: Clip) {
+        guard let player = players[clip.id] else { return }
+        let start = CMTime(seconds: clip.trimStart, preferredTimescale: 600)
+        player.seek(to: start, toleranceBefore: .zero, toleranceAfter: .zero)
+        player.play()
     }
 
     private func playerPage(for clip: Clip, index: Int) -> some View {
@@ -1013,9 +1032,13 @@ private struct ClipPreviewCarousel: View {
         }
         .onAppear {
             if players[clip.id] == nil {
-                let p = AVPlayer(url: clip.fileURL)
+                let item = AVPlayerItem(url: clip.fileURL)
+                if let trimEnd = clip.trimEnd {
+                    item.forwardPlaybackEndTime = CMTime(seconds: trimEnd, preferredTimescale: 600)
+                }
+                let p = AVPlayer(playerItem: item)
                 players[clip.id] = p
-                if index == currentIndex { p.play() }
+                if index == currentIndex { seekAndPlay(clip) }
             }
         }
         .onDisappear {
