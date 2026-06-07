@@ -10,7 +10,7 @@
     <key>CFBundleName</key>
     <string>$(PRODUCT_NAME)</string>
     <key>CFBundleDisplayName</key>
-    <string>LifeClip</string>
+    <string>keep.</string>
     <key>CFBundleVersion</key>
     <string>$(CURRENT_PROJECT_VERSION)</string>
     <key>CFBundleShortVersionString</key>
@@ -24,13 +24,13 @@
 
     <!-- Privacy permissions -->
     <key>NSCameraUsageDescription</key>
-    <string>LifeClip needs camera access to record your daily moments.</string>
+    <string>keep. needs camera access to record your daily moments.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>LifeClip needs microphone access to capture audio with your clips.</string>
+    <string>keep. needs microphone access to capture audio with your clips.</string>
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>LifeClip needs photo library access to import existing videos.</string>
+    <string>keep. needs photo library access to import existing videos.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>LifeClip needs permission to save compiled videos to your photo library.</string>
+    <string>keep. needs permission to save compiled videos to your photo library.</string>
 
     <!-- Background processing -->
     <key>UIBackgroundModes</key>

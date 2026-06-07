@@ -649,7 +649,7 @@
 				DEVELOPMENT_TEAM = PAZWVYN25U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LifeClipWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = LifeClipWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = "keep. Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -684,7 +684,7 @@
 				DEVELOPMENT_TEAM = PAZWVYN25U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LifeClipWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = LifeClipWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = "keep. Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (

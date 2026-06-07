@@ -33,7 +33,7 @@ struct ProjectListView: View {
                                 .font(.eyebrow)
                                 .tracking(2)
                                 .foregroundStyle(.white.opacity(0.35))
-                            Text("LifeClip")
+                            Text("keep.")
                                 .font(.appWordmark)
                                 .foregroundStyle(.white)
                         }
