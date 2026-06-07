@@ -37,11 +37,11 @@ enum CompositionError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noClips:                    return "No clips to compose."
-        case .assetUnreadable(let url):   return "Cannot read asset at \(url.lastPathComponent)."
-        case .trackInsertionFailed:       return "Failed to insert a track into the composition."
-        case .exportSessionFailed:        return "Export session could not be created."
-        case .exportCancelled:            return "Export was cancelled."
+        case .noClips:                    return String(localized: "No clips to compose.")
+        case .assetUnreadable(let url):   return String(localized: "Cannot read asset at \(url.lastPathComponent).")
+        case .trackInsertionFailed:       return String(localized: "Failed to insert a track into the composition.")
+        case .exportSessionFailed:        return String(localized: "Export session could not be created.")
+        case .exportCancelled:            return String(localized: "Export was cancelled.")
         }
     }
 }

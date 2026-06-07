@@ -42,7 +42,7 @@ struct ProjectDetailView: View {
 
     // Bulk copy
     @State private var clipsToBulkCopy: [Clip]? = nil
-    @State private var copyToastText = "Clip kopiert"
+    @State private var copyToastText = String(localized: "Clip Copied")
 
     private let composer = VideoComposer()
 
@@ -181,14 +181,14 @@ struct ProjectDetailView: View {
         } message: { Text(exportError ?? "") }
         .alert(
             missingClipCount == 1
-                ? "1 Clip nicht gefunden"
-                : "\(missingClipCount) Clips nicht gefunden",
+                ? "1 Clip Not Found"
+                : "\(missingClipCount) Clips Not Found",
             isPresented: $showMissingClipsAlert
         ) {
-            Button("Trotzdem exportieren") { isExportOptionsPresented = true }
-            Button("Abbrechen", role: .cancel) {}
+            Button("Export Anyway") { isExportOptionsPresented = true }
+            Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Die Videodateien dieser Clips fehlen auf dem Gerät und werden beim Export übersprungen.")
+            Text("These clip files are missing from your device and will be skipped during export.")
         }
         .onChange(of: importSelections) { _, items in
             guard !items.isEmpty else { return }
@@ -200,7 +200,7 @@ struct ProjectDetailView: View {
         .sheet(item: $clipToCopy) { clip in
             ProjectPickerSheet(clip: clip, currentProjectID: project.id) {
                 clipToCopy = nil
-                copyToastText = "Clip kopiert"
+                copyToastText = String(localized: "Clip Copied")
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showCopyToast = true }
                 Task {
                     try? await Task.sleep(nanoseconds: 2_200_000_000)
@@ -217,7 +217,7 @@ struct ProjectDetailView: View {
                     clipsToBulkCopy = nil
                     isSelectMode = false
                     selectedClipIDs.removeAll()
-                    copyToastText = "\(clips.count) Clips kopiert"
+                    copyToastText = String(localized: "\(clips.count) Clips Copied")
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showCopyToast = true }
                     Task {
                         try? await Task.sleep(nanoseconds: 2_200_000_000)
@@ -264,7 +264,7 @@ struct ProjectDetailView: View {
             // Right actions
             HStack(spacing: 2) {
                 if isSelectMode {
-                    Button("Fertig") {
+                    Button("Done") {
                         isSelectMode = false
                         selectedClipIDs.removeAll()
                     }
@@ -404,7 +404,7 @@ struct ProjectDetailView: View {
     private var selectionActionBar: some View {
         VStack(spacing: 6) {
             if selectedClipIDs.isEmpty {
-                Text("Clips antippen zum Auswählen")
+                Text("Tap clips to select")
                     .font(.monoCaption)
                     .foregroundStyle(.white.opacity(0.35))
                     .tracking(0.4)
@@ -418,7 +418,7 @@ struct ProjectDetailView: View {
                         selectedClipIDs.removeAll()
                         isSelectMode = false
                     } label: {
-                        Label("\(selectedClipIDs.count) löschen", systemImage: "trash")
+                        Label("Delete \(selectedClipIDs.count)", systemImage: "trash")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
@@ -429,7 +429,7 @@ struct ProjectDetailView: View {
                     Button {
                         clipsToBulkCopy = selectedClips
                     } label: {
-                        Label("\(selectedClipIDs.count) kopieren", systemImage: "doc.on.doc")
+                        Label("Copy \(selectedClipIDs.count)", systemImage: "doc.on.doc")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(Theme.ink)
                             .frame(maxWidth: .infinity)
@@ -439,8 +439,8 @@ struct ProjectDetailView: View {
                 }
             }
             Text(selectedClipIDs.isEmpty
-                 ? "0 AUSGEWÄHLT"
-                 : "\(selectedClipIDs.count) VON \(displayClips.count) AUSGEWÄHLT")
+                 ? "0 SELECTED"
+                 : "\(selectedClipIDs.count) OF \(displayClips.count) SELECTED")
                 .font(.monoCaption)
                 .foregroundStyle(.white.opacity(0.3))
                 .tracking(0.5)
@@ -751,7 +751,7 @@ private struct FilmCell: View {
         // Date + time stamp — bottom left
         .overlay(alignment: .bottomLeading) {
             VStack(alignment: .leading, spacing: 1) {
-                Text(clip.createdAt, format: .dateTime.day().month().locale(Locale(identifier: "de_DE")))
+                Text(clip.createdAt, format: .dateTime.day().month().locale(Locale.current))
                     .font(.system(size: 7, weight: .medium))
                     .foregroundStyle(.white.opacity(0.65))
                 Text(clip.createdAt, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
@@ -772,7 +772,7 @@ private struct FilmCell: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 13))
                             .foregroundStyle(.yellow)
-                        Text("Fehlt")
+                        Text("Missing")
                             .font(.system(size: 8, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.7))
                     }
@@ -823,13 +823,13 @@ private struct FilmCell: View {
         .contextMenu {
             if !isSelectMode {
                 Button { onTrim() } label: {
-                    Label("Trimmen", systemImage: "scissors")
+                    Label("Trim", systemImage: "scissors")
                 }
                 Button { onSetAsCover() } label: {
-                    Label("Als Cover setzen", systemImage: "photo")
+                    Label("Set as Cover", systemImage: "photo")
                 }
                 Button { onCopyToProject() } label: {
-                    Label("In Projekt kopieren …", systemImage: "doc.on.doc")
+                    Label("Copy to Project…", systemImage: "doc.on.doc")
                 }
             }
         }
@@ -904,19 +904,19 @@ private struct ProjectPickerSheet: View {
                 }
                 .buttonStyle(.plain)
             }
-            .navigationTitle("In Projekt kopieren")
+            .navigationTitle("Copy to Project")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Abbrechen") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
             }
             .overlay {
                 if otherProjects.isEmpty {
                     ContentUnavailableView(
-                        "Keine weiteren Projekte",
+                        "No Other Projects",
                         systemImage: "folder",
-                        description: Text("Erstelle ein weiteres Projekt, um Clips dorthin zu kopieren.")
+                        description: Text("Create another project to copy clips into.")
                     )
                 }
             }
@@ -981,7 +981,7 @@ private struct ClipPreviewCarousel: View {
                     if currentIndex < clips.count {
                         let clip = clips[currentIndex]
                         HStack(spacing: 6) {
-                            Text(clip.createdAt, format: .dateTime.day().month().locale(Locale(identifier: "de_DE")))
+                            Text(clip.createdAt, format: .dateTime.day().month().locale(Locale.current))
                             Text(clip.createdAt, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
                                 .fontDesign(.monospaced)
                         }
@@ -1096,19 +1096,19 @@ private struct BulkProjectPickerSheet: View {
                 }
                 .buttonStyle(.plain)
             }
-            .navigationTitle("\(clips.count) Clips kopieren")
+            .navigationTitle("Copy \(clips.count) Clips")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Abbrechen") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
             }
             .overlay {
                 if otherProjects.isEmpty {
                     ContentUnavailableView(
-                        "Keine weiteren Projekte",
+                        "No Other Projects",
                         systemImage: "folder",
-                        description: Text("Erstelle ein weiteres Projekt, um Clips dorthin zu kopieren.")
+                        description: Text("Create another project to copy clips into.")
                     )
                 }
             }

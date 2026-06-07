@@ -108,13 +108,13 @@ struct OnThisDayView: View {
                         streakCard
                             .padding(.horizontal, 20)
                         if !lastWeekGroups.isEmpty {
-                            lookbackSection("Letzte Woche", groups: lastWeekGroups)
+                            lookbackSection("Last Week", groups: lastWeekGroups)
                         }
                         if !lastMonthGroups.isEmpty {
-                            lookbackSection("Letzter Monat", groups: lastMonthGroups)
+                            lookbackSection("Last Month", groups: lastMonthGroups)
                         }
                         if !lastYearGroups.isEmpty {
-                            lookbackSection("Letztes Jahr", groups: lastYearGroups)
+                            lookbackSection("Last Year", groups: lastYearGroups)
                         }
                         if lastWeekGroups.isEmpty && lastMonthGroups.isEmpty && lastYearGroups.isEmpty {
                             noLookbackHint
@@ -132,7 +132,7 @@ struct OnThisDayView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Rückblicke")
+            Text("Memories")
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(.white)
             Text(formattedToday)
@@ -143,8 +143,8 @@ struct OnThisDayView: View {
 
     private var formattedToday: String {
         let f = DateFormatter()
-        f.dateFormat = "EEEE, d. MMMM"
-        f.locale = Locale(identifier: "de_DE")
+        f.dateStyle = .full
+        f.timeStyle = .none
         return f.string(from: Date())
     }
 
@@ -156,9 +156,9 @@ struct OnThisDayView: View {
             spacing: 12
         ) {
             statCard(value: "\(allClips.count)",  label: "Clips")
-            statCard(value: "\(projects.count)",  label: "Projekte")
-            statCard(value: "\(recordingDays)",   label: "Aufnahme-Tage")
-            statCard(value: totalDurationLabel,   label: "Gesamtdauer")
+            statCard(value: "\(projects.count)",  label: "Projects")
+            statCard(value: "\(recordingDays)",   label: "Recording Days")
+            statCard(value: totalDurationLabel,   label: "Total Duration")
         }
     }
 
@@ -195,7 +195,7 @@ struct OnThisDayView: View {
                             .foregroundStyle(.white)
                             .contentTransition(.numericText())
                     }
-                    Text("Tage in Folge")
+                    Text("Day Streak")
                         .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.45))
                 }
@@ -204,7 +204,7 @@ struct OnThisDayView: View {
                     Text("\(bestStreak)")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundStyle(.white.opacity(0.55))
-                    Text("Bestleistung")
+                    Text("Best Streak")
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.3))
                 }
@@ -242,7 +242,7 @@ struct OnThisDayView: View {
 
     private func shortDayLabel(for date: Date) -> String {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "de_DE")
+        f.locale = Locale.current
         f.dateFormat = "EE"
         return String(f.string(from: date).prefix(2))
     }
@@ -289,9 +289,9 @@ struct OnThisDayView: View {
 
     private func dayLabel(for date: Date) -> String {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "de_DE")
-        if cal.isDateInToday(date)     { return "Heute" }
-        if cal.isDateInYesterday(date) { return "Gestern" }
+        f.locale = Locale.current
+        if cal.isDateInToday(date)     { return String(localized: "Today") }
+        if cal.isDateInYesterday(date) { return String(localized: "Yesterday") }
         f.dateFormat = "EEE, d. MMM"
         return f.string(from: date)
     }
@@ -300,10 +300,10 @@ struct OnThisDayView: View {
 
     private var noLookbackHint: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Rückblicke erscheinen hier")
+            Text("Memories Appear Here")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.4))
-            Text("Nimm noch ein paar Tage auf — nach einer Woche tauchen hier deine ersten Rückblicke auf.")
+            Text("Record a few more days — your first memories will appear here after a week.")
                 .font(.system(size: 13))
                 .foregroundStyle(.white.opacity(0.25))
                 .lineSpacing(2)
@@ -319,10 +319,10 @@ struct OnThisDayView: View {
             Image(systemName: "film.stack")
                 .font(.system(size: 44))
                 .foregroundStyle(Theme.amber.opacity(0.4))
-            Text("Noch keine Aufnahmen")
+            Text("No Recordings Yet")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.white)
-            Text("Nimm deinen ersten Clip auf —\nbald siehst du hier deine Rückblicke.")
+            Text("Record your first clip —\nyour memories will appear here soon.")
                 .font(.system(size: 14))
                 .foregroundStyle(.white.opacity(0.4))
                 .multilineTextAlignment(.center)

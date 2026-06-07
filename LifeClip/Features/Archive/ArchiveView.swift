@@ -23,11 +23,11 @@ struct ArchiveView: View {
                     // Header
                     HStack(alignment: .bottom) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("ARCHIVIERT")
+                            Text("ARCHIVED")
                                 .font(.eyebrow)
                                 .tracking(2)
                                 .foregroundStyle(.white.opacity(0.35))
-                            Text("Archiv")
+                            Text("Archive")
                                 .font(.appWordmark)
                                 .foregroundStyle(.white)
                         }
@@ -57,12 +57,12 @@ struct ArchiveView: View {
                                     Button {
                                         project.unarchive()
                                     } label: {
-                                        Label("Wiederherstellen", systemImage: "arrow.uturn.up")
+                                        Label("Restore", systemImage: "arrow.uturn.up")
                                     }
                                     Button(role: .destructive) {
                                         projectToDelete = project
                                     } label: {
-                                        Label("Löschen", systemImage: "trash")
+                                        Label("Delete", systemImage: "trash")
                                     }
                                 }
                             }
@@ -88,7 +88,7 @@ struct ArchiveView: View {
             }
             Button("Cancel", role: .cancel) { projectToDelete = nil }
         } message: {
-            Text("Das Projekt wird in den Papierkorb verschoben und kann jederzeit wiederhergestellt werden.")
+            Text("The project will be moved to trash and can be restored at any time.")
         }
     }
 
@@ -99,10 +99,10 @@ struct ArchiveView: View {
                 .font(.system(size: 56))
                 .foregroundStyle(.white.opacity(0.12))
             VStack(spacing: 8) {
-                Text("Noch kein Archiv")
+                Text("No Archive Yet")
                     .font(.title3.bold())
                     .foregroundStyle(.white)
-                Text("Halte ein Projekt lang gedrückt und wähle\n„Archivieren\", um es hier abzulegen.")
+                Text("Long-press a project and choose\n\"Archive\" to move it here.")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.38))
                     .multilineTextAlignment(.center)

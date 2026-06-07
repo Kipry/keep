@@ -57,15 +57,15 @@ struct ClipTrimView: View {
 
     private var topBar: some View {
         HStack {
-            Button("Abbrechen") { onDismiss() }
+            Button("Cancel") { onDismiss() }
                 .font(.system(size: 16))
                 .foregroundStyle(.white.opacity(0.75))
             Spacer()
-            Text("Trimmen")
+            Text("Trim")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.white)
             Spacer()
-            Button("Fertig") { save() }
+            Button("Done") { save() }
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Theme.amber)
         }

@@ -76,7 +76,7 @@ struct ProjectListView: View {
                                     Button {
                                         project.archive()
                                     } label: {
-                                        Label("Archivieren", systemImage: "archivebox")
+                                        Label("Archive", systemImage: "archivebox")
                                     }
                                     Button(role: .destructive) {
                                         projectToDelete = project
@@ -150,7 +150,7 @@ struct ProjectListView: View {
             }
             Button("Cancel", role: .cancel) { projectToDelete = nil }
         } message: {
-            Text("Das Projekt wird in den Papierkorb verschoben und kann jederzeit wiederhergestellt werden.")
+            Text("The project will be moved to trash and can be restored at any time.")
         }
     }
 

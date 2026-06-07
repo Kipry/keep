@@ -1,0 +1,351 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+
+    "Memories" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Rückblicke" } } }
+    },
+    "Recording Days" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Aufnahme-Tage" } } }
+    },
+    "Total Duration" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gesamtdauer" } } }
+    },
+    "Projects" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Projekte" } } }
+    },
+    "Day Streak" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Tage in Folge" } } }
+    },
+    "Best Streak" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Bestleistung" } } }
+    },
+    "Last Week" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Letzte Woche" } } }
+    },
+    "Last Month" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Letzter Monat" } } }
+    },
+    "Last Year" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Letztes Jahr" } } }
+    },
+    "Memories Appear Here" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Rückblicke erscheinen hier" } } }
+    },
+    "Record a few more days — your first memories will appear here after a week." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Nimm noch ein paar Tage auf — nach einer Woche tauchen hier deine ersten Rückblicke auf." } } }
+    },
+    "No Recordings Yet" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Noch keine Aufnahmen" } } }
+    },
+    "Record your first clip —\nyour memories will appear here soon." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Nimm deinen ersten Clip auf —\nbald siehst du hier deine Rückblicke." } } }
+    },
+    "Today" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Heute" } } }
+    },
+    "Yesterday" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gestern" } } }
+    },
+
+    "ARCHIVED" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "ARCHIVIERT" } } }
+    },
+    "Archive" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Archiv" } } }
+    },
+    "Restore" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Wiederherstellen" } } }
+    },
+    "Delete" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Löschen" } } }
+    },
+    "No Archive Yet" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Noch kein Archiv" } } }
+    },
+    "Long-press a project and choose\n\"Archive\" to move it here." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Halte ein Projekt lang gedrückt und wähle\n„Archivieren", um es hier abzulegen." } } }
+    },
+
+    "Cancel" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Abbrechen" } } }
+    },
+    "Done" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Fertig" } } }
+    },
+    "Trim" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Trimmen" } } }
+    },
+
+    "Delete this clip?" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Diesen Clip löschen?" } } }
+    },
+    "Delete Clip" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Clip löschen" } } }
+    },
+    "Export Failed" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Export fehlgeschlagen" } } }
+    },
+    "1 Clip Not Found" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "1 Clip nicht gefunden" } } }
+    },
+    "Export Anyway" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Trotzdem exportieren" } } }
+    },
+    "These clip files are missing from your device and will be skipped during export." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Die Videodateien dieser Clips fehlen auf dem Gerät und werden beim Export übersprungen." } } }
+    },
+    "Tap clips to select" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Clips antippen zum Auswählen" } } }
+    },
+    "0 SELECTED" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "0 AUSGEWÄHLT" } } }
+    },
+    "Set as Cover" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Als Cover setzen" } } }
+    },
+    "Copy to Project…" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "In Projekt kopieren …" } } }
+    },
+    "Missing" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Fehlt" } } }
+    },
+    "Copy to Project" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "In Projekt kopieren" } } }
+    },
+    "No Other Projects" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Keine weiteren Projekte" } } }
+    },
+    "Create another project to copy clips into." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Erstelle ein weiteres Projekt, um Clips dorthin zu kopieren." } } }
+    },
+    "Clip Copied" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Clip kopiert" } } }
+    },
+    "No clips yet" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Noch keine Clips" } } }
+    },
+    "Record a clip or import from your library." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Nimm einen Clip auf oder importiere aus deiner Mediathek." } } }
+    },
+    "Record" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Aufnehmen" } } }
+    },
+    "Import" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Importieren" } } }
+    },
+    "Importing videos…" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Videos werden importiert…" } } }
+    },
+    "+ add to the reel" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "+ zum Film hinzufügen" } } }
+    },
+    "Wind the reel · Export" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Film zusammenstellen · Export" } } }
+    },
+    "The project will be moved to trash and can be restored at any time." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Das Projekt wird in den Papierkorb verschoben und kann jederzeit wiederhergestellt werden." } } }
+    },
+
+    "YOUR LIBRARY" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "DEINE BIBLIOTHEK" } } }
+    },
+    "New Project" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Neues Projekt" } } }
+    },
+    "Project name" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Projektname" } } }
+    },
+    "Create" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Erstellen" } } }
+    },
+    "Rename" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Umbenennen" } } }
+    },
+    "Give your project a name — e.g. \"Summer 2026\"." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gib deinem Projekt einen Namen – z.B. „Sommer 2026"." } } }
+    },
+    "Rename Project" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Projekt umbenennen" } } }
+    },
+    "Move to Trash" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "In den Papierkorb" } } }
+    },
+    "No projects yet" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Noch keine Projekte" } } }
+    },
+    "Tap + to create your first project\nand start capturing moments." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Tippe auf +, um dein erstes Projekt zu erstellen\nund mit dem Aufnehmen zu beginnen." } } }
+    },
+
+    "TRANSITION" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "ÜBERGANG" } } }
+    },
+    "QUALITY" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "QUALITÄT" } } }
+    },
+    "Largest file" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Größte Datei" } } }
+    },
+    "Smaller file" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Kleinere Datei" } } }
+    },
+    "Keep holding…" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Halten…" } } }
+    },
+    "Hold to Export" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gedrückt halten zum Exportieren" } } }
+    },
+    "COMPILING YOUR REEL" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "DEIN FILM WIRD ZUSAMMENGESTELLT" } } }
+    },
+
+    "Camera access denied. Enable it in Settings." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Kein Kamerazugriff. Bitte in den Einstellungen aktivieren." } } }
+    },
+    "No camera found on this device." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Keine Kamera gefunden." } } }
+    },
+    "No microphone found on this device." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Kein Mikrofon gefunden." } } }
+    },
+    "Could not configure the capture session." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Aufnahme konnte nicht konfiguriert werden." } } }
+    },
+    "Could not attach a recording output." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Aufnahmeausgang konnte nicht eingerichtet werden." } } }
+    },
+    "Audio track is not connected." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Audiospur nicht verbunden." } } }
+    },
+    "No clips to compose." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Keine Clips zum Zusammenstellen." } } }
+    },
+    "Failed to insert a track into the composition." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Spur konnte nicht zur Komposition hinzugefügt werden." } } }
+    },
+    "Export session could not be created." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Exportsitzung konnte nicht erstellt werden." } } }
+    },
+    "Export was cancelled." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Export abgebrochen." } } }
+    },
+
+    "%lld Clips Not Found" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld Clips nicht gefunden" } } }
+    },
+    "Delete %lld" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld löschen" } } }
+    },
+    "Copy %lld" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld kopieren" } } }
+    },
+    "%lld OF %lld SELECTED" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld VON %lld AUSGEWÄHLT" } } }
+    },
+    "%lld Clips Copied" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld Clips kopiert" } } }
+    },
+    "Copy %lld Clips" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld Clips kopieren" } } }
+    },
+    "Recording failed: %@" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Aufnahme fehlgeschlagen: %@" } } }
+    },
+    "Cannot read asset at %@." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Datei kann nicht gelesen werden: %@." } } }
+    },
+    "Enter a new name for \"%@\"." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gib einen neuen Namen für „%@" ein." } } }
+    },
+    "Delete \"%@\"?" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "„%@" löschen?" } } }
+    }
+
+  },
+  "version" : "1.0"
+}

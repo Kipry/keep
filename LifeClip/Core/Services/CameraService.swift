@@ -15,13 +15,13 @@ enum CameraError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .permissionDenied:       return "Camera access denied. Enable it in Settings."
-        case .deviceNotFound:         return "No camera found on this device."
-        case .audioDeviceNotFound:    return "No microphone found on this device."
-        case .sessionSetupFailed:     return "Could not configure the capture session."
-        case .outputSetupFailed:      return "Could not attach a recording output."
-        case .audioConnectionMissing: return "Audio track is not connected."
-        case .recordingFailed(let e): return "Recording failed: \(e.localizedDescription)"
+        case .permissionDenied:       return String(localized: "Camera access denied. Enable it in Settings.")
+        case .deviceNotFound:         return String(localized: "No camera found on this device.")
+        case .audioDeviceNotFound:    return String(localized: "No microphone found on this device.")
+        case .sessionSetupFailed:     return String(localized: "Could not configure the capture session.")
+        case .outputSetupFailed:      return String(localized: "Could not attach a recording output.")
+        case .audioConnectionMissing: return String(localized: "Audio track is not connected.")
+        case .recordingFailed(let e): return String(localized: "Recording failed: \(e.localizedDescription)")
         }
     }
 }
