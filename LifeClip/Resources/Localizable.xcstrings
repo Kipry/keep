@@ -85,7 +85,7 @@
     },
     "Long-press a project and choose\n\"Archive\" to move it here." : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Halte ein Projekt lang gedrückt und wähle\n„Archivieren", um es hier abzulegen." } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Halte ein Projekt lang gedrückt und wähle\n\"Archivieren\", um es hier abzulegen." } } }
     },
 
     "Cancel" : {
@@ -216,7 +216,7 @@
     },
     "Give your project a name — e.g. \"Summer 2026\"." : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gib deinem Projekt einen Namen – z.B. „Sommer 2026"." } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gib deinem Projekt einen Namen – z.B. \"Sommer 2026\"." } } }
     },
     "Rename Project" : {
       "extractionState" : "manual",
@@ -339,11 +339,11 @@
     },
     "Enter a new name for \"%@\"." : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gib einen neuen Namen für „%@" ein." } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gib einen neuen Namen für \"%@\" ein." } } }
     },
     "Delete \"%@\"?" : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "„%@" löschen?" } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "\"%@\" löschen?" } } }
     }
 
   },
