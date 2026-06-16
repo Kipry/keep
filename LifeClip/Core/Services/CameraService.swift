@@ -236,10 +236,16 @@ final class CameraService: NSObject, ObservableObject {
     private func configureAudioSession() throws {
         let a = AVAudioSession.sharedInstance()
         // .measurement mode disables all DSP (AEC, noise reduction, AGC).
-        // .allowBluetooth / .allowBluetoothA2DP are intentionally omitted: including them
-        // lets iOS route the mic input to AirPods or other Bluetooth devices, which
-        // have significantly worse microphone quality than the iPhone's built-in mics.
-        try a.setCategory(.playAndRecord, mode: .measurement, options: .mixWithOthers)
+        //
+        // Bluetooth routing — two profiles with very different behaviour:
+        //   • .allowBluetooth     = HFP, a BIDIRECTIONAL profile. Including it lets iOS route
+        //     the mic INPUT to AirPods/Bluetooth headsets, which have far worse microphone
+        //     quality than the iPhone's built-in mics. Intentionally OMITTED.
+        //   • .allowBluetoothA2DP = A2DP, an OUTPUT-ONLY profile (no microphone path at all).
+        //     Including it keeps background music playing over connected Bluetooth speakers /
+        //     headphones during recording, while the recording itself stays on the built-in mics.
+        try a.setCategory(.playAndRecord, mode: .measurement,
+                          options: [.mixWithOthers, .allowBluetoothA2DP])
         try a.setActive(true)
         // Explicitly select the built-in mic so AirPods or other connected accessories
         // can never be chosen as the audio source, regardless of system default routing.
