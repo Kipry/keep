@@ -6,6 +6,7 @@ import UIKit
 
 enum CameraError: LocalizedError {
     case permissionDenied
+    case microphoneDenied
     case deviceNotFound
     case audioDeviceNotFound
     case sessionSetupFailed
@@ -16,12 +17,22 @@ enum CameraError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .permissionDenied:       return String(localized: "Camera access denied. Enable it in Settings.")
+        case .microphoneDenied:       return String(localized: "Microphone access denied. Enable it in Settings.")
         case .deviceNotFound:         return String(localized: "No camera found on this device.")
         case .audioDeviceNotFound:    return String(localized: "No microphone found on this device.")
         case .sessionSetupFailed:     return String(localized: "Could not configure the capture session.")
         case .outputSetupFailed:      return String(localized: "Could not attach a recording output.")
         case .audioConnectionMissing: return String(localized: "Audio track is not connected.")
         case .recordingFailed(let e): return String(localized: "Recording failed: \(e.localizedDescription)")
+        }
+    }
+
+    /// True for the two cases that require the user to grant access in Settings,
+    /// so the UI can show a dedicated permission screen instead of an error banner.
+    var isPermissionDenial: Bool {
+        switch self {
+        case .permissionDenied, .microphoneDenied: return true
+        default:                                    return false
         }
     }
 }
@@ -74,6 +85,11 @@ final class CameraService: NSObject, ObservableObject {
     func startSession(position: CameraPosition = .back) async throws {
         guard session == nil else { return }
         cameraPosition = position
+
+        // Explicitly request camera + microphone access up front. This surfaces a
+        // clear, actionable permission-denied error to the UI instead of silently
+        // producing a black/silent session, and triggers the system prompt on first use.
+        try await ensurePermissions()
 
         // AVAudioSession must be configured BEFORE the capture session starts.
         // Skipping this is the #1 reason audio is silent on clips 2+.
@@ -204,6 +220,35 @@ final class CameraService: NSObject, ObservableObject {
         try? device.lockForConfiguration()
         device.torchMode = on ? .on : .off
         device.unlockForConfiguration()
+    }
+
+    // MARK: - Permissions
+
+    /// Verifies camera + microphone authorization, requesting it on first use.
+    /// Throws `.permissionDenied` / `.microphoneDenied` when the user has declined,
+    /// so the UI can route to a dedicated "Open Settings" screen.
+    private func ensurePermissions() async throws {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            break
+        case .notDetermined:
+            guard await AVCaptureDevice.requestAccess(for: .video) else {
+                throw CameraError.permissionDenied
+            }
+        default: // .denied, .restricted
+            throw CameraError.permissionDenied
+        }
+
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
+            break
+        case .notDetermined:
+            guard await AVCaptureDevice.requestAccess(for: .audio) else {
+                throw CameraError.microphoneDenied
+            }
+        default: // .denied, .restricted
+            throw CameraError.microphoneDenied
+        }
     }
 
     // MARK: - Private helpers

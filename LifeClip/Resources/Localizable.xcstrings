@@ -344,6 +344,30 @@
     "Delete \"%@\"?" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "\"%@\" löschen?" } } }
+    },
+    "Microphone access denied. Enable it in Settings." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Mikrofonzugriff verweigert. Aktiviere ihn in den Einstellungen." } } }
+    },
+    "Camera Access Needed" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Kamerazugriff erforderlich" } } }
+    },
+    "Microphone Access Needed" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Mikrofonzugriff erforderlich" } } }
+    },
+    "keep. needs camera access to record your daily moments. Turn it on in Settings to continue." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "keep. benötigt Kamerazugriff, um deine täglichen Momente aufzunehmen. Aktiviere ihn in den Einstellungen, um fortzufahren." } } }
+    },
+    "keep. needs microphone access to capture sound with your clips. Turn it on in Settings to continue." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "keep. benötigt Mikrofonzugriff, um den Ton deiner Clips aufzunehmen. Aktiviere ihn in den Einstellungen, um fortzufahren." } } }
+    },
+    "Open Settings" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Einstellungen öffnen" } } }
     }
 
   },

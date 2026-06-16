@@ -5,6 +5,8 @@ struct CameraView: View {
     var onSave: (URL, Double) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var camera = CameraService()
 
     @State private var recordingStart: Date?
@@ -30,11 +32,41 @@ struct CameraView: View {
     @State private var screenFlashOn = false
     @State private var savedBrightness: CGFloat = UIScreen.main.brightness
     @State private var setupError: String?
+    @State private var deniedPermission: CameraError?
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
+            if let denied = deniedPermission {
+                permissionDeniedView(denied)
+            } else {
+                cameraUI
+            }
+        }
+        .task { await setupCamera() }
+        .onDisappear { teardown() }
+        .onChange(of: scenePhase) { _, phase in
+            // Returning from Settings after granting access: retry setup so the
+            // user isn't stranded on the permission screen.
+            if phase == .active, deniedPermission != nil {
+                deniedPermission = nil
+                Task { await setupCamera() }
+            }
+        }
+        .onChange(of: camera.lastRecordedURL) { _, url in
+            guard let url else { return }
+            finishRecording(url: url)
+        }
+        .statusBarHidden(true)
+        .animation(.easeInOut(duration: 0.25), value: showZoomLabel)
+        .animation(.easeInOut(duration: 0.2), value: showExposureControl)
+    }
+
+    // MARK: - Camera UI
+
+    private var cameraUI: some View {
+        ZStack {
             if let session = camera.session {
                 CameraPreviewView(session: session)
                     .ignoresSafeArea()
@@ -110,15 +142,66 @@ struct CameraView: View {
                 bottomBar
             }
         }
-        .task { await setupCamera() }
-        .onDisappear { teardown() }
-        .onChange(of: camera.lastRecordedURL) { _, url in
-            guard let url else { return }
-            finishRecording(url: url)
+    }
+
+    // MARK: - Permission denied
+
+    private func permissionDeniedView(_ error: CameraError) -> some View {
+        let isCamera: Bool = { if case .permissionDenied = error { return true } else { return false } }()
+        let title: LocalizedStringKey = isCamera ? "Camera Access Needed" : "Microphone Access Needed"
+        let message: LocalizedStringKey = isCamera
+            ? "keep. needs camera access to record your daily moments. Turn it on in Settings to continue."
+            : "keep. needs microphone access to capture sound with your clips. Turn it on in Settings to continue."
+        return VStack(spacing: 0) {
+            HStack {
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark")
+                        .font(.title3.bold())
+                        .foregroundStyle(.white)
+                        .padding(12)
+                        .background(.black.opacity(0.4), in: Circle())
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+
+            Spacer()
+
+            VStack(spacing: 16) {
+                Image(systemName: isCamera ? "video.slash.fill" : "mic.slash.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(Theme.amber)
+
+                Text(title)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+
+                Text(message)
+                    .font(.system(size: 15))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+                    .padding(.horizontal, 32)
+
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                } label: {
+                    Text("Open Settings")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.ink)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                        .background(.white, in: Capsule())
+                }
+                .padding(.horizontal, 40)
+                .padding(.top, 8)
+            }
+
+            Spacer()
+            Spacer()
         }
-        .statusBarHidden(true)
-        .animation(.easeInOut(duration: 0.25), value: showZoomLabel)
-        .animation(.easeInOut(duration: 0.2), value: showExposureControl)
     }
 
     // MARK: - Top bar
@@ -296,6 +379,9 @@ struct CameraView: View {
 
     private func setupCamera() async {
         do { try await camera.startSession() }
+        catch let error as CameraError where error.isPermissionDenial {
+            deniedPermission = error
+        }
         catch { setupError = error.localizedDescription }
     }
 
