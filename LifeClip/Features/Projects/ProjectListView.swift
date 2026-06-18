@@ -19,6 +19,13 @@ struct ProjectListView: View {
     @State private var renameText = ""
     @State private var selectedProject: Project?
     @State private var recordOnNextOpen = false
+    @State private var searchText = ""
+    @State private var isSearching = false
+
+    private var displayedProjects: [Project] {
+        guard !searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return projects }
+        return projects.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -27,23 +34,49 @@ struct ProjectListView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     // ── Header ───────────────────────────────────────────
-                    HStack(alignment: .bottom) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("YOUR LIBRARY")
-                                .font(.eyebrow)
-                                .tracking(2)
-                                .foregroundStyle(.white.opacity(0.35))
-                            Text("keep.")
-                                .font(.appWordmark)
-                                .foregroundStyle(.white)
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(alignment: .bottom) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("YOUR LIBRARY")
+                                    .font(.eyebrow)
+                                    .tracking(2)
+                                    .foregroundStyle(.white.opacity(0.35))
+                                Text("keep.")
+                                    .font(.appWordmark)
+                                    .foregroundStyle(.white)
+                            }
+                            Spacer()
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) { isSearching.toggle() }
+                                if !isSearching { searchText = "" }
+                            } label: {
+                                Image(systemName: isSearching ? "xmark" : "magnifyingglass")
+                                    .font(.body.bold())
+                                    .foregroundStyle(isSearching ? Theme.amber : .white)
+                                    .frame(width: 36, height: 36)
+                                    .background(.white.opacity(0.1), in: Circle())
+                            }
                         }
-                        Spacer()
-                        Button {} label: {
-                            Image(systemName: "magnifyingglass")
-                                .font(.body.bold())
-                                .foregroundStyle(.white)
-                                .frame(width: 36, height: 36)
-                                .background(.white.opacity(0.1), in: Circle())
+
+                        if isSearching {
+                            HStack(spacing: 10) {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundStyle(.white.opacity(0.4))
+                                TextField("Search projects…", text: $searchText)
+                                    .foregroundStyle(.white)
+                                    .tint(Theme.amber)
+                                    .autocorrectionDisabled()
+                                if !searchText.isEmpty {
+                                    Button { searchText = "" } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundStyle(.white.opacity(0.3))
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(Color(white: 0.12), in: RoundedRectangle(cornerRadius: 12))
+                            .transition(.move(edge: .top).combined(with: .opacity))
                         }
                     }
                     .padding(.horizontal, 24)
@@ -51,8 +84,8 @@ struct ProjectListView: View {
                     .padding(.bottom, 24)
 
                     // ── Grid ─────────────────────────────────────────────
-                    if projects.isEmpty {
-                        emptyState
+                    if displayedProjects.isEmpty {
+                        isSearching ? AnyView(noResultsState) : AnyView(emptyState)
                     } else {
                         LazyVGrid(
                             columns: [
@@ -61,7 +94,7 @@ struct ProjectListView: View {
                             ],
                             spacing: 14
                         ) {
-                            ForEach(projects) { project in
+                            ForEach(displayedProjects) { project in
                                 Button { selectedProject = project } label: {
                                     ProjectCard(project: project)
                                 }
@@ -154,7 +187,22 @@ struct ProjectListView: View {
         }
     }
 
-    // MARK: - Empty state
+    // MARK: - Empty / no-results states
+
+    private var noResultsState: some View {
+        VStack(spacing: 16) {
+            Spacer(minLength: 60)
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 40))
+                .foregroundStyle(.white.opacity(0.12))
+            Text("No results for \"\(searchText)\"")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.38))
+                .multilineTextAlignment(.center)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+    }
 
     private var emptyState: some View {
         VStack(spacing: 20) {

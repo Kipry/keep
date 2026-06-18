@@ -31,6 +31,7 @@
 		A10000000000000000000C1B /* OnThisDayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000C1A /* OnThisDayView.swift */; };
 		A10000000000000000000C3B /* ClipTrimView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000C3A /* ClipTrimView.swift */; };
 		A10000000000000000000C5B /* ArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000C5A /* ArchiveView.swift */; };
+		A10000000000000000000F1B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000F1A /* SettingsView.swift */; };
 		C328CD4A2FB728B300443F80 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD492FB728B300443F80 /* WidgetKit.framework */; };
 		C328CD4C2FB728B300443F80 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD4B2FB728B300443F80 /* SwiftUI.framework */; };
 		C328CD592FB728B400443F80 /* LifeClipWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C328CD472FB728B300443F80 /* LifeClipWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -94,6 +95,7 @@
 		A10000000000000000000C5A /* ArchiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveView.swift; sourceTree = "<group>"; };
 		A10000000000000000000D1A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A10000000000000000000E1A /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		A10000000000000000000F1A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		C328CD472FB728B300443F80 /* LifeClipWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LifeClipWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C328CD492FB728B300443F80 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		C328CD4B2FB728B300443F80 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -205,8 +207,17 @@
 				A10000000000000000000C0A /* Today */,
 				A10000000000000000000C2A /* Trim */,
 				A10000000000000000000C4A /* Archive */,
+				A10000000000000000000F0A /* Settings */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000F0A /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000F1A /* SettingsView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		A1000000000000000000013A /* Camera */ = {
@@ -448,6 +459,7 @@
 				A10000000000000000000C1B /* OnThisDayView.swift in Sources */,
 				A10000000000000000000C3B /* ClipTrimView.swift in Sources */,
 				A10000000000000000000C5B /* ArchiveView.swift in Sources */,
+				A10000000000000000000F1B /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

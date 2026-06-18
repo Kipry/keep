@@ -9,10 +9,12 @@ struct CameraView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var camera = CameraService()
 
+    @AppStorage("defaultRecordingDuration") private var defaultDuration: Double = 1.0
+
     @State private var recordingStart: Date?
     @State private var elapsed: Double = 0
     @State private var timer: Timer?
-    @State private var durationLimit: Double = 1
+    @State private var durationLimit: Double = 1.0
     @State private var isHoldRecording = false
     @State private var holdStartTask: Task<Void, Never>?
     @State private var holdZoomStart: CGFloat = 1.0
@@ -44,7 +46,7 @@ struct CameraView: View {
                 cameraUI
             }
         }
-        .task { await setupCamera() }
+        .task { durationLimit = defaultDuration; await setupCamera() }
         .onDisappear { teardown() }
         .onChange(of: scenePhase) { _, phase in
             // Returning from Settings after granting access: retry setup so the

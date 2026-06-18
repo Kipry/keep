@@ -9,6 +9,8 @@ struct OnThisDayView: View {
     @Query(filter: #Predicate<Project> { !$0.isDeleted })
     private var projects: [Project]
 
+    @State private var showSettings = false
+
     private var cal: Calendar { .current }
     private var today: Date { cal.startOfDay(for: Date()) }
 
@@ -131,14 +133,25 @@ struct OnThisDayView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Memories")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(.white)
-            Text(formattedToday)
-                .font(.system(size: 15))
-                .foregroundStyle(.white.opacity(0.45))
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Memories")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.white)
+                Text(formattedToday)
+                    .font(.system(size: 15))
+                    .foregroundStyle(.white.opacity(0.45))
+            }
+            Spacer()
+            Button { showSettings = true } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(width: 36, height: 36)
+                    .background(Color(white: 0.12), in: Circle())
+            }
         }
+        .sheet(isPresented: $showSettings) { SettingsView() }
     }
 
     private var formattedToday: String {

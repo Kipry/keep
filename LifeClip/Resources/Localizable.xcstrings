@@ -368,6 +368,42 @@
     "Open Settings" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Einstellungen öffnen" } } }
+    },
+    "Settings" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Einstellungen" } } }
+    },
+    "Recording" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Aufnahme" } } }
+    },
+    "Default Duration" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Standard-Aufnahmedauer" } } }
+    },
+    "About" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Über" } } }
+    },
+    "Daily Moments" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Tägliche Momente" } } }
+    },
+    "Version" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Version" } } }
+    },
+    "Made by" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Entwickelt von" } } }
+    },
+    "Search projects…" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Projekte suchen …" } } }
+    },
+    "No results for \"%@\"" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Keine Ergebnisse für \"%@\"" } } }
     }
 
   },
