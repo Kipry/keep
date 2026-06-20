@@ -19,6 +19,7 @@ struct ContentView: View {
             case .today:    OnThisDayView()
             }
         }
+        .onboardingGate()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             AppTabBar(selectedTab: $selectedTab)
         }
@@ -71,5 +72,20 @@ private struct AppTabBar: View {
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
         .animation(.easeInOut(duration: 0.18), value: selectedTab)
+    }
+}
+
+// MARK: - Onboarding gate
+
+extension View {
+    func onboardingGate() -> some View {
+        modifier(OnboardingGateModifier())
+    }
+}
+
+private struct OnboardingGateModifier: ViewModifier {
+    @AppStorage("didOnboard") private var didOnboard = false
+    func body(content: Content) -> some View {
+        if didOnboard { content } else { OnboardingView() }
     }
 }

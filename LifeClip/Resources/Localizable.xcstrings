@@ -404,6 +404,139 @@
     "No results for \"%@\"" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Keine Ergebnisse für \"%@\"" } } }
+    },
+
+    "WELCOME" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "WILLKOMMEN" } } }
+    },
+    "Hold the moment.\nBefore it's gone." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Halt den Moment.\nBevor er weg ist." } } }
+    },
+    "keep. — your life, one clip at a time." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "keep. — dein Leben, ein Clip nach dem anderen." } } }
+    },
+    "THE LOCK SCREEN TRIGGER" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "DER LOCK-SCREEN-AUSLÖSER" } } }
+    },
+    "One tap.\nRecorded." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ein Tipp.\nAufgenommen." } } }
+    },
+    "From the lock screen straight into recording — the app stays closed." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Vom Sperrbildschirm direkt in die Aufnahme — die App bleibt zu." } } }
+    },
+    "LIBRARY" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "BIBLIOTHEK" } } }
+    },
+    "Every experience.\nIts own project." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Jedes Erlebnis.\nSein eigenes Projekt." } } }
+    },
+    "Holiday, daily life, workout — all clips from one day in one place." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Urlaub, Alltag, Form-Check — alle Clips eines Tages an einem Ort." } } }
+    },
+    "FILMSTRIP" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "FILMSTREIFEN" } } }
+    },
+    "Your day.\nFrame by frame." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Dein Tag.\nFrame für Frame." } } }
+    },
+    "Trim, sort, rearrange — just like a real film strip." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Clips trimmen, sortieren, neu anordnen — wie an einem echten Filmstreifen." } } }
+    },
+    "EXPORT" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "EXPORT" } } }
+    },
+    "Clips in.\nVideo out." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Clips rein.\nVideo raus." } } }
+    },
+    "Wind the reel — a finished video in seconds." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Wind the reel — ein fertiges Video in Sekunden." } } }
+    },
+    "YOUR TRIGGER" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "DEIN AUSLÖSER" } } }
+    },
+    "Put the REC button\non your lock screen." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Leg den REC-Knopf\nauf den Sperrbildschirm." } } }
+    },
+    "The most powerful feature: a lock screen widget that takes you from moment to recording in 3 seconds. No unlocking, no opening." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Das stärkste Feature: ein Lock-Screen-Widget, das dich in 3 Sekunden vom Moment zur Aufnahme bringt. Ohne Entsperren, ohne Öffnen." } } }
+    },
+    "Let's go" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Los geht's" } } }
+    },
+    "Next" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Weiter" } } }
+    },
+    "Skip" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Überspringen" } } }
+    },
+    "One tap — record directly" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Tippen — direkt aufnehmen" } } }
+    },
+    "WITHOUT OPENING THE APP" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "OHNE DIE APP ZU ÖFFNEN" } } }
+    },
+    "Done." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Gekeept." } } }
+    },
+    "Three seconds. Phone back in your pocket." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Drei Sekunden. Handy zurück in die Tasche." } } }
+    },
+    "COMPILING YOUR REEL" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "DEIN VIDEO WIRD ERSTELLT" } } }
+    },
+    "HOW TO SET IT UP" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "SO RICHTEST DU ES EIN" } } }
+    },
+    "Long-press the lock screen" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Sperrbildschirm lange drücken" } } }
+    },
+    "Tap 'Customise'" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "„Anpassen“ antippen" } } }
+    },
+    "Add a widget" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Widget hinzufügen" } } }
+    },
+    "Choose keep. from the list" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "unter den Widgets keep. wählen" } } }
+    },
+    "Place the REC circle" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Den REC-Kreis platzieren" } } }
+    },
+    "Done — 1 tap to record" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "fertig — ab jetzt 1 Tipp bis zur Aufnahme" } } }
     }
 
   },
