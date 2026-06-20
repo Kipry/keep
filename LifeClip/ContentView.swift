@@ -19,10 +19,10 @@ struct ContentView: View {
             case .today:    OnThisDayView()
             }
         }
-        .onboardingGate()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             AppTabBar(selectedTab: $selectedTab)
         }
+        .onboardingGate()
     }
 }
 

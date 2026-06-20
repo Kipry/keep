@@ -828,54 +828,51 @@ private struct PhoneFrame<Content: View>: View {
         self.content = content()
     }
 
-    private let screenWidth:  CGFloat = 393
-    private let screenHeight: CGFloat = 852
-    private let scaleFactor:  CGFloat = 0.45
-    private let outerCorner:  CGFloat = 52
-    private let innerCorner:  CGFloat = 44
-    private let bezelWidth:   CGFloat = 10
+    private let screenW: CGFloat = 393
+    private let screenH: CGFloat = 852
+    private let scale:   CGFloat = 0.45
+    private let bezel:   CGFloat = 7
+
+    private var dispW:   CGFloat { screenW * scale }
+    private var dispH:   CGFloat { screenH * scale }
+    private var frameW:  CGFloat { dispW + bezel * 2 }
+    private var frameH:  CGFloat { dispH + bezel * 2 }
+    private var corner:  CGFloat { 44 * scale + bezel }
 
     var body: some View {
         ZStack(alignment: .top) {
-            RoundedRectangle(cornerRadius: outerCorner)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(white: 0.22), Color(white: 0.14)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(
-                    width:  (screenWidth  + bezelWidth * 2) * scaleFactor,
-                    height: (screenHeight + bezelWidth * 2) * scaleFactor
-                )
+            // Bezel
+            RoundedRectangle(cornerRadius: corner)
+                .fill(LinearGradient(
+                    colors: [Color(white: 0.22), Color(white: 0.10)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                ))
+                .overlay {
+                    RoundedRectangle(cornerRadius: corner)
+                        .stroke(.white.opacity(0.15), lineWidth: 0.5)
+                }
+                .shadow(color: .black.opacity(0.55), radius: 20, y: 10)
+                .frame(width: frameW, height: frameH)
 
-            RoundedRectangle(cornerRadius: innerCorner * scaleFactor)
-                .fill(Color(white: 0.07))
-                .frame(
-                    width:  screenWidth  * scaleFactor,
-                    height: screenHeight * scaleFactor
-                )
-                .offset(y: bezelWidth * scaleFactor)
-                .clipShape(RoundedRectangle(cornerRadius: innerCorner * scaleFactor))
-                .overlay(
-                    content
-                        .frame(width: screenWidth, height: screenHeight)
-                        .scaleEffect(scaleFactor)
-                        .clipShape(RoundedRectangle(cornerRadius: innerCorner))
-                        .offset(y: bezelWidth * scaleFactor)
-                    ,
-                    alignment: .top
-                )
-                .overlay(
-                    Capsule()
-                        .fill(.black)
-                        .frame(width: 124 * scaleFactor, height: 36 * scaleFactor)
-                        .padding(.top, 13 * scaleFactor)
-                    ,
-                    alignment: .top
-                )
+            // Screen: content is rendered at full 393×852, scaled to 0.45
+            // with topLeading anchor, then the layout frame is collapsed to
+            // the scaled size so nothing overflows into the surrounding layout.
+            ZStack(alignment: .top) {
+                Color.black
+                content
+                    .frame(width: screenW, height: screenH)
+                    .scaleEffect(scale, anchor: .topLeading)
+                    .frame(width: dispW, height: dispH, alignment: .topLeading)
+                // Dynamic Island
+                Capsule()
+                    .fill(.black)
+                    .frame(width: 124 * scale, height: 36 * scale)
+                    .padding(.top, 13 * scale)
+            }
+            .frame(width: dispW, height: dispH)
+            .clipShape(RoundedRectangle(cornerRadius: 44 * scale))
+            .offset(y: bezel)
         }
-        .padding(.vertical, 8)
+        .frame(width: frameW, height: frameH)
     }
 }
