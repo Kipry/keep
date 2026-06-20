@@ -537,6 +537,18 @@
     "Done — 1 tap to record" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "fertig — ab jetzt 1 Tipp bis zur Aufnahme" } } }
+    },
+    "Tutorial" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Tutorial" } } }
+    },
+    "Show Introduction" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Einführung anzeigen" } } }
+    },
+    "Restart" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Neu starten" } } }
     }
 
   },

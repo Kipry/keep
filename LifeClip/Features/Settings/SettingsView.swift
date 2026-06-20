@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @AppStorage("defaultRecordingDuration") private var defaultDuration: Double = 1.0
+    @AppStorage("didOnboard") private var didOnboard = true
     @Environment(\.dismiss) private var dismiss
 
     private var appVersion: String {
@@ -15,6 +16,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     header
                     recordingSection
+                    tutorialSection
                     aboutSection
                 }
                 .padding(.top, 60)
@@ -71,6 +73,40 @@ struct SettingsView: View {
                             .buttonStyle(.plain)
                         }
                     }
+                }
+            }
+            .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+            .padding(.horizontal, 20)
+        }
+    }
+
+    // MARK: - Tutorial section
+
+    private var tutorialSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("Tutorial")
+
+            VStack(spacing: 0) {
+                row {
+                    Text("Show Introduction")
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Button {
+                        dismiss()
+                        // Brief delay so the sheet dismisses before the gate fires
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            didOnboard = false
+                        }
+                    } label: {
+                        Text("Restart")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Theme.amber)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
+                            .background(Theme.amber.opacity(0.12), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
