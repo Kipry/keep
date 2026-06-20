@@ -45,8 +45,6 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: Skip
-
     @ViewBuilder
     private var skipButton: some View {
         if step < totalSteps - 1 {
@@ -66,8 +64,6 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: Step content
-
     @ViewBuilder
     private var stepContent: some View {
         switch step {
@@ -79,8 +75,6 @@ struct OnboardingView: View {
         default: StepWidget()
         }
     }
-
-    // MARK: Bottom overlay
 
     private var bottomOverlay: some View {
         VStack(spacing: 0) {
@@ -126,9 +120,7 @@ struct OnboardingView: View {
                 .foregroundStyle(Theme.ink)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(
-                    Capsule().fill(Theme.amber)
-                )
+                .background(Capsule().fill(Theme.amber))
                 .shadow(color: Theme.amber.opacity(0.45), radius: 16, y: 6)
         }
         .buttonStyle(.plain)
@@ -195,8 +187,6 @@ private struct StepWelcome: View {
         }
     }
 }
-
-// MARK: - Amber lens hero
 
 private struct AmberLens: View {
     @State private var floating = false
@@ -269,28 +259,22 @@ private struct StepLockScreen: View {
             headline: "One tap.\nRecorded.",
             subtext:  "From the lock screen straight into recording — the app stays closed."
         ) {
-            PhoneFrame {
-                LockPhaseAnimation()
-            }
+            PhoneFrame { LockPhaseAnimation() }
         }
     }
 }
-
-// MARK: - Lock phase animation
 
 private struct LockPhaseAnimation: View {
     @State private var phase = 0
 
     var body: some View {
         ZStack {
-            LockPhase()
+            LockScreenMock(showTapRing: true)
                 .opacity(phase == 0 ? 1 : 0)
                 .animation(.easeInOut(duration: 0.4), value: phase)
-
             CameraPhase()
                 .opacity(phase == 1 ? 1 : 0)
                 .animation(.easeInOut(duration: 0.4), value: phase)
-
             SuccessPhase()
                 .opacity(phase == 2 ? 1 : 0)
                 .animation(.easeInOut(duration: 0.4), value: phase)
@@ -304,20 +288,28 @@ private struct LockPhaseAnimation: View {
             withAnimation { phase = 1 }
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.4) {
                 withAnimation { phase = 2 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-                    runCycle()
-                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { runCycle() }
             }
         }
     }
 }
 
-private struct LockPhase: View {
+// MARK: - Shared lock screen mock (steps 2 & 6)
+
+private struct LockScreenMock: View {
+    var showTapRing: Bool = false
+    var highlightWidget: Bool = false
+
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(white: 0.08), Color(white: 0.04)],
-                startPoint: .top, endPoint: .bottom
+                colors: [
+                    Color(red: 0.10, green: 0.07, blue: 0.04),
+                    Color(red: 0.051, green: 0.051, blue: 0.051),
+                    Color(red: 0.04, green: 0.05, blue: 0.07)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             )
             .ignoresSafeArea()
 
@@ -334,31 +326,28 @@ private struct LockPhase: View {
                         .foregroundStyle(.white)
                 }
 
-                Spacer()
+                Spacer().frame(height: 36)
 
                 HStack(spacing: 14) {
-                    Circle()
-                        .fill(Color(white: 0.18))
-                        .frame(width: 44, height: 44)
-                        .overlay(
-                            Image(systemName: "cloud.sun.fill")
-                                .font(.system(size: 18))
-                                .foregroundStyle(.white.opacity(0.5))
-                        )
+                    glassCircle(icon: "cloud.sun.fill")
 
-                    RecWidget(size: 44)
+                    ZStack {
+                        if highlightWidget {
+                            Circle()
+                                .fill(Theme.amber.opacity(0.22))
+                                .frame(width: 72, height: 72)
+                                .blur(radius: 12)
+                        }
+                        if showTapRing || highlightWidget {
+                            TapRingAnimation(size: 48)
+                        }
+                        RecWidget(size: 48)
+                    }
 
-                    Circle()
-                        .fill(Color(white: 0.18))
-                        .frame(width: 44, height: 44)
-                        .overlay(
-                            Image(systemName: "battery.75")
-                                .font(.system(size: 18))
-                                .foregroundStyle(.white.opacity(0.5))
-                        )
+                    glassCircle(icon: "battery.75")
                 }
 
-                Spacer().frame(height: 24)
+                Spacer().frame(height: 20)
 
                 Text("One tap — record directly")
                     .font(.mono(10))
@@ -369,7 +358,41 @@ private struct LockPhase: View {
             }
         }
     }
+
+    private func glassCircle(icon: String) -> some View {
+        Circle()
+            .fill(Color.white.opacity(0.12))
+            .frame(width: 48, height: 48)
+            .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1))
+            .overlay(
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundStyle(.white.opacity(0.5))
+            )
+    }
 }
+
+private struct TapRingAnimation: View {
+    let size: CGFloat
+    @State private var scale: CGFloat = 1.0
+    @State private var opacity: CGFloat = 0.6
+
+    var body: some View {
+        Circle()
+            .stroke(Theme.amber.opacity(0.5), lineWidth: 1.5)
+            .frame(width: size * 1.75, height: size * 1.75)
+            .scaleEffect(scale)
+            .opacity(opacity)
+            .onAppear {
+                withAnimation(.easeOut(duration: 1.5).repeatForever(autoreverses: false)) {
+                    scale = 2.1
+                    opacity = 0
+                }
+            }
+    }
+}
+
+// MARK: - REC widget (glass style, matches HTML design)
 
 private struct RecWidget: View {
     let size: CGFloat
@@ -377,24 +400,24 @@ private struct RecWidget: View {
     var body: some View {
         ZStack {
             Circle()
+                .fill(Color.white.opacity(0.12))
+                .frame(width: size, height: size)
+            Circle()
                 .stroke(Theme.amber, lineWidth: 2)
                 .frame(width: size, height: size)
-
-            Circle()
-                .fill(Theme.amber.opacity(0.15))
-                .frame(width: size, height: size)
-
             VStack(spacing: 2) {
                 Circle()
                     .fill(Theme.amber)
                     .frame(width: size * 0.18, height: size * 0.18)
                 Text("REC")
-                    .font(.mono(size * 0.2, weight: .medium))
+                    .font(.mono(size * 0.20, weight: .medium))
                     .foregroundStyle(Theme.amber)
             }
         }
     }
 }
+
+// MARK: - Camera recording phase
 
 private struct CameraPhase: View {
     @State private var elapsed: CGFloat = 0
@@ -414,13 +437,11 @@ private struct CameraPhase: View {
                     Circle()
                         .stroke(Color(white: 0.25), lineWidth: 4)
                         .frame(width: 72, height: 72)
-
                     Circle()
                         .trim(from: 0, to: min(elapsed / 3, 1))
                         .stroke(Theme.amber, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .frame(width: 72, height: 72)
                         .rotationEffect(.degrees(-90))
-
                     Circle()
                         .fill(Color.red)
                         .frame(width: 36, height: 36)
@@ -453,12 +474,9 @@ private struct SuccessPhase: View {
     var body: some View {
         ZStack {
             Color(white: 0.04)
-
             VStack(spacing: 16) {
                 ZStack {
-                    Circle()
-                        .fill(Theme.amber)
-                        .frame(width: 80, height: 80)
+                    Circle().fill(Theme.amber).frame(width: 80, height: 80)
                     Image(systemName: "checkmark")
                         .font(.system(size: 32, weight: .bold))
                         .foregroundStyle(Theme.ink)
@@ -480,67 +498,173 @@ private struct StepLibrary: View {
             headline: "Every experience.\nIts own project.",
             subtext:  "Holiday, daily life, workout — all clips from one day in one place."
         ) {
-            PhoneFrame {
-                ProjectGridMock()
+            PhoneFrame { ProjectGridMock() }
+        }
+    }
+}
+
+// MARK: - Project grid mock (matches actual ProjectListView exactly)
+
+private struct ProjectGridMock: View {
+    private let cards: [(name: String, clips: Int, date: String, top: Color, bot: Color)] = [
+        ("Summer 2026",  7, "Jun 20, 2026",
+         Color(red: 0.1,  green: 0.2,  blue: 0.4),  Color(red: 0.05, green: 0.1,  blue: 0.25)),
+        ("Daily life",  12, "Jun 19, 2026",
+         Color(red: 0.35, green: 0.1,  blue: 0.1),  Color(red: 0.18, green: 0.05, blue: 0.05)),
+        ("Workout",      4, "Jun 17, 2026",
+         Color(red: 0.1,  green: 0.28, blue: 0.15), Color(red: 0.05, green: 0.14, blue: 0.07)),
+        ("Family",       9, "Jun 15, 2026",
+         Color(red: 0.22, green: 0.1,  blue: 0.35), Color(red: 0.11, green: 0.05, blue: 0.18))
+    ]
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Theme.background
+
+            VStack(spacing: 0) {
+                // Header — mirrors ProjectListView
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("YOUR LIBRARY")
+                                .font(.mono(10))
+                                .tracking(2)
+                                .foregroundStyle(.white.opacity(0.35))
+                            Text("keep.")
+                                .font(.hand(36))
+                                .foregroundStyle(.white)
+                        }
+                        Spacer()
+                        Circle()
+                            .fill(.white.opacity(0.1))
+                            .frame(width: 36, height: 36)
+                            .overlay(
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(.white)
+                            )
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 64)
+                .padding(.bottom, 24)
+
+                // 2-column grid — matches ProjectListView grid + ProjectCard
+                LazyVGrid(
+                    columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
+                    spacing: 14
+                ) {
+                    ForEach(cards.indices, id: \.self) { i in
+                        let c = cards[i]
+                        ZStack(alignment: .topTrailing) {
+                            ZStack(alignment: .bottomLeading) {
+                                LinearGradient(
+                                    colors: [c.top, c.bot],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                .frame(height: 196)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                                LinearGradient(
+                                    colors: [.clear, .black.opacity(0.72)],
+                                    startPoint: .center,
+                                    endPoint: .bottom
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(c.name)
+                                        .font(.hand(15))
+                                        .foregroundStyle(.white)
+                                        .lineLimit(2)
+                                    Text(c.date)
+                                        .font(.mono(9))
+                                        .foregroundStyle(.white.opacity(0.8))
+                                }
+                                .padding(10)
+                            }
+
+                            Text("\(c.clips)")
+                                .font(.mono(10, weight: .medium))
+                                .foregroundStyle(Theme.paper)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(.black.opacity(0.55), in: Capsule())
+                                .overlay(Capsule().stroke(Theme.paper.opacity(0.4), lineWidth: 1))
+                                .padding(8)
+                        }
+                    }
+                }
+                .padding(.horizontal, 24)
+
+                Spacer()
+            }
+
+            // Amber FAB — mirrors ProjectListView FAB
+            Circle()
+                .fill(Theme.amber)
+                .frame(width: 58, height: 58)
+                .overlay(
+                    Image(systemName: "plus")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(Theme.ink)
+                )
+                .shadow(color: Theme.amber.opacity(0.5), radius: 12, y: 4)
+                .padding(.trailing, 20)
+                .padding(.bottom, 92)
+
+            // Tab bar — mirrors AppTabBar
+            VStack {
+                Spacer()
+                MockTabBar(activeTab: 0)
             }
         }
     }
 }
 
-private struct ProjectGridMock: View {
-    private let gradients: [(Color, Color)] = [
-        (Color(red: 0.1, green: 0.2, blue: 0.4),  Color(red: 0.05, green: 0.1, blue: 0.25)),
-        (Color(red: 0.35, green: 0.1, blue: 0.1),  Color(red: 0.18, green: 0.05, blue: 0.05)),
-        (Color(red: 0.1, green: 0.28, blue: 0.15), Color(red: 0.05, green: 0.14, blue: 0.07)),
-        (Color(red: 0.22, green: 0.1, blue: 0.35), Color(red: 0.11, green: 0.05, blue: 0.18))
+// MARK: - Mock tab bar (matches actual AppTabBar capsule)
+
+private struct MockTabBar: View {
+    let activeTab: Int
+
+    private let items: [(String, String, String)] = [
+        ("square.grid.2x2", "square.grid.2x2.fill", "Projects"),
+        ("archivebox",       "archivebox.fill",       "Archive"),
+        ("sparkles",         "sparkles",              "Today")
     ]
 
     var body: some View {
-        ZStack(alignment: .top) {
-            Color(white: 0.05)
-
-            VStack(spacing: 0) {
-                HStack {
-                    Text("keep.")
-                        .font(.hand(18))
-                        .foregroundStyle(.white)
-                    Spacer()
-                    Image(systemName: "plus")
-                        .foregroundStyle(Theme.amber)
+        HStack(spacing: 0) {
+            ForEach(items.indices, id: \.self) { i in
+                let item = items[i]
+                let active = i == activeTab
+                VStack(spacing: 4) {
+                    Image(systemName: active ? item.1 : item.0)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(active ? Theme.ink : .white.opacity(0.4))
+                        .frame(width: 52, height: 30)
+                        .background(
+                            RoundedRectangle(cornerRadius: 9)
+                                .fill(active ? Theme.amber : .clear)
+                        )
+                    Text(item.2)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(active ? Theme.amber : .white.opacity(0.35))
                 }
-                .padding(.horizontal, 14)
-                .padding(.top, 54)
-                .padding(.bottom, 12)
-
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                    ForEach(0..<4, id: \.self) { i in
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(
-                                LinearGradient(
-                                    colors: [gradients[i].0, gradients[i].1],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(height: 90)
-                            .overlay(
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Spacer()
-                                    Text(["Holiday", "Daily life", "Workout", "Family"][i])
-                                        .font(.hand(12))
-                                        .foregroundStyle(.white.opacity(0.9))
-                                    Text("\([7, 12, 4, 9][i]) clips")
-                                        .font(.mono(8))
-                                        .foregroundStyle(.white.opacity(0.5))
-                                }
-                                .padding(8)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            )
-                    }
-                }
-                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity)
             }
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(Color(white: 0.1).opacity(0.95))
+                .overlay(Capsule().stroke(.white.opacity(0.08), lineWidth: 1))
+        )
+        .padding(.horizontal, 40)
+        .padding(.bottom, 20)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -553,75 +677,185 @@ private struct StepFilmstrip: View {
             headline: "Your day.\nFrame by frame.",
             subtext:  "Trim, sort, rearrange — just like a real film strip."
         ) {
-            PhoneFrame {
-                FilmstripMock()
-            }
+            PhoneFrame { FilmstripMock() }
         }
     }
 }
 
+// MARK: - Filmstrip mock (matches actual ProjectDetailView)
+
 private struct FilmstripMock: View {
-    private let clipColors: [Color] = [
-        Color(red: 0.1,  green: 0.2,  blue: 0.4),
-        Color(red: 0.35, green: 0.1,  blue: 0.1),
-        Color(red: 0.1,  green: 0.28, blue: 0.15),
-        Color(red: 0.22, green: 0.1,  blue: 0.35),
-        Color(red: 0.3,  green: 0.24, blue: 0.06),
-        Color(red: 0.06, green: 0.24, blue: 0.28),
-        Color(red: 0.18, green: 0.14, blue: 0.32),
-        Color(red: 0.22, green: 0.14, blue: 0.06)
+    private let rowColors: [[Color]] = [
+        [
+            Color(red: 0.1,  green: 0.2,  blue: 0.4),
+            Color(red: 0.35, green: 0.1,  blue: 0.1),
+            Color(red: 0.1,  green: 0.28, blue: 0.15),
+            Color(red: 0.22, green: 0.1,  blue: 0.35)
+        ],
+        [
+            Color(red: 0.3,  green: 0.24, blue: 0.06),
+            Color(red: 0.06, green: 0.24, blue: 0.28),
+            Color(red: 0.18, green: 0.14, blue: 0.32),
+            Color(red: 0.22, green: 0.14, blue: 0.06)
+        ]
     ]
 
     var body: some View {
-        ZStack {
-            Color(white: 0.05)
+        ZStack(alignment: .bottom) {
+            Theme.background
 
-            VStack {
-                Spacer()
-                VStack(spacing: 14) {
-                    FilmstripRow(colors: Array(clipColors.prefix(4)))
-                    FilmstripRow(colors: Array(clipColors.suffix(4)))
+            VStack(spacing: 0) {
+                // Nav bar — mirrors ProjectDetailView navBar
+                HStack(alignment: .center) {
+                    Text("‹")
+                        .font(.hand(28))
+                        .foregroundStyle(.white)
+                        .frame(width: 44, height: 44)
+
+                    VStack(spacing: 2) {
+                        Text("Summer 2026")
+                            .font(.hand(22))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                        Text("7 CLIPS · 21s")
+                            .font(.mono(9))
+                            .tracking(0.5)
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    HStack(spacing: 2) {
+                        Circle()
+                            .fill(.white.opacity(0.1))
+                            .frame(width: 32, height: 32)
+                            .overlay(Image(systemName: "play.fill").font(.system(size: 12)).foregroundStyle(.white))
+                        Circle()
+                            .fill(.white.opacity(0.1))
+                            .frame(width: 32, height: 32)
+                            .overlay(Image(systemName: "plus").font(.system(size: 15, weight: .bold)).foregroundStyle(.white))
+                    }
+                    .frame(width: 100, alignment: .trailing)
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 16)
+                .padding(.top, 60)
+                .padding(.bottom, 12)
+
+                // Filmstrip rows + "add" button
+                VStack(spacing: 12) {
+                    ForEach(rowColors.indices, id: \.self) { i in
+                        MockFilmstripRow(colors: rowColors[i])
+                    }
+
+                    Text("+ add to the reel")
+                        .font(.scrawl(22))
+                        .foregroundStyle(.white.opacity(0.25))
+                        .frame(maxWidth: .infinity, minHeight: 72)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(.white.opacity(0.12), style: StrokeStyle(lineWidth: 1.4, dash: [6]))
+                        )
+                        .padding(.horizontal, 14)
+                }
+                .padding(.top, 4)
+
                 Spacer()
             }
+
+            // Camera FAB
+            HStack {
+                Spacer()
+                Circle()
+                    .fill(Theme.amber)
+                    .frame(width: 64, height: 64)
+                    .overlay(
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(Theme.ink)
+                    )
+                    .shadow(color: Theme.amber.opacity(0.45), radius: 14, y: 4)
+                    .padding(.trailing, 22)
+                    .padding(.bottom, 132)
+            }
+
+            // Export bar — mirrors ProjectDetailView exportBar
+            VStack(spacing: 6) {
+                HStack(spacing: 10) {
+                    Image(systemName: "film.stack")
+                    Text("Wind the reel · Export")
+                        .font(.hand(18))
+                    Spacer()
+                    Image(systemName: "arrow.right")
+                }
+                .foregroundStyle(Theme.ink)
+                .padding(.horizontal, 20)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(Theme.amber, in: RoundedRectangle(cornerRadius: 14))
+
+                Text("7 CLIPS → 1 VIDEO · ~21s")
+                    .font(.mono(9))
+                    .foregroundStyle(.white.opacity(0.3))
+                    .tracking(0.5)
+            }
+            .padding(.horizontal, 22)
+            .padding(.top, 12)
+            .padding(.bottom, 16)
+            .background(
+                LinearGradient(
+                    colors: [Theme.background.opacity(0), Theme.background],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
         }
     }
 }
 
-private struct FilmstripRow: View {
+// MARK: - Mock filmstrip row (matches real FilmstripRow structure)
+
+private struct MockFilmstripRow: View {
     let colors: [Color]
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Color(white: 0.1))
-                .frame(height: 72)
-
-            HStack(spacing: 0) {
-                sprocketColumn
-                HStack(spacing: 3) {
-                    ForEach(0..<colors.count, id: \.self) { i in
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(colors[i].opacity(0.85))
-                            .frame(height: 56)
-                    }
+        VStack(spacing: 0) {
+            sprocketHoles
+            HStack(spacing: 5) {
+                ForEach(colors.indices, id: \.self) { i in
+                    colors[i]
+                        .overlay(
+                            Image(systemName: "film")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.white.opacity(0.15))
+                        )
+                        .aspectRatio(4/5, contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: 2))
                 }
-                .padding(.horizontal, 4)
-                sprocketColumn
+                let pad = 4 - min(colors.count, 4)
+                ForEach(0..<pad, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(.white.opacity(0.04))
+                        .aspectRatio(4/5, contentMode: .fit)
+                }
             }
+            .padding(.horizontal, 6)
+            sprocketHoles
         }
+        .background(Theme.filmCard)
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .padding(.horizontal, 14)
     }
 
-    private var sprocketColumn: some View {
-        VStack(spacing: 6) {
-            ForEach(0..<3, id: \.self) { _ in
+    private var sprocketHoles: some View {
+        HStack(spacing: 0) {
+            ForEach(0..<18, id: \.self) { _ in
+                Spacer(minLength: 0)
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(Color(white: 0.22))
-                    .frame(width: 8, height: 10)
+                    .fill(Theme.background)
+                    .frame(width: 8, height: 4)
             }
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 4)
+        .padding(.vertical, 5)
     }
 }
 
@@ -634,67 +868,57 @@ private struct StepExport: View {
             headline: "Clips in.\nVideo out.",
             subtext:  "Wind the reel — a finished video in seconds."
         ) {
-            PhoneFrame {
-                ExportMock()
-            }
+            PhoneFrame { ExportMock() }
         }
     }
 }
 
+// MARK: - Export mock (matches actual ExportProgressOverlay)
+
 private struct ExportMock: View {
     @State private var progress: CGFloat = 0
-    @State private var displayPercent: Int = 0
     @State private var timer: Timer?
 
     var body: some View {
         ZStack {
-            Color(white: 0.04)
+            Color.black.opacity(0.95)
 
             RadialGradient(
                 colors: [Theme.amber.opacity(0.12), .clear],
                 center: .center,
                 startRadius: 0,
-                endRadius: 180
+                endRadius: 200
             )
+            .frame(width: 400, height: 400)
 
-            VStack(spacing: 22) {
-                Spacer()
+            VStack(spacing: 52) {
+                MockExportFilmStrip()
 
-                FilmstripRow(colors: [
-                    Color(red: 0.1, green: 0.2, blue: 0.4),
-                    Color(red: 0.35, green: 0.1, blue: 0.1),
-                    Color(red: 0.1, green: 0.28, blue: 0.15),
-                    Color(red: 0.22, green: 0.1, blue: 0.35)
-                ])
-                .padding(.horizontal, 20)
-                .scaleEffect(0.85)
-
-                VStack(spacing: 14) {
+                VStack(spacing: 22) {
                     Text("COMPILING YOUR REEL")
-                        .font(.mono(9, weight: .medium))
-                        .foregroundStyle(Theme.amber)
-                        .tracking(2)
+                        .font(.mono(10))
+                        .tracking(3)
+                        .foregroundStyle(.white.opacity(0.38))
 
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(Color(white: 0.18))
-                                .frame(height: 4)
+                                .fill(.white.opacity(0.1))
+                                .frame(height: 3)
                             Capsule()
                                 .fill(Theme.amber)
-                                .frame(width: geo.size.width * progress, height: 4)
+                                .frame(width: geo.size.width * progress, height: 3)
+                                .shadow(color: Theme.amber.opacity(0.8), radius: 6)
                         }
                     }
-                    .frame(height: 4)
-                    .padding(.horizontal, 24)
+                    .frame(height: 3)
 
-                    Text("\(displayPercent)%")
-                        .font(.mono(22, weight: .medium))
+                    Text("\(Int(progress * 100))%")
+                        .font(.hand(52))
                         .foregroundStyle(.white)
                         .monospacedDigit()
                 }
-
-                Spacer()
+                .padding(.horizontal, 40)
             }
         }
         .onAppear { startExport() }
@@ -703,22 +927,59 @@ private struct ExportMock: View {
 
     private func startExport() {
         progress = 0
-        displayPercent = 0
         timer?.invalidate()
-        let duration: CGFloat = 4.0
-        let interval: CGFloat = 0.05
-        let steps = Int(duration / interval)
-        var current = 0
-        timer = Timer.scheduledTimer(withTimeInterval: Double(interval), repeats: true) { t in
-            current += 1
-            let frac = CGFloat(current) / CGFloat(steps)
-            progress       = min(frac, 1)
-            displayPercent = min(Int(frac * 100), 100)
-            if current >= steps {
+        var elapsed = 0.0
+        let total = 4.0
+        timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { t in
+            elapsed += 0.05
+            progress = min(CGFloat(elapsed / total), 1)
+            if elapsed >= total {
                 t.invalidate()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { startExport() }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { self.startExport() }
             }
         }
+    }
+}
+
+// MARK: - Mock export film strip (matches actual ExportProgressOverlay filmStrip)
+
+private struct MockExportFilmStrip: View {
+    private let colors: [Color] = [
+        Color(red: 0.1,  green: 0.2,  blue: 0.4),
+        Color(red: 0.35, green: 0.1,  blue: 0.1),
+        Color(red: 0.1,  green: 0.28, blue: 0.15),
+        Color(red: 0.22, green: 0.1,  blue: 0.35),
+        Color(red: 0.3,  green: 0.24, blue: 0.06)
+    ]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            sprocketRow
+            HStack(spacing: 3) {
+                ForEach(colors.indices, id: \.self) { i in
+                    colors[i]
+                        .frame(width: 60, height: 80)
+                }
+            }
+            .padding(.horizontal, 6)
+            sprocketRow
+        }
+        .background(Theme.filmCard)
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .padding(.horizontal, 20)
+    }
+
+    private var sprocketRow: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<14, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Theme.background)
+                    .frame(width: 8, height: 4)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 5)
+        .padding(.horizontal, 4)
     }
 }
 
@@ -729,14 +990,14 @@ private struct StepWidget: View {
         StepShell(
             eyebrow:  "YOUR TRIGGER",
             headline: "Put the REC button\non your lock screen.",
-            subtext:  "The most powerful feature: a lock screen widget that takes you from moment to recording in 3 seconds. No unlocking, no opening."
+            subtext:  "The most powerful feature: a lock screen widget that takes you from moment to recording in 3 seconds."
         ) {
-            PhoneFrame {
-                WidgetSetupMock()
-            }
+            PhoneFrame { WidgetSetupMock() }
         }
     }
 }
+
+// MARK: - Widget setup mock (lock screen + glowing REC + instruction card)
 
 private struct WidgetSetupMock: View {
     @State private var glowing = false
@@ -744,33 +1005,67 @@ private struct WidgetSetupMock: View {
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(red: 0.12, green: 0.09, blue: 0.06), Color(red: 0.05, green: 0.04, blue: 0.03)],
+                colors: [
+                    Color(red: 0.10, green: 0.07, blue: 0.04),
+                    Color(red: 0.051, green: 0.051, blue: 0.051),
+                    Color(red: 0.04, green: 0.05, blue: 0.07)
+                ],
                 startPoint: .top,
                 endPoint: .bottom
             )
+            .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 Spacer()
 
-                ZStack {
-                    Circle()
-                        .fill(Theme.amber.opacity(0.18))
-                        .frame(width: 88, height: 88)
-                        .blur(radius: glowing ? 14 : 8)
-                        .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: glowing)
-
-                    RecWidget(size: 58)
+                VStack(spacing: 4) {
+                    Text("SONNTAG · 7. JUNI")
+                        .font(.mono(11))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .tracking(1.5)
+                    Text("23:07")
+                        .font(.custom("PatrickHand-Regular", size: 64))
+                        .foregroundStyle(.white)
                 }
 
-                Spacer().frame(height: 24)
+                Spacer().frame(height: 36)
+
+                HStack(spacing: 14) {
+                    Circle()
+                        .fill(Color.white.opacity(0.12))
+                        .frame(width: 48, height: 48)
+                        .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1))
+                        .overlay(Image(systemName: "cloud.sun.fill").font(.system(size: 20)).foregroundStyle(.white.opacity(0.5)))
+
+                    ZStack {
+                        Circle()
+                            .fill(Theme.amber.opacity(glowing ? 0.28 : 0.12))
+                            .frame(width: 76, height: 76)
+                            .blur(radius: glowing ? 16 : 8)
+                        TapRingAnimation(size: 48)
+                        RecWidget(size: 48)
+                    }
+
+                    Circle()
+                        .fill(Color.white.opacity(0.12))
+                        .frame(width: 48, height: 48)
+                        .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1))
+                        .overlay(Image(systemName: "battery.75").font(.system(size: 20)).foregroundStyle(.white.opacity(0.5)))
+                }
+
+                Spacer().frame(height: 28)
 
                 instructionCard
+                    .padding(.horizontal, 24)
 
-                Spacer().frame(height: 20)
+                Spacer().frame(height: 28)
             }
-            .padding(.horizontal, 16)
         }
-        .onAppear { glowing = true }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
+                glowing = true
+            }
+        }
     }
 
     private var instructionCard: some View {
@@ -778,25 +1073,21 @@ private struct WidgetSetupMock: View {
             Rectangle()
                 .fill(Theme.amber)
                 .frame(height: 2)
-                .cornerRadius(1)
 
             VStack(alignment: .leading, spacing: 12) {
-                ForEach(instructionSteps.indices, id: \.self) { i in
+                ForEach(steps.indices, id: \.self) { i in
                     HStack(alignment: .top, spacing: 10) {
                         ZStack {
-                            Circle()
-                                .fill(Theme.amber)
-                                .frame(width: 20, height: 20)
+                            Circle().fill(Theme.amber).frame(width: 20, height: 20)
                             Text("\(i + 1)")
                                 .font(.mono(9, weight: .medium))
                                 .foregroundStyle(Theme.ink)
                         }
-
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(instructionSteps[i].0)
+                            Text(steps[i].0)
                                 .font(.hand(14))
                                 .foregroundStyle(.white)
-                            Text(instructionSteps[i].1)
+                            Text(steps[i].1)
                                 .font(.system(size: 11))
                                 .foregroundStyle(Color(white: 0.45))
                         }
@@ -807,12 +1098,13 @@ private struct WidgetSetupMock: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(white: 0.12).opacity(0.85))
+                .fill(Color.white.opacity(0.1))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.14), lineWidth: 1))
         )
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    private let instructionSteps: [(String, String)] = [
+    private let steps: [(String, String)] = [
         ("Long-press the lock screen", "Tap 'Customise'"),
         ("Add a widget",               "Choose keep. from the list"),
         ("Place the REC circle",        "Done — 1 tap to record")
@@ -833,15 +1125,14 @@ private struct PhoneFrame<Content: View>: View {
     private let scale:   CGFloat = 0.45
     private let bezel:   CGFloat = 7
 
-    private var dispW:   CGFloat { screenW * scale }
-    private var dispH:   CGFloat { screenH * scale }
-    private var frameW:  CGFloat { dispW + bezel * 2 }
-    private var frameH:  CGFloat { dispH + bezel * 2 }
-    private var corner:  CGFloat { 44 * scale + bezel }
+    private var dispW:  CGFloat { screenW * scale }
+    private var dispH:  CGFloat { screenH * scale }
+    private var frameW: CGFloat { dispW + bezel * 2 }
+    private var frameH: CGFloat { dispH + bezel * 2 }
+    private var corner: CGFloat { 44 * scale + bezel }
 
     var body: some View {
         ZStack(alignment: .top) {
-            // Bezel
             RoundedRectangle(cornerRadius: corner)
                 .fill(LinearGradient(
                     colors: [Color(white: 0.22), Color(white: 0.10)],
@@ -854,16 +1145,12 @@ private struct PhoneFrame<Content: View>: View {
                 .shadow(color: .black.opacity(0.55), radius: 20, y: 10)
                 .frame(width: frameW, height: frameH)
 
-            // Screen: content is rendered at full 393×852, scaled to 0.45
-            // with topLeading anchor, then the layout frame is collapsed to
-            // the scaled size so nothing overflows into the surrounding layout.
             ZStack(alignment: .top) {
                 Color.black
                 content
                     .frame(width: screenW, height: screenH)
                     .scaleEffect(scale, anchor: .topLeading)
                     .frame(width: dispW, height: dispH, alignment: .topLeading)
-                // Dynamic Island
                 Capsule()
                     .fill(.black)
                     .frame(width: 124 * scale, height: 36 * scale)
