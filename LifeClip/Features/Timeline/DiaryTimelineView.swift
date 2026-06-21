@@ -138,6 +138,7 @@ struct DiaryTimelineView: View {
     @State private var lastHapticDay = Int.min
     @State private var autoTask: Task<Void, Never>?
     @State private var selectedProject: Project?
+    private let selectionFeedback = UISelectionFeedbackGenerator()
 
     private let calendar = Calendar.current
 
@@ -204,9 +205,9 @@ struct DiaryTimelineView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 12)
 
-            // Preview fills all space above the timeline strip
+            // Preview: fills remaining space but capped so the scrubber always fits
             preview(data: data)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, minHeight: 160, maxHeight: 280)
                 .clipShape(RoundedRectangle(cornerRadius: 22))
                 .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
                 .padding(.horizontal, 12)
@@ -765,13 +766,17 @@ struct DiaryTimelineView: View {
     private func dragGesture(data: TimelineData) -> some Gesture {
         DragGesture(minimumDistance: 4)
             .onChanged { v in
-                if dragBase == nil { dragBase = centerDay; stopAutoplay() }
+                if dragBase == nil {
+                    dragBase = centerDay
+                    stopAutoplay()
+                    selectionFeedback.prepare()
+                }
                 let delta = -v.translation.width / px
                 let nv = clampDay((dragBase ?? centerDay) + delta)
                 let rounded = Int(nv.rounded())
                 if rounded != lastHapticDay {
                     lastHapticDay = rounded
-                    UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.4)
+                    selectionFeedback.selectionChanged()
                 }
                 centerDay = nv
             }
