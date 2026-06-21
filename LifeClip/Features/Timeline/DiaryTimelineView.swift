@@ -145,6 +145,7 @@ struct DiaryTimelineView: View {
     var body: some View {
         GeometryReader { geo in
             let cx = geo.size.width / 2
+            let topInset = geo.safeAreaInsets.top
             ZStack {
                 Theme.background.ignoresSafeArea()
                 RadialGradient(colors: [Theme.amber.opacity(0.06), .clear],
@@ -152,12 +153,13 @@ struct DiaryTimelineView: View {
                     .ignoresSafeArea()
 
                 if let data, !data.bands.isEmpty {
-                    content(width: geo.size.width, cx: cx, data: data)
+                    content(width: geo.size.width, cx: cx, data: data, topInset: topInset)
                 } else {
                     emptyScreen
                 }
             }
         }
+        .ignoresSafeArea(edges: .top)
         .preferredColorScheme(.dark)
         .onAppear(perform: rebuild)
         .onChange(of: projects.count) { _, _ in rebuild() }
@@ -197,14 +199,15 @@ struct DiaryTimelineView: View {
     // MARK: - Content
 
     @ViewBuilder
-    private func content(width: CGFloat, cx: CGFloat, data: TimelineData) -> some View {
+    private func content(width: CGFloat, cx: CGFloat, data: TimelineData, topInset: CGFloat) -> some View {
         VStack(spacing: 0) {
             header(data: data)
                 .padding(.horizontal, 24)
-                .padding(.top, 8)
+                .padding(.top, topInset + 12)
 
             preview(data: data)
-                .frame(height: 330)
+                .frame(minHeight: 180, maxHeight: .infinity)
+                .layoutPriority(1)
                 .padding(.horizontal, 24)
                 .padding(.top, 12)
 
