@@ -538,6 +538,35 @@
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "fertig — ab jetzt 1 Tipp bis zur Aufnahme" } } }
     },
+    "YOUR LIBRARY" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "DEINE BIBLIOTHEK" } } }
+    },
+    "Summer 2026" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Sommer 2026" } } }
+    },
+    "Daily life" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Alltag" } } }
+    },
+    "Workout" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Training" } } }
+    },
+    "Family" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Familie" } } }
+    },
+    "+ add to the reel" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "+ zum Film hinzufügen" } } }
+    },
+    "Wind the reel · Export" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Film zusammenstellen · Export" } } }
+    },
+
     "Tutorial" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Tutorial" } } }

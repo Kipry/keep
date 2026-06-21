@@ -115,7 +115,8 @@ struct OnboardingView: View {
                 withAnimation(.easeInOut(duration: 0.35)) { step += 1 }
             }
         } label: {
-            Text(step == totalSteps - 1 ? "Let's go" : "Next")
+            let label: LocalizedStringKey = step == totalSteps - 1 ? "Let's go" : "Next"
+            Text(label)
                 .font(.hand(21))
                 .foregroundStyle(Theme.ink)
                 .frame(maxWidth: .infinity)
@@ -130,12 +131,12 @@ struct OnboardingView: View {
 // MARK: - Step layout shell
 
 private struct StepShell<Visual: View>: View {
-    let eyebrow: String
-    let headline: String
-    let subtext: String
+    let eyebrow: LocalizedStringKey
+    let headline: LocalizedStringKey
+    let subtext: LocalizedStringKey
     let visual: Visual
 
-    init(eyebrow: String, headline: String, subtext: String, @ViewBuilder visual: () -> Visual) {
+    init(eyebrow: LocalizedStringKey, headline: LocalizedStringKey, subtext: LocalizedStringKey, @ViewBuilder visual: () -> Visual) {
         self.eyebrow  = eyebrow
         self.headline = headline
         self.subtext  = subtext
@@ -506,7 +507,7 @@ private struct StepLibrary: View {
 // MARK: - Project grid mock (matches actual ProjectListView exactly)
 
 private struct ProjectGridMock: View {
-    private let cards: [(name: String, clips: Int, date: String, top: Color, bot: Color)] = [
+    private let cards: [(name: LocalizedStringKey, clips: Int, date: String, top: Color, bot: Color)] = [
         ("Summer 2026",  7, "Jun 20, 2026",
          Color(red: 0.1,  green: 0.2,  blue: 0.4),  Color(red: 0.05, green: 0.1,  blue: 0.25)),
         ("Daily life",  12, "Jun 19, 2026",
@@ -990,7 +991,7 @@ private struct StepWidget: View {
         StepShell(
             eyebrow:  "YOUR TRIGGER",
             headline: "Put the REC button\non your lock screen.",
-            subtext:  "The most powerful feature: a lock screen widget that takes you from moment to recording in 3 seconds."
+            subtext:  "The most powerful feature: a lock screen widget that takes you from moment to recording in 3 seconds. No unlocking, no opening."
         ) {
             PhoneFrame { WidgetSetupMock() }
         }
@@ -1104,7 +1105,7 @@ private struct WidgetSetupMock: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    private let steps: [(String, String)] = [
+    private let steps: [(LocalizedStringKey, LocalizedStringKey)] = [
         ("Long-press the lock screen", "Tap 'Customise'"),
         ("Add a widget",               "Choose keep. from the list"),
         ("Place the REC circle",        "Done — 1 tap to record")
