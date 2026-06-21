@@ -578,6 +578,99 @@
     "Restart" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Neu starten" } } }
+    },
+
+    "DIARY" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "TAGEBUCH" } } }
+    },
+    "Your Timeline" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Deine Zeitachse" } } }
+    },
+    "TODAY" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "HEUTE" } } }
+    },
+    "Day" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Tag" } } }
+    },
+    "Week" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Woche" } } }
+    },
+    "Month" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Monat" } } }
+    },
+    "Year" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Jahr" } } }
+    },
+    "PREVIEW" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "VORSCHAU" } } }
+    },
+    "LOOKBACK" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "RÜCKBLICK" } } }
+    },
+    "No entry on this day" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Kein Eintrag an diesem Tag" } } }
+    },
+    "Record your first clips — they'll line up here as a scrubbable diary." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Nimm deine ersten Clips auf — sie reihen sich hier als scrollbares Tagebuch auf." } } }
+    },
+    "%lld CLIPS" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld CLIPS" } } }
+    },
+    "single day" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "eintägig" } } }
+    },
+    "%lld days" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "%lld Tage" } } }
+    },
+    "today" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "heute" } } }
+    },
+    "yesterday" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "gestern" } } }
+    },
+    "tomorrow" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "morgen" } } }
+    },
+    "%lld days ago" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "vor %lld Tagen" } } }
+    },
+    "1 week ago" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "vor 1 Woche" } } }
+    },
+    "%lld weeks ago" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "vor %lld Wochen" } } }
+    },
+    "%lld months ago" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "vor %lld Monaten" } } }
+    },
+    "in %lld days" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "in %lld Tagen" } } }
+    },
+    "in %lld weeks" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "in %lld Wochen" } } }
     }
 
   },

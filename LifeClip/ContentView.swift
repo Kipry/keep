@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - App tabs
 
 enum AppTab {
-    case projects, archive, today
+    case projects, archive, timeline, today
 }
 
 // MARK: - Root view
@@ -16,6 +16,7 @@ struct ContentView: View {
             switch selectedTab {
             case .projects: ProjectListView()
             case .archive:  ArchiveView()
+            case .timeline: DiaryTimelineView()
             case .today:    OnThisDayView()
             }
         }
@@ -35,6 +36,7 @@ private struct AppTabBar: View {
         HStack(spacing: 0) {
             tabItem(.projects, icon: "square.grid.2x2",      label: "Projekte")
             tabItem(.archive,  icon: "archivebox",            label: "Archiv")
+            tabItem(.timeline, icon: "calendar.day.timeline.left", fillIcon: "calendar.day.timeline.left", label: "Tagebuch")
             tabItem(.today,    icon: "sparkles", fillIcon: "sparkles", label: "Heute")
         }
         .padding(.horizontal, 10)
