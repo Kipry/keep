@@ -146,21 +146,19 @@ struct DiaryTimelineView: View {
     var body: some View {
         GeometryReader { geo in
             let cx = geo.size.width / 2
-            let topInset = geo.safeAreaInsets.top
-            ZStack {
+            ZStack(alignment: .top) {
                 Theme.background.ignoresSafeArea()
                 RadialGradient(colors: [Theme.amber.opacity(0.06), .clear],
                                center: .init(x: 0.5, y: 0.04), startRadius: 0, endRadius: 320)
                     .ignoresSafeArea()
 
                 if let data, !data.bands.isEmpty {
-                    content(width: geo.size.width, cx: cx, data: data, topInset: topInset)
+                    content(width: geo.size.width, cx: cx, data: data)
                 } else {
                     emptyScreen
                 }
             }
         }
-        .ignoresSafeArea(edges: .top)
         .preferredColorScheme(.dark)
         .onAppear(perform: rebuild)
         .onChange(of: projects.count) { _, _ in rebuild() }
@@ -199,21 +197,27 @@ struct DiaryTimelineView: View {
 
     // MARK: - Content
 
+    // 9:16 portrait card width — narrow enough to see the full video frame
+    private let cardW: CGFloat = 118
+    private var cardH: CGFloat { cardW * 16 / 9 }   // ≈ 210 pt
+
     @ViewBuilder
-    private func content(width: CGFloat, cx: CGFloat, data: TimelineData, topInset: CGFloat) -> some View {
+    private func content(width: CGFloat, cx: CGFloat, data: TimelineData) -> some View {
         VStack(spacing: 0) {
             header(data: data)
                 .padding(.horizontal, 24)
-                .padding(.top, topInset + 12)
+                .padding(.top, 18)
 
+            // Portrait thumbnail — shows the full 9:16 frame, no crop
             preview(data: data)
-                .frame(height: 210)
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
+                .frame(width: cardW, height: cardH)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.1), lineWidth: 1))
+                .padding(.top, 14)
 
             controlRow(data: data)
                 .padding(.horizontal, 24)
-                .padding(.top, 12)
+                .padding(.top, 14)
 
             scrubber(width: width, cx: cx, data: data)
                 .padding(.top, 10)
@@ -261,21 +265,20 @@ struct DiaryTimelineView: View {
     @ViewBuilder
     private func preview(data: TimelineData) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 24).fill(Color(red: 0.078, green: 0.075, blue: 0.071))
+            Color(red: 0.078, green: 0.075, blue: 0.071)
             if let band = activeBand {
                 previewActive(band)
             } else {
                 previewEmpty(data: data)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .overlay(RoundedRectangle(cornerRadius: 24).stroke(.white.opacity(0.1), lineWidth: 1))
-        .contentShape(RoundedRectangle(cornerRadius: 24))
+        .contentShape(Rectangle())
         .onTapGesture {
             if let band = activeBand { stopAutoplay(); selectedProject = band.project }
         }
     }
 
+    // Compact portrait overlay — fits in the 9:16 card without a mini strip
     @ViewBuilder
     private func previewActive(_ band: TimelineBand) -> some View {
         ZStack {
@@ -285,68 +288,48 @@ struct DiaryTimelineView: View {
 
             LinearGradient(
                 stops: [
-                    .init(color: .black.opacity(0.4), location: 0),
-                    .init(color: .clear, location: 0.26),
-                    .init(color: .clear, location: 0.5),
+                    .init(color: .black.opacity(0.45), location: 0),
+                    .init(color: .clear, location: 0.28),
+                    .init(color: .clear, location: 0.52),
                     .init(color: .black.opacity(0.88), location: 1)
                 ],
                 startPoint: .top, endPoint: .bottom
             )
 
             VStack {
-                // top badge + mini strip
-                HStack(alignment: .top) {
-                    HStack(spacing: 7) {
-                        Circle()
-                            .fill(isPlaying ? Color.red : Theme.amber)
-                            .frame(width: 7, height: 7)
-                            .opacity(isPlaying ? blinkOpacity : 1)
-                        Text("\(isPlaying ? Text("LOOKBACK") : Text("PREVIEW")) · \(Text(verbatim: dateString(focusedDate)))")
-                            .font(.mono(10))
-                            .tracking(1.2)
-                            .foregroundStyle(.white.opacity(0.85))
-                    }
-                    Spacer()
-                    HStack(spacing: 4) {
-                        ForEach(1...3, id: \.self) { k in
-                            TimelineThumb(clip: clip(at: k), fallback: band.startTag + k)
-                                .frame(width: 28, height: 38)
-                                .clipShape(RoundedRectangle(cornerRadius: 5))
-                                .overlay(RoundedRectangle(cornerRadius: 5).stroke(.white.opacity(0.25), lineWidth: 1))
-                        }
-                    }
+                // top badge
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(isPlaying ? Color.red : Theme.amber)
+                        .frame(width: 6, height: 6)
+                        .opacity(isPlaying ? blinkOpacity : 1)
+                    Text(isPlaying ? "LOOKBACK" : "PREVIEW")
+                        .font(.mono(9))
+                        .tracking(1.2)
+                        .foregroundStyle(.white.opacity(0.85))
                 }
-                .padding(.top, 13)
-                .padding(.horizontal, 15)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 10)
+                .padding(.horizontal, 9)
 
                 Spacer()
 
-                // bottom: project name + chips
-                VStack(alignment: .leading, spacing: 7) {
+                // bottom: name + single chip
+                VStack(alignment: .leading, spacing: 5) {
                     Text(band.name)
-                        .font(.hand(29))
+                        .font(.hand(20))
                         .foregroundStyle(.white)
                         .lineLimit(1)
-                    HStack(spacing: 7) {
-                        Text("\(band.clipCount) CLIPS")
-                            .font(.mono(10.5))
-                            .foregroundStyle(Theme.paper)
-                            .padding(.horizontal, 9).padding(.vertical, 2)
-                            .background(.black.opacity(0.5), in: Capsule())
-                            .overlay(Capsule().stroke(Theme.paper.opacity(0.35), lineWidth: 1))
-                        Text(relativeLabel(forDay: Int(band.center.rounded())))
-                            .font(.mono(10.5))
-                            .foregroundStyle(Theme.ink)
-                            .padding(.horizontal, 9).padding(.vertical, 2)
-                            .background(Theme.amber, in: Capsule())
-                        (band.span == 1 ? Text("single day") : Text("\(band.span) days"))
-                            .font(.mono(10.5))
-                            .foregroundStyle(.white.opacity(0.55))
-                    }
+                    Text("\(band.clipCount) CLIPS")
+                        .font(.mono(9))
+                        .foregroundStyle(Theme.paper)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .background(.black.opacity(0.5), in: Capsule())
+                        .overlay(Capsule().stroke(Theme.paper.opacity(0.35), lineWidth: 1))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 17)
-                .padding(.bottom, 16)
+                .padding(.horizontal, 10)
+                .padding(.bottom, 12)
             }
         }
     }
@@ -354,23 +337,20 @@ struct DiaryTimelineView: View {
     @ViewBuilder
     private func previewEmpty(data: TimelineData) -> some View {
         ZStack {
-            // subtle diagonal "no entry" hatch
             Color(red: 0.086, green: 0.078, blue: 0.071)
-            VStack(spacing: 18) {
-                TimelineLens(size: 64)
+            VStack(spacing: 12) {
+                TimelineLens(size: 44)
                     .opacity(0.4)
-                VStack(spacing: 12) {
-                    Text("No entry on this day")
-                        .font(.hand(23))
-                        .foregroundStyle(.white.opacity(0.62))
-                    Text("\(Text(verbatim: dateString(focusedDate))) · \(relativeLabel(forDay: focusedDay))")
-                        .font(.mono(11))
-                        .tracking(1)
-                        .foregroundStyle(.white.opacity(0.3))
-                }
-                .multilineTextAlignment(.center)
+                Text("No entry on this day")
+                    .font(.hand(16))
+                    .foregroundStyle(.white.opacity(0.62))
+                    .multilineTextAlignment(.center)
+                Text(verbatim: dateString(focusedDate))
+                    .font(.mono(10))
+                    .tracking(1)
+                    .foregroundStyle(.white.opacity(0.3))
             }
-            .padding(.horizontal, 28)
+            .padding(.horizontal, 10)
         }
         .id("empty")
         .transition(.opacity)
