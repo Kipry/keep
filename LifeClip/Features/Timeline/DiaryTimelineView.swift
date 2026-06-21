@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import AVFoundation
 
 // MARK: - Geometry / data model
 //
@@ -206,17 +207,21 @@ struct DiaryTimelineView: View {
                 .padding(.top, topInset + 12)
 
             preview(data: data)
-                .frame(minHeight: 180, maxHeight: .infinity)
-                .layoutPriority(1)
-                .padding(.horizontal, 24)
+                .frame(height: 210)
+                .padding(.horizontal, 20)
                 .padding(.top, 12)
 
             controlRow(data: data)
                 .padding(.horizontal, 24)
-                .padding(.top, 16)
+                .padding(.top, 12)
 
             scrubber(width: width, cx: cx, data: data)
-                .padding(.top, 14)
+                .padding(.top, 10)
+
+            bigDate(data: data)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+                .frame(maxWidth: .infinity)
         }
     }
 
@@ -413,25 +418,21 @@ struct DiaryTimelineView: View {
     // MARK: Scrubber
 
     private func scrubber(width: CGFloat, cx: CGFloat, data: TimelineData) -> some View {
-        let projH = CGFloat(data.lanes) * 28
+        let projH = CGFloat(data.lanes) * 20
         return ZStack(alignment: .top) {
-            VStack(spacing: 8) {
-                monthScale(cx: cx, data: data).frame(height: 28).clipped()
+            VStack(spacing: 6) {
+                monthScale(cx: cx, data: data).frame(height: 22).clipped()
                 projectBands(cx: cx, data: data).frame(height: projH)
                 heatmap(cx: cx, data: data)
-                    .frame(height: 16)
+                    .frame(height: 12)
                     .mask(edgeFadeMask)
                 filmRuler(cx: cx, data: data)
-                    .frame(height: 50)
+                    .frame(height: 30)
                     .mask(edgeFadeMask)
             }
             .overlay(alignment: .top) { playhead(projH: projH) }
-
-            bigDate(data: data)
-                .padding(.top, projH + 134)   // monthScale+bands+heat+ruler stack + 16pt gap
-                .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity)
         .padding(.top, 6)
         .contentShape(Rectangle())
         .gesture(dragGesture(data: data))
@@ -451,7 +452,7 @@ struct DiaryTimelineView: View {
 
     // playhead line + triangle, fixed at centre
     private func playhead(projH: CGFloat) -> some View {
-        let h = projH + 118   // monthScale(28)+bands+heat(16)+ruler(50) + 8pt gaps
+        let h = projH + 82   // monthScale(22)+bands+heat(12)+ruler(30) + 6pt gaps*3
         return ZStack(alignment: .top) {
             LinearGradient(
                 stops: [
@@ -524,22 +525,22 @@ struct DiaryTimelineView: View {
                 let on = activeBand?.id == band.id
                 let showLabel = w >= 42
                 let centerX = leftX + w / 2
-                let y = CGFloat(band.lane) * 28 + 12
+                let y = CGFloat(band.lane) * 20 + 10
 
                 Group {
                     if showLabel {
                         Text(band.name)
-                            .font(.hand(15))
+                            .font(.hand(13))
                             .foregroundStyle(on ? Theme.ink : Color(red: 0.863, green: 0.902, blue: 0.941))
                             .lineLimit(1)
-                            .frame(width: w - 16, alignment: .leading)
-                            .padding(.leading, 8)
-                            .frame(width: w, height: 24, alignment: .leading)
+                            .frame(width: w - 14, alignment: .leading)
+                            .padding(.leading, 7)
+                            .frame(width: w, height: 18, alignment: .leading)
                     } else {
                         Circle()
                             .fill(on ? Theme.ink : Color(red: 0.863, green: 0.902, blue: 0.941))
-                            .frame(width: 6, height: 6)
-                            .frame(width: w, height: 24)
+                            .frame(width: 5, height: 5)
+                            .frame(width: w, height: 18)
                     }
                 }
                 .background(
@@ -572,11 +573,11 @@ struct DiaryTimelineView: View {
                 let v = data.density[d]
                 if v > 0 {
                     let ratio = v / data.maxDensity
-                    let barH = 3 + ratio * 13
+                    let barH = 2 + ratio * 10
                     Capsule()
                         .fill(Theme.amber.opacity(0.22 + 0.78 * ratio))
                         .frame(width: max(2, px - 1), height: barH)
-                        .position(x: cx + CGFloat(Double(d) - centerDay) * px, y: 16 - barH / 2)
+                        .position(x: cx + CGFloat(Double(d) - centerDay) * px, y: 12 - barH / 2)
                 }
             }
         }
@@ -595,15 +596,15 @@ struct DiaryTimelineView: View {
                     RoundedRectangle(cornerRadius: 1)
                         .fill(tick.color)
                         .frame(width: 2, height: tick.height)
-                        .position(x: cx + CGFloat(Double(d) - centerDay) * px, y: 50 - tick.height / 2)
+                        .position(x: cx + CGFloat(Double(d) - centerDay) * px, y: 30 - tick.height / 2)
                 }
             }
             // HEUTE marker
             let todayX = cx + CGFloat(Double(data.todayTag) - centerDay) * px
             DashedLine()
                 .stroke(.white.opacity(0.6), style: StrokeStyle(lineWidth: 2, dash: [3, 3]))
-                .frame(width: 2, height: 50)
-                .position(x: todayX, y: 25)
+                .frame(width: 2, height: 30)
+                .position(x: todayX, y: 15)
             Text("TODAY")
                 .font(.mono(8))
                 .tracking(1)
@@ -611,7 +612,7 @@ struct DiaryTimelineView: View {
                 .padding(.horizontal, 5).padding(.vertical, 1)
                 .background(.white.opacity(0.16), in: RoundedRectangle(cornerRadius: 4))
                 .fixedSize()
-                .position(x: todayX, y: 4)
+                .position(x: todayX, y: 3)
         }
         .frame(maxWidth: .infinity)
     }
@@ -625,7 +626,7 @@ struct DiaryTimelineView: View {
         let isFocus = d == focusedDay
         if px < 4 && !isMonth && !isWeek && !isFocus { return nil }
         if px < 8 && !isMonth && !isWeek && !isFocus && d % 2 != 0 { return nil }
-        let h: CGFloat = isMonth ? 34 : isWeek ? 22 : 13
+        let h: CGFloat = isMonth ? 22 : isWeek ? 14 : 8
         let color: Color = isFocus ? .white
             : isMonth ? Theme.amber
             : isWeek ? Theme.amber.opacity(0.85)
@@ -834,16 +835,18 @@ struct DiaryTimelineView: View {
 
 // MARK: - Supporting views
 
-/// Decodes a clip's stored thumbnail (with a coloured gradient fallback).
+/// Shows the stored low-res thumbnail immediately, then upgrades to a full-res
+/// frame decoded from the actual video file for the hero preview.
 private struct TimelineThumb: View {
     let clip: Clip?
     let fallback: Int
-    @State private var image: UIImage?
+    @State private var thumbImage: UIImage?
+    @State private var hiResImage: UIImage?
 
     var body: some View {
         ZStack {
-            if let image {
-                Image(uiImage: image)
+            if let img = hiResImage ?? thumbImage {
+                Image(uiImage: img)
                     .resizable()
                     .scaledToFill()
             } else {
@@ -860,9 +863,23 @@ private struct TimelineThumb: View {
     }
 
     private func load() async {
-        image = nil
-        guard let data = clip?.thumbnailData, let img = UIImage(data: data) else { return }
-        image = img
+        thumbImage = nil
+        hiResImage = nil
+        guard let clip else { return }
+        // Show stored thumbnail instantly
+        if let data = clip.thumbnailData, let img = UIImage(data: data) {
+            thumbImage = img
+        }
+        // Upgrade to a full-res frame from the video file
+        let url = clip.fileURL
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        let asset = AVURLAsset(url: url)
+        let gen = AVAssetImageGenerator(asset: asset)
+        gen.appliesPreferredTrackTransform = true
+        gen.maximumSize = CGSize(width: 1080, height: 1080)
+        guard let cgImg = try? await gen.image(at: .zero).image,
+              !Task.isCancelled else { return }
+        hiResImage = UIImage(cgImage: cgImg)
     }
 }
 
