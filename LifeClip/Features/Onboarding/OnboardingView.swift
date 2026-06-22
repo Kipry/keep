@@ -183,64 +183,82 @@ private struct StepWelcome: View {
             headline: "Hold the moment.\nBefore it's gone.",
             subtext:  "keep. — your life, one clip at a time."
         ) {
-            AmberLens()
-                .frame(height: 300)
+            VStack(spacing: 46) {
+                AmberLens()
+                Wordmark(size: 52)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 36)
         }
+    }
+}
+
+// "keep." wordmark in Patrick Hand (matches the app + design)
+private struct Wordmark: View {
+    var size: CGFloat = 40
+    var body: some View {
+        (Text("keep").foregroundStyle(Color.white)
+         + Text(".").foregroundStyle(Theme.amber))
+            .font(.hand(size))
     }
 }
 
 private struct AmberLens: View {
     @State private var floating = false
 
+    private let lensSize: CGFloat = 168
+
     var body: some View {
         ZStack {
-            ForEach([CGFloat(1.6), 1.3, 1.0], id: \.self) { scale in
+            // three concentric amber rings (border opacity 0.30 / 0.215 / 0.13)
+            ForEach(Array([0, 1, 2].enumerated()), id: \.offset) { _, i in
                 Circle()
-                    .stroke(Theme.amber.opacity(scale == 1.0 ? 0.30 : scale == 1.3 ? 0.22 : 0.13), lineWidth: 1.5)
-                    .frame(width: 160, height: 160)
-                    .scaleEffect(scale)
+                    .stroke(Theme.amber.opacity(0.30 - Double(i) * 0.085), lineWidth: 2)
+                    .frame(width: lensSize, height: lensSize)
+                    .scaleEffect(1 + CGFloat(i) * 0.3)
             }
 
+            // amber body — radial highlight from upper area
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color(red: 0.984, green: 0.702, blue: 0.416),
-                            Color(red: 0.941, green: 0.529, blue: 0.227),
-                            Color(red: 0.788, green: 0.408, blue: 0.122)
+                            Color(red: 0.984, green: 0.702, blue: 0.416), // #FBB36A
+                            Theme.amber,                                   // #F0873A
+                            Color(red: 0.788, green: 0.408, blue: 0.122)   // #C9681F
                         ],
-                        center: UnitPoint(x: 0.5, y: 0.3),
+                        center: UnitPoint(x: 0.5, y: 0.30),
                         startRadius: 0,
-                        endRadius: 80
+                        endRadius: lensSize * 0.55
                     )
                 )
-                .frame(width: 160, height: 160)
+                .frame(width: lensSize, height: lensSize)
+                .shadow(color: Theme.amber.opacity(0.28), radius: lensSize * 0.16, y: lensSize * 0.08)
 
+            // dark glass lens
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Color(white: 0.18), Color(white: 0.07)],
-                        center: .center,
+                        colors: [Color(red: 0.227, green: 0.227, blue: 0.227), Color(white: 0.035)],
+                        center: UnitPoint(x: 0.36, y: 0.32),
                         startRadius: 0,
-                        endRadius: 52
+                        endRadius: lensSize * 0.42 * 0.72
                     )
                 )
-                .frame(width: 108, height: 108)
+                .frame(width: lensSize * 0.42, height: lensSize * 0.42)
 
+            // amber pupil
             Circle()
                 .fill(Theme.amber)
-                .frame(width: 8, height: 8)
+                .frame(width: lensSize * 0.42 * 0.3, height: lensSize * 0.42 * 0.3)
+                .shadow(color: Theme.amber.opacity(0.85), radius: lensSize * 0.05)
 
+            // specular highlight
             Circle()
-                .fill(.white.opacity(0.55))
-                .frame(width: 10, height: 10)
-                .offset(x: -18, y: -16)
+                .fill(.white.opacity(0.85))
+                .frame(width: lensSize * 0.10, height: lensSize * 0.10)
                 .blur(radius: 2)
-
-            Text("keep.")
-                .font(.hand(20))
-                .foregroundStyle(.white.opacity(0.9))
-                .offset(y: 88)
+                .offset(x: -lensSize * 0.10, y: -lensSize * 0.10)
         }
         .offset(y: floating ? -7 : 0)
         .animation(
@@ -295,126 +313,182 @@ private struct LockPhaseAnimation: View {
     }
 }
 
-// MARK: - Shared lock screen mock (steps 2 & 6)
+// MARK: - Shared lock-screen building blocks (match kb-screens.jsx LockFace)
 
-private struct LockScreenMock: View {
-    var showTapRing: Bool = false
-    var highlightWidget: Bool = false
-
+/// Warm amber-tinted lock-screen backdrop (radial glow + dark gradient).
+private struct LockBackground: View {
     var body: some View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color(red: 0.10, green: 0.07, blue: 0.04),
-                    Color(red: 0.051, green: 0.051, blue: 0.051),
-                    Color(red: 0.04, green: 0.05, blue: 0.07)
+                    Color(red: 0.141, green: 0.114, blue: 0.086), // #241d16
+                    Color(red: 0.047, green: 0.043, blue: 0.039), // #0c0b0a
+                    .black
                 ],
-                startPoint: .top,
-                endPoint: .bottom
+                startPoint: .top, endPoint: .bottom
             )
-            .ignoresSafeArea()
+            RadialGradient(
+                colors: [Theme.amber.opacity(0.10), .clear],
+                center: UnitPoint(x: 0.5, y: 0.16),
+                startRadius: 0, endRadius: 300
+            )
+        }
+        .ignoresSafeArea()
+    }
+}
 
-            VStack(spacing: 0) {
-                Spacer()
-
-                VStack(spacing: 4) {
-                    Text("SONNTAG · 7. JUNI")
-                        .font(.mono(11))
-                        .foregroundStyle(.white.opacity(0.55))
-                        .tracking(1.5)
-                    Text("23:07")
-                        .font(.custom("PatrickHand-Regular", size: 64))
-                        .foregroundStyle(.white)
-                }
-
-                Spacer().frame(height: 36)
-
-                HStack(spacing: 14) {
-                    glassCircle(icon: "cloud.sun.fill")
-
-                    ZStack {
-                        if highlightWidget {
-                            Circle()
-                                .fill(Theme.amber.opacity(0.22))
-                                .frame(width: 72, height: 72)
-                                .blur(radius: 12)
-                        }
-                        if showTapRing || highlightWidget {
-                            TapRingAnimation(size: 48)
-                        }
-                        RecWidget(size: 48)
-                    }
-
-                    glassCircle(icon: "battery.75")
-                }
-
-                Spacer().frame(height: 20)
-
-                Text("One tap — record directly")
-                    .font(.mono(10))
-                    .foregroundStyle(Theme.amber.opacity(0.8))
-                    .tracking(1)
-
-                Spacer().frame(height: 32)
-            }
+/// Lock-screen clock — SF Pro Display time over a mono date line.
+private struct LockClock: View {
+    var body: some View {
+        VStack(spacing: 4) {
+            Text("SONNTAG · 7. JUNI")
+                .font(.mono(13))
+                .tracking(2)
+                .foregroundStyle(.white.opacity(0.55))
+            Text("23:07")
+                .font(.system(size: 88, weight: .semibold))
+                .foregroundStyle(.white)
+                .tracking(-3)
         }
     }
-
-    private func glassCircle(icon: String) -> some View {
-        Circle()
-            .fill(Color.white.opacity(0.12))
-            .frame(width: 48, height: 48)
-            .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1))
-            .overlay(
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundStyle(.white.opacity(0.5))
-            )
-    }
 }
 
-private struct TapRingAnimation: View {
-    let size: CGFloat
-    @State private var scale: CGFloat = 1.0
-    @State private var opacity: CGFloat = 0.6
-
-    var body: some View {
-        Circle()
-            .stroke(Theme.amber.opacity(0.5), lineWidth: 1.5)
-            .frame(width: size * 1.75, height: size * 1.75)
-            .scaleEffect(scale)
-            .opacity(opacity)
-            .onAppear {
-                withAnimation(.easeOut(duration: 1.5).repeatForever(autoreverses: false)) {
-                    scale = 2.1
-                    opacity = 0
-                }
-            }
-    }
-}
-
-// MARK: - REC widget (glass style, matches HTML design)
-
-private struct RecWidget: View {
-    let size: CGFloat
+/// Decoy accessory-circular widgets either side of the REC widget.
+private struct CircularDecoy: View {
+    enum Kind { case weather, battery }
+    let kind: Kind
+    var size: CGFloat = 62
 
     var body: some View {
         ZStack {
-            Circle()
-                .fill(Color.white.opacity(0.12))
-                .frame(width: size, height: size)
-            Circle()
-                .stroke(Theme.amber, lineWidth: 2)
-                .frame(width: size, height: size)
+            Circle().fill(.white.opacity(0.14))
+            switch kind {
+            case .weather:
+                Image(systemName: "cloud.sun.fill")
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, Color(red: 1, green: 0.84, blue: 0.04))
+                    .font(.system(size: 24))
+            case .battery:
+                VStack(spacing: -1) {
+                    Text("85")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("%")
+                        .font(.mono(8))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+            }
+        }
+        .frame(width: size, height: size)
+    }
+}
+
+/// accessoryCircular REC widget — amber ring + dot + "REC" over glass.
+private struct RecWidget: View {
+    var size: CGFloat = 62
+    var showTap: Bool = false
+
+    var body: some View {
+        ZStack {
+            if showTap { TapRingAnimation(size: size) }
+            Circle().fill(.white.opacity(0.12))
+            Circle().stroke(Theme.amber, lineWidth: 2)
             VStack(spacing: 2) {
                 Circle()
                     .fill(Theme.amber)
-                    .frame(width: size * 0.18, height: size * 0.18)
+                    .frame(width: size * 0.16, height: size * 0.16)
                 Text("REC")
-                    .font(.mono(size * 0.20, weight: .medium))
+                    .font(.mono(size * 0.13, weight: .bold))
+                    .tracking(0.5)
                     .foregroundStyle(Theme.amber)
             }
         }
+        .frame(width: size, height: size)
+    }
+}
+
+/// Expanding white tap pulse (kbTap: grow + fade out).
+private struct TapRingAnimation: View {
+    let size: CGFloat
+    @State private var animate = false
+
+    var body: some View {
+        Circle()
+            .stroke(.white.opacity(0.9), lineWidth: 2)
+            .frame(width: size + 12, height: size + 12)
+            .scaleEffect(animate ? 1.3 : 0.55)
+            .opacity(animate ? 0 : 0.85)
+            .onAppear {
+                withAnimation(.easeOut(duration: 1.5).repeatForever(autoreverses: false)) {
+                    animate = true
+                }
+            }
+    }
+}
+
+// MARK: - Lock screen mock (step 2 · matches LockFace)
+
+private struct LockScreenMock: View {
+    var showTapRing: Bool = false
+
+    var body: some View {
+        ZStack {
+            LockBackground()
+
+            VStack(spacing: 0) {
+                LockClock()
+                    .padding(.top, 92)
+
+                // accessory widget row (weather · REC · battery)
+                HStack(spacing: 16) {
+                    CircularDecoy(kind: .weather)
+                    RecWidget(size: 62, showTap: showTapRing)
+                    CircularDecoy(kind: .battery)
+                }
+                .padding(.top, 30)
+
+                // pointer caption
+                VStack(spacing: 4) {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Theme.amber)
+                    Text("One tap — record directly")
+                        .font(.hand(19))
+                        .foregroundStyle(.white)
+                    Text("WITHOUT OPENING THE APP")
+                        .font(.mono(10))
+                        .tracking(1)
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+                .padding(.top, 18)
+
+                Spacer()
+
+                // lock affordances
+                HStack(spacing: 200) {
+                    lockAffordance("lock.fill")
+                    lockAffordance("camera.fill")
+                }
+                .padding(.bottom, 40)
+
+                // home indicator
+                Capsule()
+                    .fill(.white.opacity(0.6))
+                    .frame(width: 134, height: 5)
+                    .padding(.bottom, 9)
+            }
+        }
+    }
+
+    private func lockAffordance(_ icon: String) -> some View {
+        Circle()
+            .fill(.white.opacity(0.16))
+            .frame(width: 46, height: 46)
+            .overlay(
+                Image(systemName: icon)
+                    .font(.system(size: 18))
+                    .foregroundStyle(.white)
+            )
     }
 }
 
@@ -472,20 +546,48 @@ private struct CameraPhase: View {
 }
 
 private struct SuccessPhase: View {
+    @State private var popped = false
+
     var body: some View {
         ZStack {
-            Color(white: 0.04)
-            VStack(spacing: 16) {
+            LockBackground()
+            VStack(spacing: 0) {
                 ZStack {
-                    Circle().fill(Theme.amber).frame(width: 80, height: 80)
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color(red: 0.984, green: 0.702, blue: 0.416),
+                                    Theme.amber,
+                                    Color(red: 0.788, green: 0.408, blue: 0.122)
+                                ],
+                                center: UnitPoint(x: 0.5, y: 0.3),
+                                startRadius: 0, endRadius: 70
+                            )
+                        )
+                        .frame(width: 124, height: 124)
+                        .shadow(color: Theme.amber.opacity(0.4), radius: 28, y: 14)
                     Image(systemName: "checkmark")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundStyle(Theme.ink)
+                        .font(.system(size: 52, weight: .bold))
+                        .foregroundStyle(Color(red: 0.10, green: 0.07, blue: 0.02))
                 }
+                .scaleEffect(popped ? 1 : 0.8)
+
                 Text("Done.")
                     .font(.hand(38))
                     .foregroundStyle(.white)
+                    .padding(.top, 28)
+                Text("Three seconds. Phone back in your pocket.")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.white.opacity(0.45))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 6)
+                    .padding(.horizontal, 40)
             }
+        }
+        .onAppear {
+            popped = false
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) { popped = true }
         }
     }
 }
@@ -1002,107 +1104,79 @@ private struct StepWidget: View {
 
 private struct WidgetSetupMock: View {
     @State private var glowing = false
+    @State private var floating = false
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.10, green: 0.07, blue: 0.04),
-                    Color(red: 0.051, green: 0.051, blue: 0.051),
-                    Color(red: 0.04, green: 0.05, blue: 0.07)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            LockBackground()
 
             VStack(spacing: 0) {
-                Spacer()
+                LockClock()
+                    .padding(.top, 92)
 
-                VStack(spacing: 4) {
-                    Text("SONNTAG · 7. JUNI")
-                        .font(.mono(11))
-                        .foregroundStyle(.white.opacity(0.55))
-                        .tracking(1.5)
-                    Text("23:07")
-                        .font(.custom("PatrickHand-Regular", size: 64))
-                        .foregroundStyle(.white)
-                }
-
-                Spacer().frame(height: 36)
-
-                HStack(spacing: 14) {
-                    Circle()
-                        .fill(Color.white.opacity(0.12))
-                        .frame(width: 48, height: 48)
-                        .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1))
-                        .overlay(Image(systemName: "cloud.sun.fill").font(.system(size: 20)).foregroundStyle(.white.opacity(0.5)))
-
+                // accessory row — REC widget glows + gently floats
+                HStack(spacing: 16) {
+                    CircularDecoy(kind: .weather)
                     ZStack {
                         Circle()
-                            .fill(Theme.amber.opacity(glowing ? 0.28 : 0.12))
-                            .frame(width: 76, height: 76)
-                            .blur(radius: glowing ? 16 : 8)
-                        TapRingAnimation(size: 48)
-                        RecWidget(size: 48)
+                            .fill(Theme.amber.opacity(glowing ? 0.20 : 0))
+                            .frame(width: 82, height: 82)
+                            .blur(radius: 7)
+                        RecWidget(size: 62)
                     }
-
-                    Circle()
-                        .fill(Color.white.opacity(0.12))
-                        .frame(width: 48, height: 48)
-                        .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1))
-                        .overlay(Image(systemName: "battery.75").font(.system(size: 20)).foregroundStyle(.white.opacity(0.5)))
+                    .offset(y: floating ? -5 : 0)
+                    CircularDecoy(kind: .battery)
                 }
+                .padding(.top, 30)
 
-                Spacer().frame(height: 28)
+                Spacer()
 
                 instructionCard
-                    .padding(.horizontal, 24)
-
-                Spacer().frame(height: 28)
+                    .frame(width: 330)
+                    .padding(.bottom, 30)
             }
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
-                glowing = true
-            }
+            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { glowing = true }
+            withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true)) { floating = true }
         }
     }
 
     private var instructionCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Rectangle()
-                .fill(Theme.amber)
-                .frame(height: 2)
+        VStack(alignment: .leading, spacing: 14) {
+            Text("HOW TO SET IT UP")
+                .font(.mono(10))
+                .tracking(2)
+                .foregroundStyle(Theme.amber)
 
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(steps.indices, id: \.self) { i in
-                    HStack(alignment: .top, spacing: 10) {
+                    HStack(alignment: .top, spacing: 12) {
                         ZStack {
-                            Circle().fill(Theme.amber).frame(width: 20, height: 20)
+                            Circle().fill(Theme.amber).frame(width: 22, height: 22)
                             Text("\(i + 1)")
-                                .font(.mono(9, weight: .medium))
+                                .font(.mono(11, weight: .semibold))
                                 .foregroundStyle(Theme.ink)
                         }
                         VStack(alignment: .leading, spacing: 1) {
                             Text(steps[i].0)
-                                .font(.hand(14))
+                                .font(.hand(17))
                                 .foregroundStyle(.white)
                             Text(steps[i].1)
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color(white: 0.45))
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(.white.opacity(0.45))
                         }
                     }
                 }
             }
-            .padding(12)
         }
+        .padding(.horizontal, 22)
+        .padding(.vertical, 20)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.1))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.14), lineWidth: 1))
+            RoundedRectangle(cornerRadius: 22)
+                .fill(Color(white: 0.07).opacity(0.86))
+                .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.amber.opacity(0.3), lineWidth: 1))
         )
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private let steps: [(LocalizedStringKey, LocalizedStringKey)] = [
