@@ -178,15 +178,22 @@ struct DiaryTimelineView: View {
 
     private var focusedDate: Date { data?.date(at: focusedDay) ?? Date() }
 
+    // Prefer the band that has actual clips on the focused day; fall back to
+    // any band whose date range spans today (for empty-day context/navigation).
     private var activeBand: TimelineBand? {
-        data?.bands.first { focusedDay >= $0.startTag && focusedDay <= $0.endTag }
+        guard let data else { return nil }
+        if let b = data.bands.first(where: { band in
+            band.project.activeClips.contains { calendar.isDate($0.createdAt, inSameDayAs: focusedDate) }
+        }) { return b }
+        return data.bands.first { focusedDay >= $0.startTag && focusedDay <= $0.endTag }
     }
 
+    // All clips from ANY project recorded on the focused day.
     private var heroClips: [Clip] {
-        guard let b = activeBand else { return [] }
-        return b.project.activeClips
-            .filter { calendar.isDate($0.createdAt, inSameDayAs: focusedDate) }
-            .sorted { $0.createdAt < $1.createdAt }
+        guard let data else { return [] }
+        return data.bands.flatMap { band in
+            band.project.activeClips.filter { calendar.isDate($0.createdAt, inSameDayAs: focusedDate) }
+        }.sorted { $0.createdAt < $1.createdAt }
     }
 
     private func clip(at offset: Int) -> Clip? {
@@ -780,15 +787,22 @@ struct DiaryTimelineView: View {
                 }
                 centerDay = nv
             }
-            .onEnded { _ in
+            .onEnded { v in
                 let c = centerDay
                 dragBase = nil
-                // snap to nearby project centre, else nearest day
-                if let near = data.bands.min(by: { abs($0.center - c) < abs($1.center - c) }),
-                   abs(near.center - c) <= 1.6 {
-                    animateTo(near.center)
+                // Project forward using release velocity (flick momentum)
+                let throwDays = -(v.velocity.width / px) * 0.13
+                let thrown = clampDay(c + throwDays)
+                // Snap to nearby project centre if landing close to one
+                if let near = data.bands.min(by: { abs($0.center - thrown) < abs($1.center - thrown) }),
+                   abs(near.center - thrown) <= 2.5 {
+                    withAnimation(.spring(response: 0.42, dampingFraction: 0.80)) {
+                        centerDay = near.center
+                    }
                 } else {
-                    animateTo(c.rounded())
+                    withAnimation(.spring(response: 0.42, dampingFraction: 0.80)) {
+                        centerDay = thrown.rounded()
+                    }
                 }
             }
     }
