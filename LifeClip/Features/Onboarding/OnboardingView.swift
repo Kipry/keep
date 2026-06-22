@@ -1145,6 +1145,26 @@ private struct WidgetSetupMock: View {
         }
     }
 
+    @ViewBuilder
+    private func stepRow(_ index: Int) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle().fill(Theme.amber).frame(width: 22, height: 22)
+                Text("\(index + 1)")
+                    .font(.mono(11, weight: .medium))
+                    .foregroundStyle(Theme.ink)
+            }
+            VStack(alignment: .leading, spacing: 1) {
+                Text(steps[index].0)
+                    .font(.hand(17))
+                    .foregroundStyle(.white)
+                Text(steps[index].1)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(.white.opacity(0.45))
+            }
+        }
+    }
+
     private var instructionCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("HOW TO SET IT UP")
@@ -1153,24 +1173,7 @@ private struct WidgetSetupMock: View {
                 .foregroundStyle(Theme.amber)
 
             VStack(alignment: .leading, spacing: 12) {
-                ForEach(steps.indices, id: \.self) { i in
-                    HStack(alignment: .top, spacing: 12) {
-                        ZStack {
-                            Circle().fill(Theme.amber).frame(width: 22, height: 22)
-                            Text("\(i + 1)")
-                                .font(.mono(11, weight: .semibold))
-                                .foregroundStyle(Theme.ink)
-                        }
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(steps[i].0)
-                                .font(.hand(17))
-                                .foregroundStyle(.white)
-                            Text(steps[i].1)
-                                .font(.system(size: 11.5))
-                                .foregroundStyle(.white.opacity(0.45))
-                        }
-                    }
-                }
+                ForEach(steps.indices, id: \.self) { i in stepRow(i) }
             }
         }
         .padding(.horizontal, 22)
