@@ -398,7 +398,7 @@ private struct RecWidget: View {
                     .fill(Theme.amber)
                     .frame(width: size * 0.16, height: size * 0.16)
                 Text("REC")
-                    .font(.mono(size * 0.13, weight: .bold))
+                    .font(.mono(size * 0.13, weight: .medium))
                     .tracking(0.5)
                     .foregroundStyle(Theme.amber)
             }
@@ -548,31 +548,34 @@ private struct CameraPhase: View {
 private struct SuccessPhase: View {
     @State private var popped = false
 
+    private var badge: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color(red: 0.984, green: 0.702, blue: 0.416),
+                            Theme.amber,
+                            Color(red: 0.788, green: 0.408, blue: 0.122)
+                        ],
+                        center: UnitPoint(x: 0.5, y: 0.3),
+                        startRadius: 0, endRadius: 70
+                    )
+                )
+                .frame(width: 124, height: 124)
+                .shadow(color: Theme.amber.opacity(0.4), radius: 28, y: 14)
+            Image(systemName: "checkmark")
+                .font(.system(size: 52, weight: .bold))
+                .foregroundStyle(Color(red: 0.10, green: 0.07, blue: 0.02))
+        }
+        .scaleEffect(popped ? 1 : 0.8)
+    }
+
     var body: some View {
         ZStack {
             LockBackground()
             VStack(spacing: 0) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    Color(red: 0.984, green: 0.702, blue: 0.416),
-                                    Theme.amber,
-                                    Color(red: 0.788, green: 0.408, blue: 0.122)
-                                ],
-                                center: UnitPoint(x: 0.5, y: 0.3),
-                                startRadius: 0, endRadius: 70
-                            )
-                        )
-                        .frame(width: 124, height: 124)
-                        .shadow(color: Theme.amber.opacity(0.4), radius: 28, y: 14)
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 52, weight: .bold))
-                        .foregroundStyle(Color(red: 0.10, green: 0.07, blue: 0.02))
-                }
-                .scaleEffect(popped ? 1 : 0.8)
-
+                badge
                 Text("Done.")
                     .font(.hand(38))
                     .foregroundStyle(.white)
