@@ -212,9 +212,10 @@ struct DiaryTimelineView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 12)
 
-            // Preview: fills remaining space but capped so the scrubber always fits
+            // Preview: grows to fill all spare height so the timeline strip is
+            // pinned to the bottom (near the tab bar) and a 9:16 clip shows tall.
             preview(data: data)
-                .frame(maxWidth: .infinity, minHeight: 160, maxHeight: 280)
+                .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 22))
                 .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
                 .padding(.horizontal, 12)
@@ -231,7 +232,7 @@ struct DiaryTimelineView: View {
 
             bigDate(data: data)
                 .padding(.top, 6)
-                .padding(.bottom, 10)
+                .padding(.bottom, 4)
                 .frame(maxWidth: .infinity)
         }
         .padding(.top, 10)
@@ -652,19 +653,49 @@ struct DiaryTimelineView: View {
 
     private func bigDate(data: TimelineData) -> some View {
         VStack(spacing: 2) {
-            Text(verbatim: dateString(focusedDate))
+            Text(verbatim: focusTitle(focusedDate))
                 .font(.mono(30, weight: .medium))
                 .tracking(2)
                 .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .padding(.horizontal, 16)
             Group {
                 if let band = activeBand {
                     Text(verbatim: band.name).foregroundStyle(Theme.amber)
                 } else {
-                    Text(verbatim: weekdayString(focusedDate)).foregroundStyle(.white.opacity(0.4))
+                    Text(verbatim: focusSubtitle(focusedDate)).foregroundStyle(.white.opacity(0.4))
                 }
             }
             .font(.hand(16))
         }
+    }
+
+    // Primary label adapts to the zoom level: exact date on Day, calendar week
+    // on Week, month on Month, year on Year.
+    private func focusTitle(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale.current
+        switch zoom {
+        case .day:
+            f.dateFormat = "dd.MM.yyyy"
+            return f.string(from: date)
+        case .week:
+            let week = calendar.component(.weekOfYear, from: date)
+            let year = calendar.component(.yearForWeekOfYear, from: date)
+            return "KW \(week) · \(year)"
+        case .month:
+            f.dateFormat = "MMMM yyyy"
+            return f.string(from: date)
+        case .year:
+            f.dateFormat = "yyyy"
+            return f.string(from: date)
+        }
+    }
+
+    // Secondary line: weekday on Day zoom, otherwise the day's context.
+    private func focusSubtitle(_ date: Date) -> String {
+        zoom == .day ? weekdayString(date) : relativeLabel(forDay: focusedDay)
     }
 
     // MARK: Empty screen (no projects at all)
