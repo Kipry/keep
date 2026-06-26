@@ -196,8 +196,9 @@ actor VideoComposer {
 
         let canvas = CGSize(width: size.width, height: size.height)
 
-        // Use UIImage.size (not cgImage pixel dimensions) so that UIKit's orientation
-        // metadata is honoured when computing the aspect ratio.
+        // Use UIImage.size (orientation-aware) so a portrait photo computes a
+        // portrait aspect ratio — using cgImage pixel dimensions would swap it
+        // and render the frame 90° rotated and stretched.
         let imgAR = image.size.width / image.size.height
         let canAR = canvas.width / canvas.height
         var drawRect = CGRect(origin: .zero, size: canvas)
@@ -209,21 +210,18 @@ actor VideoComposer {
             drawRect = CGRect(x: 0, y: (canvas.height - h) / 2, width: canvas.width, height: h)
         }
 
-        // Render through UIGraphicsImageRenderer at 1:1 pixel scale so UIKit's
-        // coordinate system (top-left origin) correctly applies image orientation.
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        guard let cg = UIGraphicsImageRenderer(size: canvas, format: format).image { uiCtx in
-            UIColor.black.setFill()
-            uiCtx.fill(CGRect(origin: .zero, size: canvas))
-            image.draw(in: drawRect)
-        }.cgImage else { return nil }
-
-        // CGContext has a bottom-left origin, opposite to UIKit. Flip the y-axis
-        // before drawing so the rendered CGImage is not upside-down in the buffer.
-        ctx.translateBy(x: 0, y: CGFloat(size.height))
+        // A CGBitmapContext has a bottom-left origin (y-up), while UIKit's
+        // UIImage.draw expects a top-left origin (y-down). Flip the context first,
+        // then draw through UIKit so imageOrientation is honoured AND the frame is
+        // stored upright in the pixel buffer (the canonical UIImage→CVPixelBuffer
+        // pattern). Drawing a raw CGImage here instead would invert the frame.
+        ctx.translateBy(x: 0, y: canvas.height)
         ctx.scaleBy(x: 1, y: -1)
-        ctx.draw(cg, in: CGRect(origin: .zero, size: canvas))
+        UIGraphicsPushContext(ctx)
+        UIColor.black.setFill()
+        UIRectFill(CGRect(origin: .zero, size: canvas))
+        image.draw(in: drawRect)
+        UIGraphicsPopContext()
 
         return buffer
     }

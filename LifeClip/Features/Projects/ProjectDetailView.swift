@@ -1133,31 +1133,54 @@ private struct ClipPreviewCarousel: View {
         player.play()
     }
 
+    @ViewBuilder
     private func playerPage(for clip: Clip, index: Int) -> some View {
-        ZStack {
-            Color.black
-            if let player = players[clip.id] {
-                VideoLayerView(player: player)
-                    .onTapGesture {
-                        if player.timeControlStatus == .playing { player.pause() }
-                        else { player.play() }
-                    }
-            }
-        }
-        .onAppear {
-            if players[clip.id] == nil {
-                let item = AVPlayerItem(url: clip.fileURL)
-                if let trimEnd = clip.trimEnd {
-                    item.forwardPlaybackEndTime = CMTime(seconds: trimEnd, preferredTimescale: 600)
+        if clip.isPhoto {
+            // Show the original still image directly — always correctly oriented,
+            // independent of how the backing still-video was rendered.
+            ZStack {
+                Color.black
+                if let img = photoImage(for: clip) {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFit()
                 }
-                let p = AVPlayer(playerItem: item)
-                players[clip.id] = p
-                if index == currentIndex { seekAndPlay(clip) }
+            }
+        } else {
+            ZStack {
+                Color.black
+                if let player = players[clip.id] {
+                    VideoLayerView(player: player)
+                        .onTapGesture {
+                            if player.timeControlStatus == .playing { player.pause() }
+                            else { player.play() }
+                        }
+                }
+            }
+            .onAppear {
+                if players[clip.id] == nil {
+                    let item = AVPlayerItem(url: clip.fileURL)
+                    if let trimEnd = clip.trimEnd {
+                        item.forwardPlaybackEndTime = CMTime(seconds: trimEnd, preferredTimescale: 600)
+                    }
+                    let p = AVPlayer(playerItem: item)
+                    players[clip.id] = p
+                    if index == currentIndex { seekAndPlay(clip) }
+                }
+            }
+            .onDisappear {
+                players[clip.id]?.pause()
             }
         }
-        .onDisappear {
-            players[clip.id]?.pause()
+    }
+
+    // Loads the full still image for a photo clip, falling back to its thumbnail.
+    private func photoImage(for clip: Clip) -> UIImage? {
+        if let url = clip.photoSourceURL, let img = UIImage(contentsOfFile: url.path) {
+            return img
         }
+        if let data = clip.thumbnailData { return UIImage(data: data) }
+        return nil
     }
 }
 
