@@ -30,7 +30,7 @@ struct VideoTransferable: Transferable {
             // Prefer the embedded capture date over the import date.
             var created: Date? = nil
             if let item = try? await asset.load(.creationDate) {
-                created = try? await item?.load(.dateValue)
+                created = try? await item.load(.dateValue)
             }
             return VideoTransferable(url: destURL, duration: duration.seconds, creationDate: created)
         }
