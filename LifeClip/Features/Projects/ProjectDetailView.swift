@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import AVFoundation
+import Photos
 import PhotosUI
 import UniformTypeIdentifiers
 import ImageIO
@@ -600,7 +601,7 @@ struct ProjectDetailView: View {
 
     // Imports a still photo: stores the source image, renders it to a short
     // still-video so it composes like any other clip, and tags it as a photo.
-    private func addPhotoClip(imageData: Data) async {
+    private func addPhotoClip(imageData: Data, phDate: Date? = nil) async {
         guard let ui = UIImage(data: imageData)?.normalizedUp() else { return }
         let imports = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -610,7 +611,8 @@ struct ProjectDetailView: View {
         guard let jpeg = ui.jpegData(compressionQuality: 0.92) else { return }
         try? jpeg.write(to: imageURL)
 
-        let created = Self.exifCreationDate(from: imageData) ?? Date()
+        // Priority: PHAsset date (most reliable) → EXIF in the raw image data → now.
+        let created = phDate ?? Self.exifCreationDate(from: imageData) ?? Date()
         let duration = 3.0
         guard let movURL = try? await composer.renderStillVideo(from: imageURL, duration: duration) else { return }
 
@@ -663,14 +665,22 @@ struct ProjectDetailView: View {
         isImporting = true
         defer { isImporting = false; importSelections = [] }
         for item in items {
+            // PHAsset.creationDate is the authoritative original capture time.
+            // item.itemIdentifier is the PHAsset local identifier — fetching it is
+            // synchronous and instant (Photos library cache, no I/O).
+            let phDate: Date? = item.itemIdentifier.flatMap { id in
+                PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
+                    .firstObject?.creationDate
+            }
+
             let types = item.supportedContentTypes
             if types.contains(where: { $0.conforms(to: .movie) }) {
                 if let video = try? await item.loadTransferable(type: VideoTransferable.self) {
-                    addClip(fileURL: video.url, duration: video.duration, createdAt: video.creationDate)
+                    addClip(fileURL: video.url, duration: video.duration, createdAt: phDate ?? video.creationDate)
                 }
             } else if types.contains(where: { $0.conforms(to: .image) }) {
                 if let data = try? await item.loadTransferable(type: Data.self) {
-                    await addPhotoClip(imageData: data)
+                    await addPhotoClip(imageData: data, phDate: phDate)
                 }
             }
         }
