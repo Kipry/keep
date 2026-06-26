@@ -11,6 +11,7 @@ enum AppTab {
 struct ContentView: View {
     @State private var selectedTab: AppTab = .projects
     @State private var slideForward = true
+    @State private var dragOffset: CGFloat = 0
 
     private let order: [AppTab] = [.projects, .timeline, .today]
 
@@ -20,6 +21,7 @@ struct ContentView: View {
                 Theme.background.ignoresSafeArea()
                 page
                     .id(selectedTab)
+                    .offset(x: dragOffset)
                     .transition(.asymmetric(
                         insertion: .move(edge: slideForward ? .trailing : .leading),
                         removal:   .move(edge: slideForward ? .leading : .trailing)
@@ -46,14 +48,31 @@ struct ContentView: View {
     }
 
     private func edgeSwipe(width: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 24, coordinateSpace: .global)
-            .onEnded { v in
-                let dx = v.translation.width, dy = v.translation.height
-                guard abs(dx) > 60, abs(dx) > abs(dy) * 1.4 else { return }
+        DragGesture(minimumDistance: 12, coordinateSpace: .global)
+            .onChanged { v in
                 let fromLeft  = v.startLocation.x < 30
                 let fromRight = v.startLocation.x > width - 30
-                if dx < 0 && fromRight { step(1) }        // swipe ← from right edge → next
-                else if dx > 0 && fromLeft { step(-1) }   // swipe → from left edge → previous
+                let dx = v.translation.width
+                // Only track intentional horizontal edge drags.
+                guard (fromLeft && dx > 0) || (fromRight && dx < 0) else { return }
+                guard abs(dx) > abs(v.translation.height) * 0.5 else { return }
+                // Rubber-band: page moves at 35 % of finger travel so the user
+                // feels immediate response without the view flying off screen.
+                dragOffset = dx * 0.35
+            }
+            .onEnded { v in
+                let dx = v.translation.width, dy = v.translation.height
+                let fromLeft  = v.startLocation.x < 30
+                let fromRight = v.startLocation.x > width - 30
+                let committed = abs(dx) > 60 && abs(dx) > abs(dy) * 1.4
+                    && ((dx < 0 && fromRight) || (dx > 0 && fromLeft))
+                if committed {
+                    // Snap offset back instantly so it doesn't fight the transition.
+                    dragOffset = 0
+                    if dx < 0 { step(1) } else { step(-1) }
+                } else {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { dragOffset = 0 }
+                }
             }
     }
 
@@ -69,7 +88,7 @@ struct ContentView: View {
               let from = order.firstIndex(of: selectedTab),
               let to   = order.firstIndex(of: tab) else { return }
         slideForward = to > from
-        withAnimation(.easeInOut(duration: 0.28)) { selectedTab = tab }
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.88)) { selectedTab = tab }
     }
 }
 

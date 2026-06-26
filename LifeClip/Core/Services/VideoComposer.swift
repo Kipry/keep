@@ -194,24 +194,37 @@ actor VideoComposer {
             bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
         ) else { return nil }
 
-        ctx.setFillColor(UIColor.black.cgColor)
-        ctx.fill(CGRect(x: 0, y: 0, width: size.width, height: size.height))
-        if let cg = image.cgImage {
-            // Fill the canvas while preserving aspect (crop overflow), matching
-            // how real clips are scaled to fill in the composition.
-            let canvas = CGSize(width: size.width, height: size.height)
-            let imgAR = CGFloat(cg.width) / CGFloat(cg.height)
-            let canAR = canvas.width / canvas.height
-            var drawRect = CGRect(origin: .zero, size: canvas)
-            if imgAR > canAR {
-                let w = canvas.height * imgAR
-                drawRect = CGRect(x: (canvas.width - w) / 2, y: 0, width: w, height: canvas.height)
-            } else {
-                let h = canvas.width / imgAR
-                drawRect = CGRect(x: 0, y: (canvas.height - h) / 2, width: canvas.width, height: h)
-            }
-            ctx.draw(cg, in: drawRect)
+        let canvas = CGSize(width: size.width, height: size.height)
+
+        // Use UIImage.size (not cgImage pixel dimensions) so that UIKit's orientation
+        // metadata is honoured when computing the aspect ratio.
+        let imgAR = image.size.width / image.size.height
+        let canAR = canvas.width / canvas.height
+        var drawRect = CGRect(origin: .zero, size: canvas)
+        if imgAR > canAR {
+            let w = canvas.height * imgAR
+            drawRect = CGRect(x: (canvas.width - w) / 2, y: 0, width: w, height: canvas.height)
+        } else {
+            let h = canvas.width / imgAR
+            drawRect = CGRect(x: 0, y: (canvas.height - h) / 2, width: canvas.width, height: h)
         }
+
+        // Render through UIGraphicsImageRenderer at 1:1 pixel scale so UIKit's
+        // coordinate system (top-left origin) correctly applies image orientation.
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        guard let cg = UIGraphicsImageRenderer(size: canvas, format: format).image { uiCtx in
+            UIColor.black.setFill()
+            uiCtx.fill(CGRect(origin: .zero, size: canvas))
+            image.draw(in: drawRect)
+        }.cgImage else { return nil }
+
+        // CGContext has a bottom-left origin, opposite to UIKit. Flip the y-axis
+        // before drawing so the rendered CGImage is not upside-down in the buffer.
+        ctx.translateBy(x: 0, y: CGFloat(size.height))
+        ctx.scaleBy(x: 1, y: -1)
+        ctx.draw(cg, in: CGRect(origin: .zero, size: canvas))
+
         return buffer
     }
 
