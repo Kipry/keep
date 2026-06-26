@@ -138,9 +138,29 @@ struct DiaryTimelineView: View {
     @State private var lastHapticDay = Int.min
     @State private var autoTask: Task<Void, Never>?
     @State private var selectedProject: Project?
+    // Cached per-day results — recomputed only when focusedDay (Int) changes,
+    // not on every animation frame while centerDay is animating.
+    @State private var heroClips: [Clip] = []
+    @State private var activeBand: TimelineBand?
+    // Month segments change only when timeline data is rebuilt.
+    @State private var cachedMonthSegs: [MonthSeg] = []
     private let selectionFeedback = UISelectionFeedbackGenerator()
 
     private let calendar = Calendar.current
+
+    // Static formatters — DateFormatter is expensive to allocate; reuse always.
+    private static let _dateFmt: DateFormatter = {
+        let f = DateFormatter(); f.locale = .current; f.dateFormat = "dd.MM.yyyy"; return f
+    }()
+    private static let _weekdayFmt: DateFormatter = {
+        let f = DateFormatter(); f.locale = .current; f.dateFormat = "EEEE"; return f
+    }()
+    private static let _monthYearFmt: DateFormatter = {
+        let f = DateFormatter(); f.locale = .current; f.dateFormat = "MMMM yyyy"; return f
+    }()
+    private static let _yearFmt: DateFormatter = {
+        let f = DateFormatter(); f.locale = .current; f.dateFormat = "yyyy"; return f
+    }()
 
     private var px: CGFloat { zoom.pxPerDay }
 
@@ -163,6 +183,7 @@ struct DiaryTimelineView: View {
         .preferredColorScheme(.dark)
         .onAppear(perform: rebuild)
         .onChange(of: projects.count) { _, _ in rebuild() }
+        .onChange(of: focusedDay) { _, _ in refreshFocusedDay() }
         .onDisappear { stopAutoplay() }
         .fullScreenCover(item: $selectedProject) { project in
             ProjectDetailView(project: project, recordOnAppear: false)
@@ -177,24 +198,6 @@ struct DiaryTimelineView: View {
     }
 
     private var focusedDate: Date { data?.date(at: focusedDay) ?? Date() }
-
-    // Prefer the band that has actual clips on the focused day; fall back to
-    // any band whose date range spans today (for empty-day context/navigation).
-    private var activeBand: TimelineBand? {
-        guard let data else { return nil }
-        if let b = data.bands.first(where: { band in
-            band.project.activeClips.contains { calendar.isDate($0.createdAt, inSameDayAs: focusedDate) }
-        }) { return b }
-        return data.bands.first { focusedDay >= $0.startTag && focusedDay <= $0.endTag }
-    }
-
-    // All clips from ANY project recorded on the focused day.
-    private var heroClips: [Clip] {
-        guard let data else { return [] }
-        return data.bands.flatMap { band in
-            band.project.activeClips.filter { calendar.isDate($0.createdAt, inSameDayAs: focusedDate) }
-        }.sorted { $0.createdAt < $1.createdAt }
-    }
 
     private func clip(at offset: Int) -> Clip? {
         let c = heroClips
@@ -493,7 +496,7 @@ struct DiaryTimelineView: View {
 
     @ViewBuilder
     private func monthScale(cx: CGFloat, data: TimelineData) -> some View {
-        let segs = monthSegments(data: data)
+        let segs = cachedMonthSegs
         ZStack(alignment: .topLeading) {
             Color.clear
             ForEach(segs) { seg in
@@ -674,22 +677,14 @@ struct DiaryTimelineView: View {
     // Primary label adapts to the zoom level: exact date on Day, calendar week
     // on Week, month on Month, year on Year.
     private func focusTitle(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.locale = Locale.current
         switch zoom {
-        case .day:
-            f.dateFormat = "dd.MM.yyyy"
-            return f.string(from: date)
+        case .day:   return Self._dateFmt.string(from: date)
         case .week:
             let week = calendar.component(.weekOfYear, from: date)
             let year = calendar.component(.yearForWeekOfYear, from: date)
             return "KW \(week) · \(year)"
-        case .month:
-            f.dateFormat = "MMMM yyyy"
-            return f.string(from: date)
-        case .year:
-            f.dateFormat = "yyyy"
-            return f.string(from: date)
+        case .month: return Self._monthYearFmt.string(from: date)
+        case .year:  return Self._yearFmt.string(from: date)
         }
     }
 
@@ -721,23 +716,27 @@ struct DiaryTimelineView: View {
         let date: Date
         let startTag: Int
         let days: Int
-        func label(short: Bool) -> String {
-            let f = DateFormatter()
-            f.locale = Locale.current
-            f.dateFormat = short ? "MMM" : "MMMM"
-            return f.string(from: date).uppercased()
-        }
+        let shortLabel: String  // "MMM" — pre-computed, no per-frame DateFormatter
+        let fullLabel: String   // "MMMM"
+        func label(short: Bool) -> String { short ? shortLabel : fullLabel }
     }
 
     private func monthSegments(data: TimelineData) -> [MonthSeg] {
         var segs: [MonthSeg] = []
         guard var cursor = calendar.date(from: calendar.dateComponents([.year, .month], from: data.startDate)) else { return [] }
         let end = calendar.date(byAdding: .day, value: data.total, to: data.startDate) ?? data.startDate
+        // Allocate formatters once for the whole loop, not once per segment.
+        let shortFmt = DateFormatter(); shortFmt.locale = .current; shortFmt.dateFormat = "MMM"
+        let fullFmt  = DateFormatter(); fullFmt.locale  = .current; fullFmt.dateFormat = "MMMM"
         var guardCount = 0
         while cursor < end && guardCount < 600 {
             let days = calendar.range(of: .day, in: .month, for: cursor)?.count ?? 30
             let startTag = calendar.dateComponents([.day], from: data.startDate, to: cursor).day ?? 0
-            segs.append(MonthSeg(date: cursor, startTag: startTag, days: days))
+            segs.append(MonthSeg(
+                date: cursor, startTag: startTag, days: days,
+                shortLabel: shortFmt.string(from: cursor).uppercased(),
+                fullLabel:  fullFmt.string(from: cursor).uppercased()
+            ))
             cursor = calendar.date(byAdding: .month, value: 1, to: cursor) ?? end
             guardCount += 1
         }
@@ -752,19 +751,8 @@ struct DiaryTimelineView: View {
         return Array(lo...hi)
     }
 
-    private func dateString(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.locale = Locale.current
-        f.dateFormat = "dd.MM.yyyy"
-        return f.string(from: date)
-    }
-
-    private func weekdayString(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.locale = Locale.current
-        f.dateFormat = "EEEE"
-        return f.string(from: date)
-    }
+    private func dateString(_ date: Date) -> String { Self._dateFmt.string(from: date) }
+    private func weekdayString(_ date: Date) -> String { Self._weekdayFmt.string(from: date) }
 
     private var blinkOpacity: Double {
         // simple time-driven blink without extra timers
@@ -880,12 +868,30 @@ struct DiaryTimelineView: View {
         let new = TimelineData.build(projects: projects, calendar: calendar)
         data = new
         if let new {
-            // start focused on the most recent project, else today
             if centerDay == 0 {
                 centerDay = new.bands.last.map(\.center) ?? Double(new.todayTag)
             }
             centerDay = clampDay(centerDay)
+            cachedMonthSegs = monthSegments(data: new)
         }
+        refreshFocusedDay()
+    }
+
+    // Recompute the two most expensive derived values: which clips belong to
+    // today and which band is active. Called only when focusedDay (Int) changes,
+    // not on every animation frame while centerDay floats between day boundaries.
+    private func refreshFocusedDay() {
+        guard let data else { heroClips = []; activeBand = nil; return }
+        let day = focusedDay
+        let date = data.date(at: day)
+        let clips = data.bands.flatMap { band in
+            band.project.activeClips.filter { calendar.isDate($0.createdAt, inSameDayAs: date) }
+        }.sorted { $0.createdAt < $1.createdAt }
+        heroClips = clips
+        if let b = data.bands.first(where: { band in
+            band.project.activeClips.contains { calendar.isDate($0.createdAt, inSameDayAs: date) }
+        }) { activeBand = b }
+        else { activeBand = data.bands.first { day >= $0.startTag && day <= $0.endTag } }
     }
 }
 
@@ -922,11 +928,15 @@ private struct TimelineThumb: View {
         thumbImage = nil
         hiResImage = nil
         guard let clip else { return }
-        // Show stored thumbnail instantly
+        // Low-res thumbnail — show instantly from stored data
         if let data = clip.thumbnailData, let img = UIImage(data: data) {
             thumbImage = img
         }
-        // Upgrade to a full-res frame from the video file
+        // Debounce: skip the expensive video decode if the user is still
+        // scrolling past this clip. Only settle after 150 ms of stability.
+        try? await Task.sleep(for: .milliseconds(150))
+        guard !Task.isCancelled else { return }
+        // Upgrade to a full-res frame decoded from the video file
         let url = clip.fileURL
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         let asset = AVURLAsset(url: url)
