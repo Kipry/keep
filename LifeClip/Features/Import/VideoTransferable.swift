@@ -9,6 +9,9 @@ import UniformTypeIdentifiers
 struct VideoTransferable: Transferable {
     let url: URL
     let duration: Double
+    /// The moment the video was actually captured (from the file's metadata),
+    /// falling back to nil when no creation date is embedded.
+    let creationDate: Date?
 
     static var transferRepresentation: some TransferRepresentation {
         FileRepresentation(contentType: .movie) { video in
@@ -24,7 +27,12 @@ struct VideoTransferable: Transferable {
             try FileManager.default.copyItem(at: received.file, to: destURL)
             let asset = AVURLAsset(url: destURL)
             let duration = try await asset.load(.duration)
-            return VideoTransferable(url: destURL, duration: duration.seconds)
+            // Prefer the embedded capture date over the import date.
+            var created: Date? = nil
+            if let item = try? await asset.load(.creationDate) {
+                created = try? await item?.load(.dateValue)
+            }
+            return VideoTransferable(url: destURL, duration: duration.seconds, creationDate: created)
         }
     }
 }

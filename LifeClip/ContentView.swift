@@ -10,26 +10,74 @@ enum AppTab {
 
 struct ContentView: View {
     @State private var selectedTab: AppTab = .projects
+    @State private var slideForward = true
+
+    private let order: [AppTab] = [.projects, .timeline, .today]
 
     var body: some View {
-        Group {
-            switch selectedTab {
-            case .projects: ProjectListView()
-            case .timeline: DiaryTimelineView()
-            case .today:    OnThisDayView()
+        GeometryReader { geo in
+            ZStack {
+                Theme.background.ignoresSafeArea()
+                page
+                    .id(selectedTab)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: slideForward ? .trailing : .leading),
+                        removal:   .move(edge: slideForward ? .leading : .trailing)
+                    ))
             }
+            .contentShape(Rectangle())
+            // Edge-swipe between the main pages. Starting near a screen edge keeps
+            // this from clashing with the timeline scrubber and horizontal carousels.
+            .simultaneousGesture(edgeSwipe(width: geo.size.width))
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            AppTabBar(selectedTab: $selectedTab)
+            AppTabBar(selectedTab: selectedTab, onSelect: switchTab)
         }
         .onboardingGate()
+    }
+
+    @ViewBuilder
+    private var page: some View {
+        switch selectedTab {
+        case .projects: ProjectListView()
+        case .timeline: DiaryTimelineView()
+        case .today:    OnThisDayView()
+        }
+    }
+
+    private func edgeSwipe(width: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 24, coordinateSpace: .global)
+            .onEnded { v in
+                let dx = v.translation.width, dy = v.translation.height
+                guard abs(dx) > 60, abs(dx) > abs(dy) * 1.4 else { return }
+                let fromLeft  = v.startLocation.x < 30
+                let fromRight = v.startLocation.x > width - 30
+                if dx < 0 && fromRight { step(1) }        // swipe ← from right edge → next
+                else if dx > 0 && fromLeft { step(-1) }   // swipe → from left edge → previous
+            }
+    }
+
+    private func step(_ delta: Int) {
+        guard let i = order.firstIndex(of: selectedTab) else { return }
+        let j = i + delta
+        guard j >= 0, j < order.count else { return }
+        switchTab(to: order[j])
+    }
+
+    private func switchTab(to tab: AppTab) {
+        guard tab != selectedTab,
+              let from = order.firstIndex(of: selectedTab),
+              let to   = order.firstIndex(of: tab) else { return }
+        slideForward = to > from
+        withAnimation(.easeInOut(duration: 0.28)) { selectedTab = tab }
     }
 }
 
 // MARK: - Tab bar
 
 private struct AppTabBar: View {
-    @Binding var selectedTab: AppTab
+    let selectedTab: AppTab
+    let onSelect: (AppTab) -> Void
 
     var body: some View {
         HStack(spacing: 0) {
@@ -53,7 +101,7 @@ private struct AppTabBar: View {
         let isActive = selectedTab == tab
         let activeIcon = fillIcon ?? (icon + ".fill")
         return Button {
-            withAnimation(.easeInOut(duration: 0.18)) { selectedTab = tab }
+            onSelect(tab)
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: isActive ? activeIcon : icon)

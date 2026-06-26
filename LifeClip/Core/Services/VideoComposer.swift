@@ -101,6 +101,127 @@ actor VideoComposer {
         }
     }
 
+    // MARK: - Still image → video
+
+    /// Renders a still image into a short silent H.264 video of `duration` seconds
+    /// so a photo can flow through the same composition pipeline as a real clip.
+    /// Returns the URL of the generated `.mov` in the Imports directory.
+    func renderStillVideo(from imageURL: URL, duration: Double) async throws -> URL {
+        guard let image = UIImage(contentsOfFile: imageURL.path) else {
+            throw CompositionError.assetUnreadable(imageURL)
+        }
+        let size = stillRenderSize(for: image)
+        let outURL = makeStillURL()
+
+        let writer = try AVAssetWriter(outputURL: outURL, fileType: .mov)
+        let settings: [String: Any] = [
+            AVVideoCodecKey:  AVVideoCodecType.h264,
+            AVVideoWidthKey:  size.width,
+            AVVideoHeightKey: size.height
+        ]
+        let input = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
+        input.expectsMediaDataInRealTime = false
+        let adaptor = AVAssetWriterInputPixelBufferAdaptor(
+            assetWriterInput: input,
+            sourcePixelBufferAttributes: [
+                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32ARGB,
+                kCVPixelBufferWidthKey as String:  size.width,
+                kCVPixelBufferHeightKey as String: size.height
+            ]
+        )
+        guard writer.canAdd(input) else { throw CompositionError.exportSessionFailed }
+        writer.add(input)
+        guard writer.startWriting() else { throw writer.error ?? CompositionError.exportSessionFailed }
+        writer.startSession(atSourceTime: .zero)
+
+        guard let buffer = pixelBuffer(from: image, size: size) else {
+            writer.cancelWriting()
+            throw CompositionError.assetUnreadable(imageURL)
+        }
+
+        // A still needs no real frame rate; 12 fps keeps cross-fade ramps smooth.
+        let fps = 12
+        let totalFrames = max(1, Int((duration * Double(fps)).rounded()))
+        for f in 0...totalFrames {
+            while !input.isReadyForMoreMediaData { await Task.yield() }
+            let pts = CMTime(value: CMTimeValue(f), timescale: CMTimeScale(fps))
+            adaptor.append(buffer, withPresentationTime: pts)
+        }
+        input.markAsFinished()
+        await writer.finishWriting()
+        guard writer.status == .completed else {
+            throw writer.error ?? CompositionError.exportSessionFailed
+        }
+        return outURL
+    }
+
+    // Even, capped pixel size for the still video (max 1920 on the long edge).
+    private func stillRenderSize(for image: UIImage) -> (width: Int, height: Int) {
+        let px = CGSize(width: image.size.width * image.scale,
+                        height: image.size.height * image.scale)
+        let maxEdge: CGFloat = 1920
+        var w = px.width, h = px.height
+        guard w > 0, h > 0 else { return (1080, 1920) }
+        let longest = max(w, h)
+        if longest > maxEdge {
+            let s = maxEdge / longest
+            w *= s; h *= s
+        }
+        // Round down to even numbers — required by the H.264 encoder.
+        let ew = max(2, Int(w.rounded(.down)) & ~1)
+        let eh = max(2, Int(h.rounded(.down)) & ~1)
+        return (ew, eh)
+    }
+
+    private func pixelBuffer(from image: UIImage, size: (width: Int, height: Int)) -> CVPixelBuffer? {
+        let attrs: [String: Any] = [
+            kCVPixelBufferCGImageCompatibilityKey as String: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey as String: true
+        ]
+        var pb: CVPixelBuffer?
+        let status = CVPixelBufferCreate(kCFAllocatorDefault, size.width, size.height,
+                                         kCVPixelFormatType_32ARGB, attrs as CFDictionary, &pb)
+        guard status == kCVReturnSuccess, let buffer = pb else { return nil }
+
+        CVPixelBufferLockBaseAddress(buffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
+        guard let ctx = CGContext(
+            data: CVPixelBufferGetBaseAddress(buffer),
+            width: size.width, height: size.height,
+            bitsPerComponent: 8,
+            bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
+        ) else { return nil }
+
+        ctx.setFillColor(UIColor.black.cgColor)
+        ctx.fill(CGRect(x: 0, y: 0, width: size.width, height: size.height))
+        if let cg = image.cgImage {
+            // Fill the canvas while preserving aspect (crop overflow), matching
+            // how real clips are scaled to fill in the composition.
+            let canvas = CGSize(width: size.width, height: size.height)
+            let imgAR = CGFloat(cg.width) / CGFloat(cg.height)
+            let canAR = canvas.width / canvas.height
+            var drawRect = CGRect(origin: .zero, size: canvas)
+            if imgAR > canAR {
+                let w = canvas.height * imgAR
+                drawRect = CGRect(x: (canvas.width - w) / 2, y: 0, width: w, height: canvas.height)
+            } else {
+                let h = canvas.width / imgAR
+                drawRect = CGRect(x: 0, y: (canvas.height - h) / 2, width: canvas.width, height: h)
+            }
+            ctx.draw(cg, in: drawRect)
+        }
+        return buffer
+    }
+
+    private func makeStillURL() -> URL {
+        let docs   = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let folder = docs.appendingPathComponent("Imports", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder.appendingPathComponent(UUID().uuidString).appendingPathExtension("mov")
+    }
+
     // MARK: - Cut composition
 
     private func composeCut(

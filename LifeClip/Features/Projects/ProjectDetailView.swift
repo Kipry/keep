@@ -3,6 +3,7 @@ import SwiftData
 import AVFoundation
 import PhotosUI
 import UniformTypeIdentifiers
+import ImageIO
 
 struct ProjectDetailView: View {
     @Bindable var project: Project
@@ -23,6 +24,7 @@ struct ProjectDetailView: View {
     @State private var clipToDelete: Clip?
     @State private var clipToCopy: Clip?
     @State private var clipToTrim: Clip?
+    @State private var clipToSetDuration: Clip?
     @State private var showCopyToast = false
     @State private var selectedTransition: TransitionStyle = .cut
     @State private var selectedQuality: ExportQuality = .p1080
@@ -43,6 +45,9 @@ struct ProjectDetailView: View {
     // Bulk copy
     @State private var clipsToBulkCopy: [Clip]? = nil
     @State private var copyToastText = String(localized: "Clip Copied")
+
+    // Interactive edge-swipe back
+    @State private var backSwipeX: CGFloat = 0
 
     private let composer = VideoComposer()
 
@@ -72,63 +77,12 @@ struct ProjectDetailView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             Theme.background.ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                navBar
-                titleBlock
-
-                if project.activeClips.isEmpty {
-                    emptyState
-                } else {
-                    filmstripScrollView
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-
-            // Camera FAB — primary capture action, floating above the export bar
-            if !project.activeClips.isEmpty && !isSelectMode {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Button { isCameraPresented = true } label: {
-                            Circle()
-                                .fill(Theme.amber)
-                                .frame(width: 64, height: 64)
-                                .overlay {
-                                    Image(systemName: "camera.fill")
-                                        .font(.system(size: 22, weight: .semibold))
-                                        .foregroundStyle(Theme.ink)
-                                }
-                                .shadow(color: Theme.amber.opacity(0.45), radius: 14, y: 4)
-                        }
-                        .padding(.trailing, 22)
-                        .padding(.bottom, 116)  // clears the export bar
-                    }
-                }
-            }
-
-            if isExporting {
-                ExportProgressOverlay(clips: project.activeClips, progress: exportProgress)
-                    .transition(.opacity)
-                    .animation(.easeInOut(duration: 0.3), value: isExporting)
-            }
-            if isImporting { progressOverlay(text: "Importing videos…") }
-
-            if showCopyToast {
-                VStack {
-                    Spacer()
-                    Label(copyToastText, systemImage: "checkmark.circle.fill")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(.black.opacity(0.85), in: Capsule())
-                        .padding(.bottom, 120)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+            content
         }
+        .offset(x: backSwipeX)
+        .background(Color.black.ignoresSafeArea())
+        // Swipe in from the left edge to go back to the library.
+        .simultaneousGesture(backSwipeGesture)
         // fullScreenCover presentation — owns the full screen, no nav bar involved
         .preferredColorScheme(.dark)
         .onAppear {
@@ -192,10 +146,14 @@ struct ProjectDetailView: View {
         }
         .onChange(of: importSelections) { _, items in
             guard !items.isEmpty else { return }
-            Task { await importVideos(from: items) }
+            Task { await importMedia(from: items) }
         }
         .fullScreenCover(item: $clipToTrim) { clip in
             ClipTrimView(clip: clip) { clipToTrim = nil }
+        }
+        .sheet(item: $clipToSetDuration) { clip in
+            PhotoDurationView(clip: clip, composer: composer) { clipToSetDuration = nil }
+                .presentationDetents([.height(280)])
         }
         .sheet(item: $clipToCopy) { clip in
             ProjectPickerSheet(clip: clip, currentProjectID: project.id) {
@@ -234,6 +192,89 @@ struct ProjectDetailView: View {
                 ClipPreviewCarousel(clips: displayClips, initialIndex: idx)
             }
         }
+    }
+
+    // MARK: - Main content
+
+    private var content: some View {
+        ZStack(alignment: .topLeading) {
+            VStack(spacing: 0) {
+                navBar
+                titleBlock
+
+                if project.activeClips.isEmpty {
+                    emptyState
+                } else {
+                    filmstripScrollView
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+
+            // Camera FAB — primary capture action, floating above the export bar
+            if !project.activeClips.isEmpty && !isSelectMode {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button { isCameraPresented = true } label: {
+                            Circle()
+                                .fill(Theme.amber)
+                                .frame(width: 64, height: 64)
+                                .overlay {
+                                    Image(systemName: "camera.fill")
+                                        .font(.system(size: 22, weight: .semibold))
+                                        .foregroundStyle(Theme.ink)
+                                }
+                                .shadow(color: Theme.amber.opacity(0.45), radius: 14, y: 4)
+                        }
+                        .padding(.trailing, 22)
+                        .padding(.bottom, 116)  // clears the export bar
+                    }
+                }
+            }
+
+            if isExporting {
+                ExportProgressOverlay(clips: project.activeClips, progress: exportProgress)
+                    .transition(.opacity)
+                    .animation(.easeInOut(duration: 0.3), value: isExporting)
+            }
+            if isImporting { progressOverlay(text: "Importing…") }
+
+            if showCopyToast {
+                VStack {
+                    Spacer()
+                    Label(copyToastText, systemImage: "checkmark.circle.fill")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(.black.opacity(0.85), in: Capsule())
+                        .padding(.bottom, 120)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+    }
+
+    // MARK: - Back-swipe gesture
+
+    private var backSwipeGesture: some Gesture {
+        DragGesture(minimumDistance: 12, coordinateSpace: .global)
+            .onChanged { v in
+                // Only react to drags that begin at the very left edge.
+                guard v.startLocation.x < 28, v.translation.width > 0 else { return }
+                backSwipeX = min(v.translation.width, 220)
+            }
+            .onEnded { v in
+                let committed = v.startLocation.x < 28
+                    && v.translation.width > 90
+                    && abs(v.translation.width) > abs(v.translation.height)
+                if committed {
+                    dismiss()
+                } else {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { backSwipeX = 0 }
+                }
+            }
     }
 
     // MARK: - Nav bar
@@ -287,7 +328,8 @@ struct ProjectDetailView: View {
                                 .background(.white.opacity(0.1), in: Circle())
                         }
                     }
-                    PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
+                    PhotosPicker(selection: $importSelections, maxSelectionCount: 20,
+                                 matching: .any(of: [.videos, .images])) {
                         Image(systemName: "plus")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(.white)
@@ -328,6 +370,7 @@ struct ProjectDetailView: View {
                         onDelete: { clipToDelete = $0 },
                         onCopyToProject: { clipToCopy = $0 },
                         onTrim: { clipToTrim = $0 },
+                        onSetDuration: { clipToSetDuration = $0 },
                         onSetAsCover: { setClipAsCover($0) },
                         onPreview: { clip in
                             if let idx = displayClips.firstIndex(where: { $0.id == clip.id }) {
@@ -481,7 +524,8 @@ struct ProjectDetailView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(Theme.amber)
 
-                PhotosPicker(selection: $importSelections, maxSelectionCount: 20, matching: .videos) {
+                PhotosPicker(selection: $importSelections, maxSelectionCount: 20,
+                             matching: .any(of: [.videos, .images])) {
                     Label("Import", systemImage: "photo.on.rectangle")
                 }
                 .buttonStyle(.bordered)
@@ -535,12 +579,12 @@ struct ProjectDetailView: View {
         }
     }
 
-    private func addClip(fileURL: URL, duration: Double) {
+    private func addClip(fileURL: URL, duration: Double, createdAt: Date? = nil) {
         // Commit any stale drag state so the display stays in sync
         if !dragClips.isEmpty { commitDragOrder() }
         // Use max existing order + 1 so deletions don't create duplicate order values
         let order = (project.activeClips.map(\.order).max() ?? -1) + 1
-        let clip = Clip(fileURL: fileURL, duration: duration, order: order)
+        let clip = Clip(fileURL: fileURL, duration: duration, order: order, createdAt: createdAt ?? Date())
         clip.project = project
         project.updatedAt = Date()
         modelContext.insert(clip)
@@ -552,6 +596,54 @@ struct ProjectDetailView: View {
             }
             WidgetDataStore.save(project: project)
         }
+    }
+
+    // Imports a still photo: stores the source image, renders it to a short
+    // still-video so it composes like any other clip, and tags it as a photo.
+    private func addPhotoClip(imageData: Data) async {
+        guard let ui = UIImage(data: imageData)?.normalizedUp() else { return }
+        let imports = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Imports", isDirectory: true)
+        try? FileManager.default.createDirectory(at: imports, withIntermediateDirectories: true)
+        let imageURL = imports.appendingPathComponent(UUID().uuidString).appendingPathExtension("jpg")
+        guard let jpeg = ui.jpegData(compressionQuality: 0.92) else { return }
+        try? jpeg.write(to: imageURL)
+
+        let created = Self.exifCreationDate(from: imageData) ?? Date()
+        let duration = 3.0
+        guard let movURL = try? await composer.renderStillVideo(from: imageURL, duration: duration) else { return }
+
+        if !dragClips.isEmpty { commitDragOrder() }
+        let order = (project.activeClips.map(\.order).max() ?? -1) + 1
+        let clip = Clip(fileURL: movURL, duration: duration, order: order, createdAt: created)
+        clip.isPhoto = true
+        clip.photoDuration = duration
+        clip.photoSourceURLString = imageURL.absoluteString
+        clip.project = project
+        project.updatedAt = Date()
+        modelContext.insert(clip)
+
+        if let thumb = ui.downscaled(maxEdge: 320).jpegData(compressionQuality: 0.7) {
+            clip.thumbnailData = thumb
+            if project.activeClips.count == 1 { project.coverThumbnailData = thumb }
+        }
+        WidgetDataStore.save(project: project)
+    }
+
+    // Reads the original capture date from a still image's EXIF metadata.
+    private static func exifCreationDate(from data: Data) -> Date? {
+        guard let src = CGImageSourceCreateWithData(data as CFData, nil),
+              let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any]
+        else { return nil }
+        let exif = props[kCGImagePropertyExifDictionary] as? [CFString: Any]
+        let raw = (exif?[kCGImagePropertyExifDateTimeOriginal] as? String)
+            ?? (props[kCGImagePropertyTIFFDictionary] as? [CFString: Any])?[kCGImagePropertyTIFFDateTime] as? String
+        guard let stamp = raw else { return nil }
+        let f = DateFormatter()
+        f.dateFormat = "yyyy:MM:dd HH:mm:ss"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f.date(from: stamp)
     }
 
     private func setClipAsCover(_ clip: Clip) {
@@ -567,12 +659,20 @@ struct ProjectDetailView: View {
         }
     }
 
-    private func importVideos(from items: [PhotosPickerItem]) async {
+    private func importMedia(from items: [PhotosPickerItem]) async {
         isImporting = true
         defer { isImporting = false; importSelections = [] }
         for item in items {
-            guard let video = try? await item.loadTransferable(type: VideoTransferable.self) else { continue }
-            addClip(fileURL: video.url, duration: video.duration)
+            let types = item.supportedContentTypes
+            if types.contains(where: { $0.conforms(to: .movie) }) {
+                if let video = try? await item.loadTransferable(type: VideoTransferable.self) {
+                    addClip(fileURL: video.url, duration: video.duration, createdAt: video.creationDate)
+                }
+            } else if types.contains(where: { $0.conforms(to: .image) }) {
+                if let data = try? await item.loadTransferable(type: Data.self) {
+                    await addPhotoClip(imageData: data)
+                }
+            }
         }
     }
 
@@ -639,6 +739,7 @@ private struct FilmstripRow: View {
     let onDelete: (Clip) -> Void
     let onCopyToProject: (Clip) -> Void
     let onTrim: (Clip) -> Void
+    let onSetDuration: (Clip) -> Void
     let onSetAsCover: (Clip) -> Void
     let onPreview: (Clip) -> Void
 
@@ -658,6 +759,7 @@ private struct FilmstripRow: View {
                         onDelete: { onDelete(clip) },
                         onCopyToProject: { onCopyToProject(clip) },
                         onTrim: { onTrim(clip) },
+                        onSetDuration: { onSetDuration(clip) },
                         onSetAsCover: { onSetAsCover(clip) },
                         onPreview: { onPreview(clip) },
                         onToggleSelect: {
@@ -711,6 +813,7 @@ private struct FilmCell: View {
     let onDelete: () -> Void
     let onCopyToProject: () -> Void
     let onTrim: () -> Void
+    let onSetDuration: () -> Void
     let onSetAsCover: () -> Void
     let onPreview: () -> Void
     let onToggleSelect: () -> Void
@@ -739,14 +842,19 @@ private struct FilmCell: View {
             .aspectRatio(4/5, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 2))
 
-            // Duration badge — bottom right
-            Text(String(format: "%.0fs", clip.effectiveDuration))
-                .font(.durBadge)
-                .foregroundStyle(.white)
-                .padding(.horizontal, 5)
-                .padding(.vertical, 2)
-                .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 3))
-                .padding(4)
+            // Duration badge — bottom right (photo gets a small icon prefix)
+            HStack(spacing: 2) {
+                if clip.isPhoto {
+                    Image(systemName: "photo.fill").font(.system(size: 7))
+                }
+                Text(String(format: "%.0fs", clip.effectiveDuration))
+                    .font(.durBadge)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 3))
+            .padding(4)
         }
         // Date + time stamp — bottom left
         .overlay(alignment: .bottomLeading) {
@@ -822,8 +930,14 @@ private struct FilmCell: View {
         .animation(.easeInOut(duration: 0.15), value: isSelected)
         .contextMenu {
             if !isSelectMode {
-                Button { onTrim() } label: {
-                    Label("Trim", systemImage: "scissors")
+                if clip.isPhoto {
+                    Button { onSetDuration() } label: {
+                        Label("Display Duration…", systemImage: "timer")
+                    }
+                } else {
+                    Button { onTrim() } label: {
+                        Label("Trim", systemImage: "scissors")
+                    }
                 }
                 Button { onSetAsCover() } label: {
                     Label("Set as Cover", systemImage: "photo")
@@ -1112,6 +1226,109 @@ private struct BulkProjectPickerSheet: View {
                     )
                 }
             }
+        }
+    }
+}
+
+// MARK: - PhotoDurationView
+
+/// Lets the user set how long a photo is shown in the compiled video. On save
+/// the backing still-video is re-rendered at the new duration.
+private struct PhotoDurationView: View {
+    @Bindable var clip: Clip
+    let composer: VideoComposer
+    let onDismiss: () -> Void
+
+    @State private var duration: Double = 3
+    @State private var isRendering = false
+
+    private let range: ClosedRange<Double> = 1...15
+
+    var body: some View {
+        ZStack {
+            Theme.background.ignoresSafeArea()
+            VStack(spacing: 18) {
+                HStack {
+                    Button("Cancel") { onDismiss() }
+                        .foregroundStyle(.white.opacity(0.7))
+                    Spacer()
+                    Text("Display Duration")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Button("Done") { Task { await save() } }
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.amber)
+                        .disabled(isRendering)
+                }
+
+                HStack(spacing: 14) {
+                    if let data = clip.thumbnailData, let img = UIImage(data: data) {
+                        Image(uiImage: img)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 56, height: 70)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(String(format: "%.1f seconds", duration))
+                            .font(.mono(22, weight: .medium))
+                            .foregroundStyle(.white)
+                        Text("How long this photo stays on screen")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.45))
+                    }
+                    Spacer()
+                }
+
+                Slider(value: $duration, in: range, step: 0.5)
+                    .tint(Theme.amber)
+
+                if isRendering {
+                    ProgressView().tint(Theme.amber)
+                }
+            }
+            .padding(22)
+        }
+        .presentationBackground(Theme.background)
+        .onAppear { duration = clip.photoDuration }
+    }
+
+    private func save() async {
+        isRendering = true
+        if let src = clip.photoSourceURL,
+           let newMov = try? await composer.renderStillVideo(from: src, duration: duration) {
+            clip.setFile(newMov)
+        }
+        clip.photoDuration = duration
+        clip.duration = duration
+        clip.project?.updatedAt = Date()
+        isRendering = false
+        onDismiss()
+    }
+}
+
+// MARK: - UIImage helpers
+
+private extension UIImage {
+    /// Returns a copy with the orientation baked into the pixels (`.up`).
+    func normalizedUp() -> UIImage {
+        guard imageOrientation != .up else { return self }
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = scale
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+
+    /// Returns a copy scaled so its longest edge is at most `maxEdge` points.
+    func downscaled(maxEdge: CGFloat) -> UIImage {
+        let longest = max(size.width, size.height)
+        guard longest > maxEdge else { return self }
+        let s = maxEdge / longest
+        let newSize = CGSize(width: size.width * s, height: size.height * s)
+        return UIGraphicsImageRenderer(size: newSize).image { _ in
+            draw(in: CGRect(origin: .zero, size: newSize))
         }
     }
 }

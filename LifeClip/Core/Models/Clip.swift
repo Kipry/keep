@@ -16,23 +16,45 @@ final class Clip {
     var trimStart: Double = 0
     var trimEnd: Double? = nil
 
-    /// Duration actually used in the compiled video (respects trim points).
+    // MARK: Photo clips
+    // A photo is stored as a short still-image video (so it flows through the
+    // exact same composition/playback pipeline as a real clip) plus a reference
+    // to the original image so the display duration can be re-rendered later.
+    var isPhoto: Bool = false
+    var photoDuration: Double = 3.0
+    var photoSourceURLString: String? = nil
+
+    /// Duration actually used in the compiled video (respects trim / photo duration).
     var effectiveDuration: Double {
+        if isPhoto { return photoDuration }
         let end = trimEnd ?? duration
         return max(0.1, end - trimStart)
+    }
+
+    /// Original still image backing a photo clip (used to re-render its duration).
+    var photoSourceURL: URL? {
+        guard let s = photoSourceURLString else { return nil }
+        return URL(string: s)
     }
 
     @Relationship(inverse: \Project.clips)
     var project: Project?
 
-    init(fileURL: URL, duration: Double, order: Int = 0) {
+    init(fileURL: URL, duration: Double, order: Int = 0, createdAt: Date = Date()) {
         self.id = UUID()
-        self.createdAt = Date()
+        self.createdAt = createdAt
         self.duration = duration
         self.fileURLString = fileURL.absoluteString
         self.order = order
         self.isDeleted = false
         self.fileBookmark = try? fileURL.bookmarkData(options: .minimalBookmark)
+    }
+
+    /// Repoints this clip at a new backing file (e.g. after re-rendering a
+    /// photo clip at a new display duration). Refreshes the security bookmark.
+    func setFile(_ url: URL) {
+        fileURLString = url.absoluteString
+        fileBookmark  = try? url.bookmarkData(options: .minimalBookmark)
     }
 
     /// Resolves the stored URL, preferring the security-scoped bookmark when available.
@@ -78,10 +100,13 @@ final class Clip {
         } catch {
             return
         }
-        let newClip = Clip(fileURL: dst, duration: duration, order: targetProject.activeClips.count)
+        let newClip = Clip(fileURL: dst, duration: duration, order: targetProject.activeClips.count, createdAt: createdAt)
         newClip.thumbnailData = thumbnailData
         newClip.trimStart = trimStart
         newClip.trimEnd   = trimEnd
+        newClip.isPhoto = isPhoto
+        newClip.photoDuration = photoDuration
+        newClip.photoSourceURLString = photoSourceURLString
         newClip.project = targetProject
         targetProject.updatedAt = Date()
         context.insert(newClip)
