@@ -21,10 +21,13 @@ struct OnboardingView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                skipButton
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .padding(.horizontal, 24)
-                    .padding(.top, 8)
+                HStack {
+                    backButton
+                    Spacer()
+                    skipButton
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
 
                 stepContent
                     .id(step)
@@ -42,6 +45,29 @@ struct OnboardingView: View {
                 bottomOverlay
             }
             .ignoresSafeArea(edges: .bottom)
+        }
+    }
+
+    @ViewBuilder
+    private var backButton: some View {
+        if step > 0 {
+            Button {
+                forward = false
+                withAnimation(.easeInOut(duration: 0.35)) { step -= 1 }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("Back")
+                        .font(.mono(11))
+                }
+                .foregroundStyle(Color(white: 0.45))
+                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
+            }
+            .buttonStyle(.plain)
+        } else {
+            Color.clear.frame(height: 30)
         }
     }
 
