@@ -837,34 +837,35 @@ struct DiaryTimelineView: View {
         isPlaying = true
         autoTask?.cancel()
         autoTask = Task { @MainActor in
-            // Start the lookback from the currently selected point, not from the
-            // very first clip ever recorded: prefer the band in focus right now,
-            // otherwise the next band ahead (or the last one if already past all).
-            var idx: Int = {
-                if let active = activeBand,
-                   let i = data.bands.firstIndex(where: { $0.id == active.id }) {
-                    return i
-                }
-                if let ahead = data.bands.firstIndex(where: { $0.center >= centerDay - 0.2 }) {
-                    return ahead
-                }
-                return data.bands.count - 1
-            }()
+            // Play the lookback FORWARD from the point the user is currently on:
+            // dwell on the current day first, then walk to each later band toward
+            // today. Never jump backward to earlier clips, and stop at the end
+            // instead of looping back to the very first recording.
+            var queue = data.bands
+                .filter { $0.center > centerDay + 0.5 }
+                .sorted { $0.center < $1.center }
+            var isFirstStop = true
+
             while !Task.isCancelled && isPlaying {
-                let target = clampDay(data.bands[idx].center)
-                let dist = abs(target - centerDay)
-                let dur = min(1.2, max(0.3, dist * 0.03))
-                if reduceMotion { centerDay = target }
-                else { withAnimation(.easeInOut(duration: dur)) { centerDay = target } }
-                try? await Task.sleep(nanoseconds: UInt64(dur * 1_000_000_000))
-                // dwell ~1.5s, cycling the day's clips as a slideshow
+                if !isFirstStop {
+                    guard !queue.isEmpty else { break }   // reached today — done
+                    let target = clampDay(queue.removeFirst().center)
+                    let dist = abs(target - centerDay)
+                    let dur = min(1.2, max(0.3, dist * 0.03))
+                    if reduceMotion { centerDay = target }
+                    else { withAnimation(.easeInOut(duration: dur)) { centerDay = target } }
+                    try? await Task.sleep(nanoseconds: UInt64(dur * 1_000_000_000))
+                }
+                isFirstStop = false
+                // dwell ~1.4s, cycling the day's clips as a slideshow
                 for _ in 0..<3 {
                     try? await Task.sleep(nanoseconds: 460_000_000)
                     if Task.isCancelled || !isPlaying { break }
                     clipFrame += 1
                 }
-                idx = (idx + 1) % data.bands.count
             }
+            // Auto-stop once the lookback reaches the present.
+            if !Task.isCancelled { isPlaying = false }
         }
     }
 
