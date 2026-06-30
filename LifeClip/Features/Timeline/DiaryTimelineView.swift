@@ -837,7 +837,19 @@ struct DiaryTimelineView: View {
         isPlaying = true
         autoTask?.cancel()
         autoTask = Task { @MainActor in
-            var idx = data.bands.firstIndex { $0.center > centerDay + 0.2 } ?? 0
+            // Start the lookback from the currently selected point, not from the
+            // very first clip ever recorded: prefer the band in focus right now,
+            // otherwise the next band ahead (or the last one if already past all).
+            var idx: Int = {
+                if let active = activeBand,
+                   let i = data.bands.firstIndex(where: { $0.id == active.id }) {
+                    return i
+                }
+                if let ahead = data.bands.firstIndex(where: { $0.center >= centerDay - 0.2 }) {
+                    return ahead
+                }
+                return data.bands.count - 1
+            }()
             while !Task.isCancelled && isPlaying {
                 let target = clampDay(data.bands[idx].center)
                 let dist = abs(target - centerDay)

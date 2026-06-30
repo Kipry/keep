@@ -19,6 +19,13 @@ struct CameraView: View {
     @State private var holdStartTask: Task<Void, Never>?
     @State private var holdZoomStart: CGFloat = 1.0
     @State private var pendingCameraFlip = false
+    // Hands-free lock (Snapchat-style): slide left toward the lock icon while
+    // hold-recording to keep recording after lifting the finger.
+    @State private var isLocked = false
+    @State private var lockArmed = false
+
+    // Horizontal travel (pts) toward the lock icon that engages the lock.
+    private let lockSlideThreshold: CGFloat = 80
 
     private let holdThreshold: TimeInterval = 0.25
 
@@ -260,19 +267,26 @@ struct CameraView: View {
     // MARK: - Bottom bar
 
     private var bottomBar: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             if !camera.isRecording {
                 durationPicker.transition(.opacity)
             }
 
+            // Hands-free lock cue (only while hold-recording).
+            if isLocked {
+                lockHint("lock.fill", "Tap the shutter to stop")
+            } else if isHoldRecording {
+                lockHint("arrow.left", "Slide to lock")
+            }
+
             HStack {
-                Color.clear.frame(width: 52, height: 52)
+                lockSlot
 
                 Spacer()
 
                 RecordButton(
                     isRecording: camera.isRecording,
-                    progress: isHoldRecording ? 0
+                    progress: (isHoldRecording || isLocked) ? 0
                         : (durationLimit > 0 ? CGFloat(min(elapsed / durationLimit, 1.0)) : 0),
                     onPressDown: { handlePressDown() },
                     onRelease:   { handleRelease() },
@@ -293,6 +307,44 @@ struct CameraView: View {
         }
         .padding(.bottom, 48)
         .animation(.easeInOut(duration: 0.2), value: camera.isRecording)
+        .animation(.easeInOut(duration: 0.2), value: isHoldRecording)
+        .animation(.easeInOut(duration: 0.2), value: isLocked)
+    }
+
+    // Left-hand slot doubling as the slide-to-lock target during hold-recording.
+    private var lockSlot: some View {
+        ZStack {
+            if isLocked {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+                    .frame(width: 48, height: 48)
+                    .background(Theme.amber, in: Circle())
+                    .shadow(color: Theme.amber.opacity(0.5), radius: 8)
+            } else if isHoldRecording {
+                Image(systemName: "lock.open")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(.black.opacity(0.45), in: Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.5), lineWidth: 1))
+            } else {
+                Color.clear
+            }
+        }
+        .frame(width: 52, height: 52)
+    }
+
+    private func lockHint(_ icon: String, _ text: LocalizedStringKey) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon).font(.system(size: 12, weight: .bold))
+            Text(text).font(.mono(12, weight: .medium))
+        }
+        .foregroundStyle(.white.opacity(0.9))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.black.opacity(0.5), in: Capsule())
+        .transition(.opacity)
     }
 
     // MARK: - Duration picker
@@ -412,6 +464,21 @@ struct CameraView: View {
 
     // Called on finger-up. Decides tap vs. hold based on whether hold mode activated.
     private func handleRelease() {
+        // The slide-to-lock gesture just engaged: keep recording hands-free and
+        // ignore the finger lift entirely.
+        if lockArmed {
+            lockArmed = false
+            holdStartTask = nil
+            return
+        }
+        // A subsequent tap while locked stops the hands-free recording.
+        if isLocked {
+            isLocked = false
+            isHoldRecording = false
+            camera.stopRecording()
+            stopTimer()
+            return
+        }
         if let task = holdStartTask {
             task.cancel()
             holdStartTask = nil
@@ -434,13 +501,26 @@ struct CameraView: View {
     }
 
     // Called while finger is held and dragged. Only active in hold-recording mode.
-    // Dragging up (negative y translation) zooms in; dragging down zooms out.
-    private func handleDrag(_ verticalTranslation: CGFloat) {
-        guard isHoldRecording else { return }
-        let newZoom = holdZoomStart - verticalTranslation * 0.013
+    // Sliding left toward the lock icon locks the recording hands-free; otherwise
+    // dragging up (negative y translation) zooms in and dragging down zooms out.
+    private func handleDrag(_ translation: CGSize) {
+        guard isHoldRecording, !isLocked else { return }
+        // Slide left toward the lock icon → lock hands-free recording.
+        if translation.width < -lockSlideThreshold && abs(translation.width) > abs(translation.height) {
+            engageLock()
+            return
+        }
+        let newZoom = holdZoomStart - translation.height * 0.013
         camera.setZoom(newZoom)
         zoomLabelTask?.cancel()
         showZoomLabel = true
+    }
+
+    private func engageLock() {
+        isLocked = true
+        lockArmed = true
+        withAnimation { showZoomLabel = false }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 
     private func scheduleHideExposureControl() {
@@ -481,7 +561,12 @@ struct CameraView: View {
     private func finishRecording(url: URL) {
         stopTimer()
         onSave(url, elapsed > 0 ? elapsed : durationLimit)
-        guard pendingCameraFlip else { dismiss(); return }
+        guard pendingCameraFlip else {
+            isLocked = false
+            lockArmed = false
+            dismiss()
+            return
+        }
         // A camera flip was requested mid-recording: switch camera now, then
         // restart recording automatically if the user is still holding.
         pendingCameraFlip = false
@@ -533,7 +618,7 @@ private struct RecordButton: View {
     let progress: CGFloat   // 0.0 – 1.0, drives the amber ring
     let onPressDown: () -> Void
     let onRelease: () -> Void
-    let onDrag: (CGFloat) -> Void   // vertical translation (negative = up = zoom in)
+    let onDrag: (CGSize) -> Void   // full translation (up = zoom in, left = lock)
 
     @State private var isPressing = false
 
@@ -577,7 +662,7 @@ private struct RecordButton: View {
                         isPressing = true
                         onPressDown()
                     } else {
-                        onDrag(value.translation.height)
+                        onDrag(value.translation)
                     }
                 }
                 .onEnded { _ in
