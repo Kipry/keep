@@ -10,6 +10,7 @@ struct OnThisDayView: View {
     private var projects: [Project]
 
     @State private var showSettings = false
+    @State private var showStreakDetail = false
     @State private var viewerClips: [Clip]?
     @State private var viewerIndex: Int = 0
 
@@ -138,6 +139,16 @@ struct OnThisDayView: View {
                 LookbackClipViewer(clips: clips, initialIndex: viewerIndex)
             }
         }
+        .sheet(isPresented: $showStreakDetail) {
+            StreakDetailView(
+                recordingDays: Set(uniqueRecordingDays),
+                currentStreak: currentStreak,
+                bestStreak: bestStreak,
+                totalRecordingDays: recordingDays,
+                today: today,
+                calendar: cal
+            )
+        }
     }
 
     private func openViewer(_ clips: [Clip], at index: Int) {
@@ -236,6 +247,10 @@ struct OnThisDayView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.3))
                 }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.25))
+                    .padding(.leading, 4)
             }
 
             // Last 7 days dots
@@ -266,6 +281,8 @@ struct OnThisDayView: View {
         .padding(18)
         .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+        .contentShape(RoundedRectangle(cornerRadius: 14))
+        .onTapGesture { showStreakDetail = true }
     }
 
     private func shortDayLabel(for date: Date) -> String {
@@ -562,5 +579,220 @@ private struct LookbackClipViewer: View {
         if let url = clip.photoSourceURL, let img = UIImage(contentsOfFile: url.path) { return img }
         if let data = clip.thumbnailData { return UIImage(data: data) }
         return nil
+    }
+}
+
+// MARK: - StreakDetailView
+
+/// Scrollable, month-by-month calendar showing which days had recordings.
+/// Mirrors the streak card's visual language: amber = recorded, grey = empty.
+private struct StreakDetailView: View {
+    let recordingDays: Set<Date>
+    let currentStreak: Int
+    let bestStreak: Int
+    let totalRecordingDays: Int
+    let today: Date
+    let calendar: Calendar
+
+    @Environment(\.dismiss) private var dismiss
+
+    // Months from the current one back to the earliest recording, newest first.
+    private var months: [Date] {
+        let currentMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: today)) ?? today
+        let earliestDay = recordingDays.min() ?? today
+        let earliestMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: earliestDay)) ?? currentMonth
+        var result: [Date] = []
+        var cursor = currentMonth
+        var guardCount = 0
+        while cursor >= earliestMonth && guardCount < 600 {
+            result.append(cursor)
+            cursor = calendar.date(byAdding: .month, value: -1, to: cursor) ?? earliestMonth
+            guardCount += 1
+        }
+        return result
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 16) {
+                    summaryCard
+                    ForEach(months, id: \.self) { month in
+                        StreakMonthGrid(
+                            monthStart: month,
+                            recordingDays: recordingDays,
+                            today: today,
+                            calendar: calendar
+                        )
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 40)
+            }
+        }
+        .safeAreaInset(edge: .top) { topBar }
+        .presentationBackground(.black)
+    }
+
+    private var topBar: some View {
+        HStack {
+            Text("Streak")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(.white)
+            Spacer()
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .frame(width: 32, height: 32)
+                    .background(Color(white: 0.14), in: Circle())
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 18)
+        .padding(.bottom, 12)
+        .background(Color.black)
+    }
+
+    private var summaryCard: some View {
+        VStack(spacing: 16) {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(currentStreak > 0 ? Theme.amber : .white.opacity(0.2))
+                        Text("\(currentStreak)")
+                            .font(.system(size: 38, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                    }
+                    Text("Day Streak")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("\(bestStreak)")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.55))
+                    Text("Best Streak")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.3))
+                }
+            }
+
+            HStack(spacing: 14) {
+                legendItem(color: Theme.amber, label: "Recorded")
+                legendItem(color: Color(white: 0.18), label: "No clip")
+                Spacer()
+                Text("\(totalRecordingDays) days total")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.35))
+            }
+        }
+        .padding(18)
+        .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+    }
+
+    private func legendItem(color: Color, label: String) -> some View {
+        HStack(spacing: 5) {
+            Circle().fill(color).frame(width: 9, height: 9)
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.45))
+        }
+    }
+}
+
+// MARK: - StreakMonthGrid
+
+/// A single month rendered as a 7-column calendar grid.
+private struct StreakMonthGrid: View {
+    let monthStart: Date
+    let recordingDays: Set<Date>
+    let today: Date
+    let calendar: Calendar
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(monthTitle)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+
+            HStack(spacing: 6) {
+                ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, sym in
+                    Text(sym)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.3))
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(Array(cells.enumerated()), id: \.offset) { _, day in
+                    if let day {
+                        dayCell(day)
+                    } else {
+                        Color.clear.frame(height: 34)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+    }
+
+    private func dayCell(_ day: Date) -> some View {
+        let active = recordingDays.contains(calendar.startOfDay(for: day))
+        let isToday = calendar.isDate(day, inSameDayAs: today)
+        let inFuture = day > today
+        return ZStack {
+            Circle()
+                .fill(active ? Theme.amber : Color(white: inFuture ? 0.11 : 0.18))
+            if isToday && !active {
+                Circle().strokeBorder(Theme.amber.opacity(0.5), lineWidth: 1.5)
+            }
+            Text("\(calendar.component(.day, from: day))")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(active ? Theme.ink
+                                 : inFuture ? .white.opacity(0.18) : .white.opacity(0.55))
+        }
+        .frame(height: 34)
+    }
+
+    // MARK: Layout helpers
+
+    private var monthTitle: String {
+        let f = DateFormatter()
+        f.locale = calendar.locale ?? .current
+        f.dateFormat = "MMMM yyyy"
+        return f.string(from: monthStart)
+    }
+
+    // Weekday header symbols ordered to match the calendar's first weekday.
+    private var weekdaySymbols: [String] {
+        let f = DateFormatter()
+        f.locale = calendar.locale ?? .current
+        let symbols = f.veryShortStandaloneWeekdaySymbols ?? ["S", "M", "T", "W", "T", "F", "S"]
+        let start = calendar.firstWeekday - 1
+        return (0..<7).map { symbols[(start + $0) % 7] }
+    }
+
+    // Day cells with leading blanks so the 1st lands under the right weekday.
+    private var cells: [Date?] {
+        guard let range = calendar.range(of: .day, in: .month, for: monthStart) else { return [] }
+        let firstWeekday = calendar.component(.weekday, from: monthStart)
+        let leadingBlanks = (firstWeekday - calendar.firstWeekday + 7) % 7
+        var result: [Date?] = Array(repeating: nil, count: leadingBlanks)
+        for d in range {
+            result.append(calendar.date(byAdding: .day, value: d - 1, to: monthStart))
+        }
+        return result
     }
 }
