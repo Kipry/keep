@@ -596,17 +596,17 @@ private struct StreakDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    // Months from the current one back to the earliest recording, newest first.
+    // Months from the earliest recording up to the current one, oldest first.
     private var months: [Date] {
         let currentMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: today)) ?? today
         let earliestDay = recordingDays.min() ?? today
         let earliestMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: earliestDay)) ?? currentMonth
         var result: [Date] = []
-        var cursor = currentMonth
+        var cursor = earliestMonth
         var guardCount = 0
-        while cursor >= earliestMonth && guardCount < 600 {
+        while cursor <= currentMonth && guardCount < 600 {
             result.append(cursor)
-            cursor = calendar.date(byAdding: .month, value: -1, to: cursor) ?? earliestMonth
+            cursor = calendar.date(byAdding: .month, value: 1, to: cursor) ?? currentMonth
             guardCount += 1
         }
         return result
