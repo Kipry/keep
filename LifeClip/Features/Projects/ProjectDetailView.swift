@@ -686,10 +686,28 @@ struct ProjectDetailView: View {
         }
     }
 
+    // Builds the intro bumper — the project's title and recording date range
+    // (first clip's date to last clip's date) burned into the bundled "keep."
+    // bumper clip — as the first ClipInfo of the export. Returns nil if the
+    // bumper couldn't be rendered so the export can proceed without it.
+    private func makeBumperClipInfo() async -> VideoComposer.ClipInfo? {
+        let dates = project.activeClips.map(\.createdAt)
+        guard let first = dates.min(), let last = dates.max() else { return nil }
+        guard let url = await composer.renderBumper(projectName: project.name, startDate: first, endDate: last) else {
+            return nil
+        }
+        return VideoComposer.ClipInfo(url: url, trimStart: 0, trimEnd: nil)
+    }
+
     private func exportVideo() async {
         let box = ProgressBox()
         isExporting = true
         exportProgress = 0
+
+        // Render the intro bumper (title card + recording date range) up front,
+        // before the progress ring starts moving. A rendering failure silently
+        // falls back to exporting without it rather than blocking the export.
+        let bumperClip = await makeBumperClipInfo()
 
         // Poll the shared box ~12 fps and reflect into UI state
         let pollTask = Task {
@@ -699,9 +717,10 @@ struct ProjectDetailView: View {
             } while !Task.isCancelled
         }
 
-        let clipInfos = project.activeClips
+        var clipInfos = project.activeClips
             .filter { $0.isAvailable }
             .map { VideoComposer.ClipInfo(url: $0.fileURL, trimStart: $0.trimStart, trimEnd: $0.trimEnd) }
+        if let bumperClip { clipInfos.insert(bumperClip, at: 0) }
         do {
             let out = try await composer.compose(
                 clips: clipInfos,

@@ -1,5 +1,6 @@
 import AVFoundation
 import UIKit
+import QuartzCore
 
 // MARK: - Export Quality
 
@@ -233,6 +234,154 @@ actor VideoComposer {
         return folder.appendingPathComponent(UUID().uuidString).appendingPathExtension("mov")
     }
 
+    // MARK: - Intro bumper
+
+    /// Renders the bundled "keep." intro bumper with the project title and its
+    /// recording date range burned in near the bottom, ready to be prepended as
+    /// the first clip of the final export. Returns nil if the bundled asset is
+    /// missing so the caller can fall back to exporting without it.
+    func renderBumper(projectName: String, startDate: Date, endDate: Date) async -> URL? {
+        guard let bumperURL = Bundle.main.url(forResource: "BumperIntro", withExtension: "mp4") else { return nil }
+        let asset = AVURLAsset(url: bumperURL)
+        guard let videoTrack = try? await asset.loadTracks(withMediaType: .video).first,
+              let naturalSize = try? await videoTrack.load(.naturalSize),
+              let preferredTransform = try? await videoTrack.load(.preferredTransform),
+              let duration = try? await asset.load(.duration)
+        else { return nil }
+
+        let display = naturalSize.applying(preferredTransform)
+        let renderSize = CGSize(width: abs(display.width), height: abs(display.height))
+        guard renderSize.width > 0, renderSize.height > 0 else { return nil }
+
+        let layerInstr = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
+        layerInstr.setTransform(preferredTransform, at: .zero)
+
+        let instr = AVMutableVideoCompositionInstruction()
+        instr.timeRange = CMTimeRange(start: .zero, duration: duration)
+        instr.layerInstructions = [layerInstr]
+
+        let vc = AVMutableVideoComposition()
+        vc.frameDuration = CMTime(value: 1, timescale: 30)
+        vc.renderSize    = renderSize
+
+        // Burn the title card into the bumper via a Core Animation overlay layer
+        // composited on top of the decoded video frames.
+        let overlay = Self.titleCardImage(
+            projectName: projectName,
+            rangeLabel: Self.dateRangeLabel(from: startDate, to: endDate),
+            size: renderSize
+        )
+        let videoLayer = CALayer()
+        videoLayer.frame = CGRect(origin: .zero, size: renderSize)
+        let overlayLayer = CALayer()
+        overlayLayer.frame = CGRect(origin: .zero, size: renderSize)
+        overlayLayer.contents = overlay.cgImage
+        let parentLayer = CALayer()
+        parentLayer.frame = CGRect(origin: .zero, size: renderSize)
+        parentLayer.addSublayer(videoLayer)
+        parentLayer.addSublayer(overlayLayer)
+        vc.animationTool = AVVideoCompositionCoreAnimationTool(postProcessingAsVideoLayer: videoLayer, in: parentLayer)
+        vc.instructions = [instr]
+
+        return try? await export(composition: asset, videoComposition: vc,
+                                 quality: .p1080, progressBox: nil)
+    }
+
+    private static func dateRangeLabel(from start: Date, to end: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "dd.MM.yyyy"
+        if Calendar.current.isDate(start, inSameDayAs: end) {
+            return f.string(from: start)
+        }
+        return "\(f.string(from: start))  –  \(f.string(from: end))"
+    }
+
+    /// Draws the bottom title card (project name + recording date range) as a
+    /// transparent overlay image. The title auto-shrinks to fit up to two lines
+    /// and gracefully truncates with an ellipsis if it's still too long — so
+    /// arbitrarily long project names never overflow or look broken.
+    private static func titleCardImage(projectName: String, rangeLabel: String, size: CGSize) -> UIImage {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+
+        return renderer.image { ctx in
+            let cg = ctx.cgContext
+            let maxWidth   = size.width * 0.86
+            let leftInset  = size.width * 0.07
+            let bottomInset = size.height * 0.065
+
+            // Bottom scrim so the text stays legible over any bumper content.
+            let scrimHeight = size.height * 0.34
+            let scrimRect = CGRect(x: 0, y: size.height - scrimHeight, width: size.width, height: scrimHeight)
+            let colors = [UIColor.black.withAlphaComponent(0).cgColor,
+                         UIColor.black.withAlphaComponent(0.82).cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
+                cg.saveGState()
+                cg.clip(to: scrimRect)
+                cg.drawLinearGradient(gradient,
+                                      start: CGPoint(x: 0, y: scrimRect.minY),
+                                      end: CGPoint(x: 0, y: scrimRect.maxY),
+                                      options: [])
+                cg.restoreGState()
+            }
+
+            // Date range — mono, amber, tracked, matching the app's data-label style.
+            let rangeFontSize = size.width * 0.032
+            let rangeFont = UIFont(name: "JetBrainsMono-Medium", size: rangeFontSize)
+                ?? .monospacedSystemFont(ofSize: rangeFontSize, weight: .medium)
+            let rangeAttrs: [NSAttributedString.Key: Any] = [
+                .font: rangeFont,
+                .foregroundColor: UIColor(red: 0.941, green: 0.529, blue: 0.227, alpha: 1),
+                .kern: rangeFontSize * 0.09
+            ]
+            let rangeString = NSAttributedString(string: rangeLabel.uppercased(), attributes: rangeAttrs)
+            let rangeSize = rangeString.size()
+            let rangeOrigin = CGPoint(x: leftInset, y: size.height - bottomInset - rangeSize.height)
+            rangeString.draw(at: rangeOrigin)
+
+            // Title — hand-drawn, prominent. Shrinks in steps until it fits within
+            // two lines at `maxWidth`; if it still doesn't fit at the floor size,
+            // the final draw call truncates the last line with an ellipsis.
+            let maxTitleSize: CGFloat = size.width * 0.115
+            let minTitleSize: CGFloat = size.width * 0.05
+            var fontSize = maxTitleSize
+            var titleFont = UIFont(name: "PatrickHand-Regular", size: fontSize)
+                ?? .boldSystemFont(ofSize: fontSize)
+            while fontSize > minTitleSize {
+                let font = UIFont(name: "PatrickHand-Regular", size: fontSize)
+                    ?? .boldSystemFont(ofSize: fontSize)
+                let bounding = (projectName as NSString).boundingRect(
+                    with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
+                    options: [.usesLineFragmentOrigin, .usesFontLeading],
+                    attributes: [.font: font], context: nil
+                )
+                titleFont = font
+                if bounding.height <= font.lineHeight * 2.05 { break }
+                fontSize -= max(1, size.width * 0.003)
+            }
+
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.lineBreakMode = .byWordWrapping
+            let titleAttrs: [NSAttributedString.Key: Any] = [
+                .font: titleFont,
+                .foregroundColor: UIColor.white,
+                .paragraphStyle: paragraph
+            ]
+            let titleBoxHeight = titleFont.lineHeight * 2.1
+            let titleRect = CGRect(
+                x: leftInset,
+                y: rangeOrigin.y - 6 - titleBoxHeight,
+                width: maxWidth,
+                height: titleBoxHeight
+            )
+            NSAttributedString(string: projectName, attributes: titleAttrs)
+                .draw(with: titleRect, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
+        }
+    }
+
     // MARK: - Cut composition
 
     private func composeCut(
@@ -453,7 +602,7 @@ actor VideoComposer {
     }
 
     private func export(
-        composition: AVMutableComposition,
+        composition: AVAsset,
         videoComposition: AVMutableVideoComposition?,
         quality: ExportQuality,
         progressBox: ProgressBox?
