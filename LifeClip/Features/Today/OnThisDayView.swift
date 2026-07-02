@@ -36,6 +36,12 @@ struct OnThisDayView: View {
         Set(allClips.map { cal.startOfDay(for: $0.createdAt) }).sorted(by: >)
     }
 
+    // All clips bucketed by calendar day — powers the streak detail's day card.
+    private var clipsByDay: [Date: [Clip]] {
+        Dictionary(grouping: allClips) { cal.startOfDay(for: $0.createdAt) }
+            .mapValues { $0.sorted { $0.createdAt < $1.createdAt } }
+    }
+
     private var currentStreak: Int {
         let days = uniqueRecordingDays
         guard let most = days.first else { return 0 }
@@ -141,6 +147,7 @@ struct OnThisDayView: View {
         }
         .sheet(isPresented: $showStreakDetail) {
             StreakDetailView(
+                clipsByDay: clipsByDay,
                 recordingDays: Set(uniqueRecordingDays),
                 currentStreak: currentStreak,
                 bestStreak: bestStreak,
@@ -586,7 +593,10 @@ private struct LookbackClipViewer: View {
 
 /// Scrollable, month-by-month calendar showing which days had recordings.
 /// Mirrors the streak card's visual language: amber = recorded, grey = empty.
+/// The stats stay pinned at the top, opening lands on the current month, and
+/// tapping a recorded day slides up a card with that day's clips.
 private struct StreakDetailView: View {
+    let clipsByDay: [Date: [Clip]]
     let recordingDays: Set<Date>
     let currentStreak: Int
     let bestStreak: Int
@@ -595,6 +605,9 @@ private struct StreakDetailView: View {
     let calendar: Calendar
 
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedDay: Date?
+    @State private var viewerClips: [Clip]?
+    @State private var viewerIndex = 0
 
     // Months from the earliest recording up to the current one, oldest first.
     private var months: [Date] {
@@ -613,27 +626,67 @@ private struct StreakDetailView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             Color.black.ignoresSafeArea()
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 16) {
-                    summaryCard
-                    ForEach(months, id: \.self) { month in
-                        StreakMonthGrid(
-                            monthStart: month,
-                            recordingDays: recordingDays,
-                            today: today,
-                            calendar: calendar
-                        )
+
+            // The stats card sits outside the scroll view so it stays pinned
+            // while the month grids scroll away underneath it.
+            VStack(spacing: 0) {
+                summaryCard
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 14)
+
+                ScrollViewReader { proxy in
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 16) {
+                            ForEach(months, id: \.self) { month in
+                                StreakMonthGrid(
+                                    monthStart: month,
+                                    recordingDays: recordingDays,
+                                    today: today,
+                                    calendar: calendar,
+                                    selectedDay: selectedDay,
+                                    onSelectDay: select(day:)
+                                )
+                                .id(month)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
+                        // Extra room while the day card is up so the last month
+                        // can still be scrolled above it.
+                        .padding(.bottom, selectedDay == nil ? 40 : 200)
+                    }
+                    // Land on the current month; scrolling up reveals the past.
+                    .onAppear {
+                        if let newest = months.last {
+                            proxy.scrollTo(newest, anchor: .bottom)
+                        }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 40)
+            }
+
+            if let day = selectedDay, let clips = clipsByDay[day] {
+                dayClipsCard(day: day, clips: clips)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .animation(.spring(response: 0.38, dampingFraction: 0.86), value: selectedDay)
+        .sensoryFeedback(.selection, trigger: selectedDay)
         .safeAreaInset(edge: .top) { topBar }
         .presentationBackground(.black)
+        .fullScreenCover(isPresented: Binding(
+            get: { viewerClips != nil },
+            set: { if !$0 { viewerClips = nil } }
+        )) {
+            if let clips = viewerClips {
+                LookbackClipViewer(clips: clips, initialIndex: viewerIndex)
+            }
+        }
+    }
+
+    private func select(day: Date) {
+        selectedDay = selectedDay == day ? nil : day
     }
 
     private var topBar: some View {
@@ -705,6 +758,70 @@ private struct StreakDetailView: View {
                 .foregroundStyle(.white.opacity(0.45))
         }
     }
+
+    // MARK: Day clips card
+
+    // Bottom card that slides up when a recorded day is tapped: weekday, date,
+    // clip count, and the day's clips as tappable thumbnails.
+    private func dayClipsCard(day: Date, clips: [Clip]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(dayTitle(day))
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text(daySubtitle(day, count: clips.count))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Theme.amber)
+                }
+                Spacer()
+                Button { selectedDay = nil } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .frame(width: 28, height: 28)
+                        .background(Color(white: 0.16), in: Circle())
+                }
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(clips.enumerated()), id: \.element.id) { idx, clip in
+                        LookbackClipCell(clip: clip) {
+                            viewerIndex = idx
+                            viewerClips = clips
+                        }
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.08), lineWidth: 1))
+        .shadow(color: .black.opacity(0.55), radius: 20, y: 8)
+        .padding(.horizontal, 14)
+        .padding(.bottom, 12)
+    }
+
+    private func dayTitle(_ day: Date) -> String {
+        if calendar.isDate(day, inSameDayAs: today) { return String(localized: "Today") }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
+           calendar.isDate(day, inSameDayAs: yesterday) { return String(localized: "Yesterday") }
+        let f = DateFormatter()
+        f.locale = .current
+        f.dateFormat = "EEEE"
+        return f.string(from: day)
+    }
+
+    private func daySubtitle(_ day: Date, count: Int) -> String {
+        let f = DateFormatter()
+        f.locale = .current
+        f.dateFormat = "d. MMMM yyyy"
+        let date = f.string(from: day)
+        return count == 1
+            ? String(localized: "\(date) · 1 Clip")
+            : String(localized: "\(date) · \(count) Clips")
+    }
 }
 
 // MARK: - StreakMonthGrid
@@ -715,6 +832,8 @@ private struct StreakMonthGrid: View {
     let recordingDays: Set<Date>
     let today: Date
     let calendar: Calendar
+    let selectedDay: Date?
+    let onSelectDay: (Date) -> Void
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
 
@@ -749,14 +868,20 @@ private struct StreakMonthGrid: View {
     }
 
     private func dayCell(_ day: Date) -> some View {
-        let active = recordingDays.contains(calendar.startOfDay(for: day))
+        let dayKey = calendar.startOfDay(for: day)
+        let active = recordingDays.contains(dayKey)
         let isToday = calendar.isDate(day, inSameDayAs: today)
         let inFuture = day > today
+        let isSelected = selectedDay == dayKey
         return ZStack {
             Circle()
                 .fill(active ? Theme.amber : Color(white: inFuture ? 0.11 : 0.18))
+                .shadow(color: isSelected ? Theme.amber.opacity(0.55) : .clear, radius: 7)
             if isToday && !active {
                 Circle().strokeBorder(Theme.amber.opacity(0.5), lineWidth: 1.5)
+            }
+            if isSelected {
+                Circle().strokeBorder(.white, lineWidth: 2)
             }
             Text("\(calendar.component(.day, from: day))")
                 .font(.system(size: 11, weight: .medium, design: .rounded))
@@ -764,6 +889,13 @@ private struct StreakMonthGrid: View {
                                  : inFuture ? .white.opacity(0.18) : .white.opacity(0.55))
         }
         .frame(height: 34)
+        .scaleEffect(isSelected ? 1.14 : 1)
+        .animation(.spring(response: 0.32, dampingFraction: 0.65), value: isSelected)
+        .contentShape(Circle())
+        .onTapGesture {
+            guard active else { return }
+            onSelectDay(dayKey)
+        }
     }
 
     // MARK: Layout helpers
