@@ -66,3 +66,26 @@ extension Font {
     static var durBadge:     Font { .mono(9,  weight: .medium) }
     static var clipBadge:    Font { .mono(10, weight: .medium) }
 }
+
+// MARK: - Scroll edge fade
+
+extension View {
+    /// Softly dissolves scrolling content at the top edge so it fades out
+    /// underneath a pinned header instead of hitting a hard cut-off line.
+    /// Apply to the ScrollView itself; the fade stays fixed to its frame.
+    func topEdgeFade(height: CGFloat = 32) -> some View {
+        mask(
+            VStack(spacing: 0) {
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .black, location: 1)
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: height)
+                Color.black
+            }
+        )
+    }
+}

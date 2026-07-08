@@ -31,99 +31,59 @@ struct ProjectListView: View {
         ZStack(alignment: .bottomTrailing) {
             Theme.background.ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    // ── Header ───────────────────────────────────────────
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(alignment: .bottom) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("YOUR LIBRARY")
-                                    .font(.eyebrow)
-                                    .tracking(2)
-                                    .foregroundStyle(.white.opacity(0.35))
-                                Text("keep.")
-                                    .font(.appWordmark)
-                                    .foregroundStyle(.white)
-                            }
-                            Spacer()
-                            Button {
-                                withAnimation(.easeInOut(duration: 0.2)) { isSearching.toggle() }
-                                if !isSearching { searchText = "" }
-                            } label: {
-                                Image(systemName: isSearching ? "xmark" : "magnifyingglass")
-                                    .font(.body.bold())
-                                    .foregroundStyle(isSearching ? Theme.amber : .white)
-                                    .frame(width: 36, height: 36)
-                                    .background(.white.opacity(0.1), in: Circle())
-                            }
-                        }
-
-                        if isSearching {
-                            HStack(spacing: 10) {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundStyle(.white.opacity(0.4))
-                                TextField("Search projects…", text: $searchText)
-                                    .foregroundStyle(.white)
-                                    .tint(Theme.amber)
-                                    .autocorrectionDisabled()
-                                if !searchText.isEmpty {
-                                    Button { searchText = "" } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .foregroundStyle(.white.opacity(0.3))
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .background(Color(white: 0.12), in: RoundedRectangle(cornerRadius: 12))
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                        }
-                    }
+            // Header stays pinned; only the project grid scrolls underneath it,
+            // dissolving softly at the top edge (same treatment as the streak view).
+            VStack(alignment: .leading, spacing: 0) {
+                header
                     .padding(.horizontal, 24)
                     .padding(.top, 20)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 12)
 
-                    // ── Grid ─────────────────────────────────────────────
-                    if displayedProjects.isEmpty {
-                        isSearching ? AnyView(noResultsState) : AnyView(emptyState)
-                    } else {
-                        LazyVGrid(
-                            columns: [
-                                GridItem(.flexible(), spacing: 14),
-                                GridItem(.flexible(), spacing: 14)
-                            ],
-                            spacing: 14
-                        ) {
-                            ForEach(displayedProjects) { project in
-                                Button { selectedProject = project } label: {
-                                    ProjectCard(project: project)
-                                }
-                                .buttonStyle(.plain)
-                                .contextMenu {
-                                    Button {
-                                        renameText = project.name
-                                        projectToRename = project
-                                    } label: {
-                                        Label("Rename", systemImage: "pencil")
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if displayedProjects.isEmpty {
+                            isSearching ? AnyView(noResultsState) : AnyView(emptyState)
+                        } else {
+                            LazyVGrid(
+                                columns: [
+                                    GridItem(.flexible(), spacing: 14),
+                                    GridItem(.flexible(), spacing: 14)
+                                ],
+                                spacing: 14
+                            ) {
+                                ForEach(displayedProjects) { project in
+                                    Button { selectedProject = project } label: {
+                                        ProjectCard(project: project)
                                     }
-                                    Button {
-                                        project.archive()
-                                    } label: {
-                                        Label("Archive", systemImage: "archivebox")
-                                    }
-                                    Button(role: .destructive) {
-                                        projectToDelete = project
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
+                                    .buttonStyle(.plain)
+                                    .contextMenu {
+                                        Button {
+                                            renameText = project.name
+                                            projectToRename = project
+                                        } label: {
+                                            Label("Rename", systemImage: "pencil")
+                                        }
+                                        Button {
+                                            project.archive()
+                                        } label: {
+                                            Label("Archive", systemImage: "archivebox")
+                                        }
+                                        Button(role: .destructive) {
+                                            projectToDelete = project
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
                                     }
                                 }
                             }
+                            .padding(.horizontal, 24)
                         }
-                        .padding(.horizontal, 24)
-                    }
 
-                    Spacer(minLength: 110)
+                        Spacer(minLength: 110)
+                    }
+                    .padding(.top, 12)
                 }
+                .topEdgeFade()
             }
 
             // ── Amber FAB ────────────────────────────────────────────────
@@ -184,6 +144,56 @@ struct ProjectListView: View {
             Button("Cancel", role: .cancel) { projectToDelete = nil }
         } message: {
             Text("The project will be moved to trash and can be restored at any time.")
+        }
+    }
+
+    // MARK: - Pinned header
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("YOUR LIBRARY")
+                        .font(.eyebrow)
+                        .tracking(2)
+                        .foregroundStyle(.white.opacity(0.35))
+                    Text("keep.")
+                        .font(.appWordmark)
+                        .foregroundStyle(.white)
+                }
+                Spacer()
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { isSearching.toggle() }
+                    if !isSearching { searchText = "" }
+                } label: {
+                    Image(systemName: isSearching ? "xmark" : "magnifyingglass")
+                        .font(.body.bold())
+                        .foregroundStyle(isSearching ? Theme.amber : .white)
+                        .frame(width: 36, height: 36)
+                        .background(.white.opacity(0.1), in: Circle())
+                }
+            }
+
+            if isSearching {
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.white.opacity(0.4))
+                    TextField("Search projects…", text: $searchText)
+                        .foregroundStyle(.white)
+                        .tint(Theme.amber)
+                        .autocorrectionDisabled()
+                    if !searchText.isEmpty {
+                        Button { searchText = "" } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.white.opacity(0.3))
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color(white: 0.12), in: RoundedRectangle(cornerRadius: 12))
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
     }
 
