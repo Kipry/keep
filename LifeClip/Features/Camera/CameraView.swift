@@ -1,5 +1,7 @@
 import SwiftUI
 import AVFoundation
+import AVKit
+import UIKit
 
 struct CameraView: View {
     var onSave: (URL, Double) -> Void
@@ -67,6 +69,12 @@ struct CameraView: View {
             guard let url else { return }
             finishRecording(url: url)
         }
+        // Strong, tactile haptics the moment recording actually starts/stops —
+        // hooked to camera.isRecording so every trigger path (tap, hold, lock,
+        // auto-stop, volume button) gets the same physical feedback.
+        .onChange(of: camera.isRecording) { _, recording in
+            recordingHaptic(started: recording)
+        }
         .statusBarHidden(true)
         .animation(.easeInOut(duration: 0.25), value: showZoomLabel)
         .animation(.easeInOut(duration: 0.2), value: showExposureControl)
@@ -76,6 +84,16 @@ struct CameraView: View {
 
     private var cameraUI: some View {
         ZStack {
+            // Volume buttons act as a shutter (Apple's sanctioned capture-event
+            // API): press once to start recording, press again to stop.
+            if #available(iOS 17.2, *) {
+                VolumeShutterBridge {
+                    Task { await handleRecordTap() }
+                }
+                .frame(width: 0, height: 0)
+                .accessibilityHidden(true)
+            }
+
             if let session = camera.session {
                 CameraPreviewView(session: session)
                     .ignoresSafeArea()
@@ -558,6 +576,23 @@ struct CameraView: View {
         }
     }
 
+    // Heavy single thump when recording starts; a sharp rigid double-tick when
+    // it stops — unmistakably physical, like a mechanical shutter engaging.
+    private func recordingHaptic(started: Bool) {
+        if started {
+            let gen = UIImpactFeedbackGenerator(style: .heavy)
+            gen.prepare()
+            gen.impactOccurred(intensity: 1.0)
+        } else {
+            let gen = UIImpactFeedbackGenerator(style: .rigid)
+            gen.prepare()
+            gen.impactOccurred(intensity: 1.0)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.09) {
+                gen.impactOccurred(intensity: 0.7)
+            }
+        }
+    }
+
     private func finishRecording(url: URL) {
         stopTimer()
         onSave(url, elapsed > 0 ? elapsed : durationLimit)
@@ -608,6 +643,40 @@ struct CameraView: View {
                 .padding()
             Spacer()
         }
+    }
+}
+
+// MARK: - VolumeShutterBridge
+
+/// Bridges the hardware volume buttons to the record action via
+/// AVCaptureEventInteraction — the system API for camera hardware triggers.
+/// Only fires while a capture session is active, so it can't hijack the
+/// volume buttons anywhere else in the app.
+@available(iOS 17.2, *)
+private struct VolumeShutterBridge: UIViewRepresentable {
+    let onPress: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onPress: onPress) }
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        let coordinator = context.coordinator
+        let interaction = AVCaptureEventInteraction { event in
+            guard event.phase == .began else { return }
+            coordinator.onPress()
+        }
+        interaction.isEnabled = true
+        view.addInteraction(interaction)
+        return view
+    }
+
+    func updateUIView(_ view: UIView, context: Context) {
+        context.coordinator.onPress = onPress
+    }
+
+    final class Coordinator {
+        var onPress: () -> Void
+        init(onPress: @escaping () -> Void) { self.onPress = onPress }
     }
 }
 

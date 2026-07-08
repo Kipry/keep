@@ -317,21 +317,22 @@ private struct LockPhaseAnimation: View {
             LockScreenMock(showTapRing: true)
                 .opacity(phase == 0 ? 1 : 0)
                 .animation(.easeInOut(duration: 0.4), value: phase)
-            CameraPhase()
+            CameraPhase(isActive: phase == 1)
                 .opacity(phase == 1 ? 1 : 0)
                 .animation(.easeInOut(duration: 0.4), value: phase)
-            SuccessPhase()
+            SuccessPhase(isActive: phase == 2)
                 .opacity(phase == 2 ? 1 : 0)
                 .animation(.easeInOut(duration: 0.4), value: phase)
         }
         .onAppear { runCycle() }
     }
 
+    // Lock screen (2.1s) → recording (exactly 1s, ring sweeps shut) → done (1.6s).
     private func runCycle() {
         phase = 0
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.1) {
             withAnimation { phase = 1 }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.4) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 withAnimation { phase = 2 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { runCycle() }
             }
@@ -521,8 +522,8 @@ private struct LockScreenMock: View {
 // MARK: - Camera recording phase
 
 private struct CameraPhase: View {
-    @State private var elapsed: CGFloat = 0
-    @State private var timer: Timer?
+    let isActive: Bool
+    @State private var progress: CGFloat = 0
 
     var body: some View {
         ZStack {
@@ -539,7 +540,7 @@ private struct CameraPhase: View {
                         .stroke(Color(white: 0.25), lineWidth: 4)
                         .frame(width: 72, height: 72)
                     Circle()
-                        .trim(from: 0, to: min(elapsed / 3, 1))
+                        .trim(from: 0, to: progress)
                         .stroke(Theme.amber, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .frame(width: 72, height: 72)
                         .rotationEffect(.degrees(-90))
@@ -552,26 +553,31 @@ private struct CameraPhase: View {
                     ForEach(["1s", "3s", "5s"], id: \.self) { label in
                         Text(label)
                             .font(.mono(11))
-                            .foregroundStyle(label == "3s" ? Theme.amber : Color(white: 0.35))
+                            .foregroundStyle(label == "1s" ? Theme.amber : Color(white: 0.35))
                     }
                 }
 
                 Spacer()
             }
         }
-        .onAppear {
-            elapsed = 0
-            timer?.invalidate()
-            timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
-                elapsed = min(elapsed + 0.05, 3)
-                if elapsed >= 3 { timer?.invalidate() }
+        // All phases stay mounted (they cross-fade via opacity), so onAppear
+        // fires only once — the ring must restart from zero each time this
+        // phase becomes visible, sweeping shut in exactly the 1s it's shown.
+        .onChange(of: isActive) { _, active in
+            if active {
+                progress = 0
+                withAnimation(.linear(duration: 1.0)) { progress = 1 }
+            } else {
+                var t = Transaction()
+                t.disablesAnimations = true
+                withTransaction(t) { progress = 0 }
             }
         }
-        .onDisappear { timer?.invalidate() }
     }
 }
 
 private struct SuccessPhase: View {
+    let isActive: Bool
     @State private var popped = false
 
     private var badge: some View {
@@ -614,9 +620,15 @@ private struct SuccessPhase: View {
                     .padding(.horizontal, 40)
             }
         }
-        .onAppear {
-            popped = false
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) { popped = true }
+        // Replays the badge pop every cycle (onAppear only fires once because
+        // the phases stay mounted and cross-fade via opacity).
+        .onChange(of: isActive) { _, active in
+            if active {
+                popped = false
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) { popped = true }
+            } else {
+                popped = false
+            }
         }
     }
 }
