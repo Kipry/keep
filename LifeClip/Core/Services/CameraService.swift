@@ -291,6 +291,10 @@ final class CameraService: NSObject, ObservableObject {
         //     headphones during recording, while the recording itself stays on the built-in mics.
         try a.setCategory(.playAndRecord, mode: .measurement,
                           options: [.mixWithOthers, .allowBluetoothA2DP])
+        // iOS silences ALL haptics by default while a .playAndRecord session is
+        // active (so the taptic buzz can't bleed onto the mic track). Without
+        // this opt-in, the record start/stop haptics fire but are suppressed.
+        try? a.setAllowHapticsAndSystemSoundsDuringRecording(true)
         try a.setActive(true)
         // Explicitly select the built-in mic so AirPods or other connected accessories
         // can never be chosen as the audio source, regardless of system default routing.
