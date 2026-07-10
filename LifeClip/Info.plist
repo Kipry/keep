@@ -22,6 +22,11 @@
     <key>LSRequiresIPhoneOS</key>
     <true/>
 
+    <!-- Export compliance: the app does no networking and uses only exempt
+         standard encryption, so it is exempt from export documentation. -->
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+
     <!-- Privacy permissions -->
     <key>NSCameraUsageDescription</key>
     <string>keep. needs camera access to record your daily moments.</string>
@@ -31,12 +36,6 @@
     <string>keep. needs photo library access to import existing videos.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>keep. needs permission to save compiled videos to your photo library.</string>
-
-    <!-- Background processing -->
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>processing</string>
-    </array>
 
     <!-- Device requirements -->
     <key>UIRequiredDeviceCapabilities</key>
