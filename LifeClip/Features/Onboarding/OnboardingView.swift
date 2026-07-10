@@ -650,15 +650,11 @@ private struct StepLibrary: View {
 // MARK: - Project grid mock (matches actual ProjectListView exactly)
 
 private struct ProjectGridMock: View {
-    private let cards: [(name: LocalizedStringKey, clips: Int, date: String, top: Color, bot: Color)] = [
-        ("Summer 2026",  7, "Jun 20, 2026",
-         Color(red: 0.1,  green: 0.2,  blue: 0.4),  Color(red: 0.05, green: 0.1,  blue: 0.25)),
-        ("Daily life",  12, "Jun 19, 2026",
-         Color(red: 0.35, green: 0.1,  blue: 0.1),  Color(red: 0.18, green: 0.05, blue: 0.05)),
-        ("Workout",      4, "Jun 17, 2026",
-         Color(red: 0.1,  green: 0.28, blue: 0.15), Color(red: 0.05, green: 0.14, blue: 0.07)),
-        ("Family",       9, "Jun 15, 2026",
-         Color(red: 0.22, green: 0.1,  blue: 0.35), Color(red: 0.11, green: 0.05, blue: 0.18))
+    private let cards: [(name: LocalizedStringKey, clips: Int, date: String, image: String)] = [
+        ("Summer 2026",  7, "Jun 20, 2026", "ClipSunset"),
+        ("Daily life",  12, "Jun 19, 2026", "ClipCoffee"),
+        ("City Nights",  4, "Jun 17, 2026", "ClipCity"),
+        ("Mountains",    9, "Jun 15, 2026", "ClipHike")
     ]
 
     var body: some View {
@@ -702,13 +698,11 @@ private struct ProjectGridMock: View {
                         let c = cards[i]
                         ZStack(alignment: .topTrailing) {
                             ZStack(alignment: .bottomLeading) {
-                                LinearGradient(
-                                    colors: [c.top, c.bot],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                                .frame(height: 196)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                Image(c.image)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(height: 196)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14))
 
                                 LinearGradient(
                                     colors: [.clear, .black.opacity(0.72)],
@@ -829,19 +823,9 @@ private struct StepFilmstrip: View {
 // MARK: - Filmstrip mock (matches actual ProjectDetailView)
 
 private struct FilmstripMock: View {
-    private let rowColors: [[Color]] = [
-        [
-            Color(red: 0.1,  green: 0.2,  blue: 0.4),
-            Color(red: 0.35, green: 0.1,  blue: 0.1),
-            Color(red: 0.1,  green: 0.28, blue: 0.15),
-            Color(red: 0.22, green: 0.1,  blue: 0.35)
-        ],
-        [
-            Color(red: 0.3,  green: 0.24, blue: 0.06),
-            Color(red: 0.06, green: 0.24, blue: 0.28),
-            Color(red: 0.18, green: 0.14, blue: 0.32),
-            Color(red: 0.22, green: 0.14, blue: 0.06)
-        ]
+    private let rowImages: [[String]] = [
+        ["ClipSunset", "ClipHike", "ClipCity", "ClipCoffee"],
+        ["ClipConcert", "ClipSparkler", "ClipSunset", "ClipCity"]
     ]
 
     var body: some View {
@@ -886,8 +870,8 @@ private struct FilmstripMock: View {
 
                 // Filmstrip rows + "add" button
                 VStack(spacing: 12) {
-                    ForEach(rowColors.indices, id: \.self) { i in
-                        MockFilmstripRow(colors: rowColors[i])
+                    ForEach(rowImages.indices, id: \.self) { i in
+                        MockFilmstripRow(images: rowImages[i])
                     }
 
                     Text("+ add to the reel")
@@ -958,23 +942,23 @@ private struct FilmstripMock: View {
 // MARK: - Mock filmstrip row (matches real FilmstripRow structure)
 
 private struct MockFilmstripRow: View {
-    let colors: [Color]
+    let images: [String]
 
     var body: some View {
         VStack(spacing: 0) {
             sprocketHoles
             HStack(spacing: 5) {
-                ForEach(colors.indices, id: \.self) { i in
-                    colors[i]
-                        .overlay(
-                            Image(systemName: "film")
-                                .font(.system(size: 10))
-                                .foregroundStyle(.white.opacity(0.15))
-                        )
+                ForEach(images.indices, id: \.self) { i in
+                    Color.clear
                         .aspectRatio(4/5, contentMode: .fit)
+                        .overlay(
+                            Image(images[i])
+                                .resizable()
+                                .scaledToFill()
+                        )
                         .clipShape(RoundedRectangle(cornerRadius: 2))
                 }
-                let pad = 4 - min(colors.count, 4)
+                let pad = 4 - min(images.count, 4)
                 ForEach(0..<pad, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: 2)
                         .fill(.white.opacity(0.04))
@@ -1088,21 +1072,20 @@ private struct ExportMock: View {
 // MARK: - Mock export film strip (matches actual ExportProgressOverlay filmStrip)
 
 private struct MockExportFilmStrip: View {
-    private let colors: [Color] = [
-        Color(red: 0.1,  green: 0.2,  blue: 0.4),
-        Color(red: 0.35, green: 0.1,  blue: 0.1),
-        Color(red: 0.1,  green: 0.28, blue: 0.15),
-        Color(red: 0.22, green: 0.1,  blue: 0.35),
-        Color(red: 0.3,  green: 0.24, blue: 0.06)
+    private let images: [String] = [
+        "ClipSunset", "ClipConcert", "ClipHike", "ClipCity", "ClipSparkler"
     ]
 
     var body: some View {
         VStack(spacing: 0) {
             sprocketRow
             HStack(spacing: 3) {
-                ForEach(colors.indices, id: \.self) { i in
-                    colors[i]
+                ForEach(images.indices, id: \.self) { i in
+                    Image(images[i])
+                        .resizable()
+                        .scaledToFill()
                         .frame(width: 60, height: 80)
+                        .clipped()
                 }
             }
             .padding(.horizontal, 6)

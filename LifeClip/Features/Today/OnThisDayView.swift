@@ -132,7 +132,9 @@ struct OnThisDayView: View {
                                 .padding(.horizontal, 20)
                         }
                     }
-                    .padding(.top, 60)
+                    // Match the top offset of the other tabs (Library / Diary)
+                    // so the title sits at the same height across the app.
+                    .padding(.top, 20)
                     .padding(.bottom, 120)
                 }
             }
@@ -165,15 +167,18 @@ struct OnThisDayView: View {
 
     // MARK: - Header
 
+    // Matches the DIARY / LIBRARY headers: mono eyebrow (here the date) above a
+    // hand-lettered title, bottom-aligned with the trailing action button.
     private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(headerDateLabel)
+                    .font(.mono(10, weight: .medium))
+                    .tracking(2.5)
+                    .foregroundStyle(.white.opacity(0.35))
                 Text("Memories")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.hand(32))
                     .foregroundStyle(.white)
-                Text(formattedToday)
-                    .font(.system(size: 15))
-                    .foregroundStyle(.white.opacity(0.45))
             }
             Spacer()
             Button { showSettings = true } label: {
@@ -187,11 +192,11 @@ struct OnThisDayView: View {
         .sheet(isPresented: $showSettings) { SettingsView() }
     }
 
-    private var formattedToday: String {
+    private var headerDateLabel: String {
         let f = DateFormatter()
-        f.dateStyle = .full
-        f.timeStyle = .none
-        return f.string(from: Date())
+        f.locale = .current
+        f.dateFormat = "EEEE · d. MMMM"
+        return f.string(from: Date()).uppercased()
     }
 
     // MARK: - Stats grid
