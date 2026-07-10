@@ -300,9 +300,9 @@ private struct AmberLens: View {
 private struct StepLockScreen: View {
     var body: some View {
         StepShell(
-            eyebrow:  "THE LOCK SCREEN TRIGGER",
-            headline: "One tap.\nRecorded.",
-            subtext:  "From the lock screen straight into recording — the app stays closed."
+            eyebrow:  "ONE TAP",
+            headline: "Tap. Record.\nSaved.",
+            subtext:  "Tap REC on the lock screen — the clip saves itself. The app stays closed."
         ) {
             PhoneFrame { LockPhaseAnimation() }
         }
@@ -639,8 +639,8 @@ private struct StepLibrary: View {
     var body: some View {
         StepShell(
             eyebrow:  "LIBRARY",
-            headline: "Every experience.\nIts own project.",
-            subtext:  "Holiday, daily life, workout — all clips from one day in one place."
+            headline: "One story.\nOne project.",
+            subtext:  "Holiday, workout, daily life — every clip lands in its project, day after day."
         ) {
             PhoneFrame { ProjectGridMock() }
         }
@@ -818,7 +818,7 @@ private struct StepFilmstrip: View {
     var body: some View {
         StepShell(
             eyebrow:  "FILMSTRIP",
-            headline: "Your day.\nFrame by frame.",
+            headline: "Your story.\nFrame by frame.",
             subtext:  "Trim, sort, rearrange — just like a real film strip."
         ) {
             PhoneFrame { FilmstripMock() }
@@ -1134,7 +1134,7 @@ private struct StepWidget: View {
         StepShell(
             eyebrow:  "YOUR TRIGGER",
             headline: "Put the REC button\non your lock screen.",
-            subtext:  "The most powerful feature: a lock screen widget that takes you from moment to recording in 3 seconds. No unlocking, no opening."
+            subtext:  "Add it once — from then on every recording is a single tap away. No unlocking, no opening."
         ) {
             PhoneFrame { WidgetSetupMock() }
         }

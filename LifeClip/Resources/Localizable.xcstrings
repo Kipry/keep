@@ -418,37 +418,37 @@
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "keep. — dein Leben, ein Clip nach dem anderen." } } }
     },
-    "THE LOCK SCREEN TRIGGER" : {
+    "ONE TAP" : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "DER LOCK-SCREEN-AUSLÖSER" } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "EIN TIPP" } } }
     },
-    "One tap.\nRecorded." : {
+    "Tap. Record.\nSaved." : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ein Tipp.\nAufgenommen." } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Tippen. Aufnehmen.\nGespeichert." } } }
     },
-    "From the lock screen straight into recording — the app stays closed." : {
+    "Tap REC on the lock screen — the clip saves itself. The app stays closed." : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Vom Sperrbildschirm direkt in die Aufnahme — die App bleibt zu." } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "REC auf dem Sperrbildschirm antippen — der Clip speichert sich von selbst. Die App bleibt zu." } } }
     },
     "LIBRARY" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "BIBLIOTHEK" } } }
     },
-    "Every experience.\nIts own project." : {
+    "One story.\nOne project." : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Jedes Erlebnis.\nSein eigenes Projekt." } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Eine Story.\nEin Projekt." } } }
     },
-    "Holiday, daily life, workout — all clips from one day in one place." : {
+    "Holiday, workout, daily life — every clip lands in its project, day after day." : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Urlaub, Alltag, Form-Check — alle Clips eines Tages an einem Ort." } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Urlaub, Workout, Alltag — jeder Clip landet in seinem Projekt, Tag für Tag." } } }
     },
     "FILMSTRIP" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "FILMSTREIFEN" } } }
     },
-    "Your day.\nFrame by frame." : {
+    "Your story.\nFrame by frame." : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Dein Tag.\nFrame für Frame." } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Deine Story.\nFrame für Frame." } } }
     },
     "Trim, sort, rearrange — just like a real film strip." : {
       "extractionState" : "manual",
@@ -464,7 +464,7 @@
     },
     "Wind the reel — a finished video in seconds." : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Wind the reel — ein fertiges Video in Sekunden." } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Einmal kurbeln — ein fertiges Video in Sekunden." } } }
     },
     "YOUR TRIGGER" : {
       "extractionState" : "manual",
@@ -474,9 +474,9 @@
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Leg den REC-Knopf\nauf den Sperrbildschirm." } } }
     },
-    "The most powerful feature: a lock screen widget that takes you from moment to recording in 3 seconds. No unlocking, no opening." : {
+    "Add it once — from then on every recording is a single tap away. No unlocking, no opening." : {
       "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Das stärkste Feature: ein Lock-Screen-Widget, das dich in 3 Sekunden vom Moment zur Aufnahme bringt. Ohne Entsperren, ohne Öffnen." } } }
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Einmal einrichten — danach ist jede Aufnahme nur einen Tipp entfernt. Ohne Entsperren, ohne Öffnen." } } }
     },
     "Let's go" : {
       "extractionState" : "manual",
