@@ -123,6 +123,10 @@ struct TimelineData {
 // MARK: - Diary timeline screen
 
 struct DiaryTimelineView: View {
+    /// False while another tab is showing (the pager keeps all pages mounted,
+    /// so onDisappear never fires on tab switches — this drives autoplay stop).
+    var isActive: Bool = true
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -184,6 +188,7 @@ struct DiaryTimelineView: View {
         .onAppear(perform: rebuild)
         .onChange(of: projects.count) { _, _ in rebuild() }
         .onChange(of: focusedDay) { _, _ in refreshFocusedDay() }
+        .onChange(of: isActive) { _, active in if !active { stopAutoplay() } }
         .onDisappear { stopAutoplay() }
         .fullScreenCover(item: $selectedProject) { project in
             ProjectDetailView(project: project, recordOnAppear: false)
@@ -832,36 +837,50 @@ struct DiaryTimelineView: View {
         isPlaying ? stopAutoplay() : startAutoplay()
     }
 
+    /// Sorted unique day-tags (0...todayTag) that actually contain clips.
+    private func daysWithClips(in data: TimelineData) -> [Int] {
+        var tags = Set<Int>()
+        for band in data.bands {
+            for clip in band.project.activeClips {
+                let t = calendar.dateComponents([.day], from: data.startDate,
+                                                to: calendar.startOfDay(for: clip.createdAt)).day ?? 0
+                if (0...data.todayTag).contains(t) { tags.insert(t) }
+            }
+        }
+        return tags.sorted()
+    }
+
+    // Walks chronologically through EVERY day that has clips, from the focused
+    // day toward today, showing each of that day's clips exactly once, then
+    // stops. Nothing is skipped: the old version only visited band centers and
+    // dwelled a fixed 3 frames with a modulo counter, which repeated or dropped
+    // clips whenever a day didn't have exactly three.
     private func startAutoplay() {
-        guard let data, !data.bands.isEmpty else { return }
+        guard let data else { return }
+        let days = daysWithClips(in: data)
+        guard !days.isEmpty else { return }   // bands can exist with zero clips
         isPlaying = true
         autoTask?.cancel()
         autoTask = Task { @MainActor in
-            // Play the lookback FORWARD from the point the user is currently on:
-            // dwell on the current day first, then walk to each later band toward
-            // today. Never jump backward to earlier clips, and stop at the end
-            // instead of looping back to the very first recording.
-            var queue = data.bands
-                .filter { $0.center > centerDay + 0.5 }
-                .sorted { $0.center < $1.center }
-            var isFirstStop = true
+            // Play forward from the focused day; if the user is already past the
+            // last clip day (e.g. parked on an empty "today"), replay from the start.
+            var queue = days.filter { $0 >= focusedDay }
+            if queue.isEmpty { queue = days }
 
-            while !Task.isCancelled && isPlaying {
-                if !isFirstStop {
-                    guard !queue.isEmpty else { break }   // reached today — done
-                    let target = clampDay(queue.removeFirst().center)
-                    let dist = abs(target - centerDay)
-                    let dur = min(1.2, max(0.3, dist * 0.03))
-                    if reduceMotion { centerDay = target }
-                    else { withAnimation(.easeInOut(duration: dur)) { centerDay = target } }
-                    try? await Task.sleep(nanoseconds: UInt64(dur * 1_000_000_000))
+            for day in queue {
+                guard !Task.isCancelled, isPlaying else { break }
+                if Double(day) != centerDay {
+                    let dist = abs(Double(day) - centerDay)
+                    let dur = min(1.0, max(0.35, dist * 0.05))
+                    if reduceMotion { centerDay = Double(day) }
+                    else { withAnimation(.easeInOut(duration: dur)) { centerDay = Double(day) } }
+                    try? await Task.sleep(nanoseconds: UInt64((dur + 0.1) * 1_000_000_000))
                 }
-                isFirstStop = false
-                // dwell ~1.4s, cycling the day's clips as a slideshow
-                for _ in 0..<3 {
-                    try? await Task.sleep(nanoseconds: 460_000_000)
-                    if Task.isCancelled || !isPlaying { break }
-                    clipFrame += 1
+                guard !Task.isCancelled, isPlaying else { break }
+                for i in 0..<max(1, heroClips.count) {   // each clip exactly once
+                    withAnimation(.easeInOut(duration: 0.25)) { clipFrame = i }
+                    try? await Task.sleep(nanoseconds: 950_000_000)
+                    guard !Task.isCancelled, isPlaying else { break }
                 }
             }
             // Auto-stop once the lookback reaches the present.
@@ -881,9 +900,8 @@ struct DiaryTimelineView: View {
         let new = TimelineData.build(projects: projects, calendar: calendar)
         data = new
         if let new {
-            if centerDay == 0 {
-                centerDay = new.bands.last.map(\.center) ?? Double(new.todayTag)
-            }
+            // First build: open the diary on today, not on the latest project.
+            if centerDay == 0 { centerDay = Double(new.todayTag) }
             centerDay = clampDay(centerDay)
             cachedMonthSegs = monthSegments(data: new)
         }
@@ -894,7 +912,9 @@ struct DiaryTimelineView: View {
     // today and which band is active. Called only when focusedDay (Int) changes,
     // not on every animation frame while centerDay floats between day boundaries.
     private func refreshFocusedDay() {
-        guard let data else { heroClips = []; activeBand = nil; return }
+        guard let data else { heroClips = []; activeBand = nil; clipFrame = 0; return }
+        // Every day starts at its first clip — for manual scrubbing and autoplay.
+        clipFrame = 0
         let day = focusedDay
         let date = data.date(at: day)
         let clips = data.bands.flatMap { band in

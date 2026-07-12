@@ -10,41 +10,40 @@ enum AppTab {
 
 struct ContentView: View {
     @State private var selectedTab: AppTab = .projects
-    @State private var slideForward = true
     @State private var dragOffset: CGFloat = 0
 
     private let order: [AppTab] = [.projects, .timeline, .today]
 
+    private var tabIndex: Int { order.firstIndex(of: selectedTab) ?? 0 }
+
+    // All three pages stay mounted in a sliding strip: switching tabs is a pure
+    // offset animation — no view is rebuilt mid-slide (the old .id(selectedTab)
+    // approach recreated the heavy Diary view during the transition, causing
+    // visible hitches) — and every page keeps its scroll/scrub state.
     var body: some View {
         GeometryReader { geo in
+            let w = geo.size.width
             ZStack {
                 Theme.background.ignoresSafeArea()
-                page
-                    .id(selectedTab)
-                    .offset(x: dragOffset)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: slideForward ? .trailing : .leading),
-                        removal:   .move(edge: slideForward ? .leading : .trailing)
-                    ))
+                HStack(spacing: 0) {
+                    ProjectListView().frame(width: w)
+                    DiaryTimelineView(isActive: selectedTab == .timeline).frame(width: w)
+                    OnThisDayView().frame(width: w)
+                }
+                .offset(x: -CGFloat(tabIndex) * w + dragOffset)
+                // Pin the 3-page strip's leading edge at x = 0 — a bare 3w-wide
+                // HStack would be centered by the ZStack (leading edge at -w).
+                .frame(width: w, alignment: .leading)
             }
             .contentShape(Rectangle())
             // Edge-swipe between the main pages. Starting near a screen edge keeps
             // this from clashing with the timeline scrubber and horizontal carousels.
-            .simultaneousGesture(edgeSwipe(width: geo.size.width))
+            .simultaneousGesture(edgeSwipe(width: w))
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             AppTabBar(selectedTab: selectedTab, onSelect: switchTab)
         }
         .onboardingGate()
-    }
-
-    @ViewBuilder
-    private var page: some View {
-        switch selectedTab {
-        case .projects: ProjectListView()
-        case .timeline: DiaryTimelineView()
-        case .today:    OnThisDayView()
-        }
     }
 
     private func edgeSwipe(width: CGFloat) -> some Gesture {
@@ -56,39 +55,41 @@ struct ContentView: View {
                 // Only track intentional horizontal edge drags.
                 guard (fromLeft && dx > 0) || (fromRight && dx < 0) else { return }
                 guard abs(dx) > abs(v.translation.height) * 0.5 else { return }
-                // Rubber-band: page moves at 35 % of finger travel so the user
-                // feels immediate response without the view flying off screen.
-                dragOffset = dx * 0.35
+                // 1:1 tracking — the neighbouring page follows the finger.
+                // Rubber only when dragging past the first/last page.
+                let overscroll = (dx > 0 && tabIndex == 0) || (dx < 0 && tabIndex == order.count - 1)
+                dragOffset = overscroll ? dx * 0.25 : dx
             }
             .onEnded { v in
-                let dx = v.translation.width, dy = v.translation.height
+                let dx = v.translation.width
                 let fromLeft  = v.startLocation.x < 30
                 let fromRight = v.startLocation.x > width - 30
-                let committed = abs(dx) > 60 && abs(dx) > abs(dy) * 1.4
+                let vx = v.velocity.width
+                let fast = (dx < 0 && vx < -500) || (dx > 0 && vx > 500)   // direction-matched flick
+                let commit = abs(dx) > abs(v.translation.height) * 1.2
                     && ((dx < 0 && fromRight) || (dx > 0 && fromLeft))
-                if committed {
-                    // Snap offset back instantly so it doesn't fight the transition.
+                    && (abs(dx) > width * 0.28 || fast)
+                var target: AppTab?
+                if commit {
+                    let j = tabIndex + (dx < 0 ? 1 : -1)
+                    if order.indices.contains(j) { target = order[j] }
+                }
+                // Tab change and offset reset in ONE transaction: the spring
+                // animates continuously from the finger's release position to
+                // the destination page — no jump.
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.88)) {
+                    if let target { selectedTab = target }
                     dragOffset = 0
-                    if dx < 0 { step(1) } else { step(-1) }
-                } else {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { dragOffset = 0 }
                 }
             }
     }
 
-    private func step(_ delta: Int) {
-        guard let i = order.firstIndex(of: selectedTab) else { return }
-        let j = i + delta
-        guard j >= 0, j < order.count else { return }
-        switchTab(to: order[j])
-    }
-
     private func switchTab(to tab: AppTab) {
-        guard tab != selectedTab,
-              let from = order.firstIndex(of: selectedTab),
-              let to   = order.firstIndex(of: tab) else { return }
-        slideForward = to > from
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.88)) { selectedTab = tab }
+        guard tab != selectedTab else { return }
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.88)) {
+            selectedTab = tab
+            dragOffset = 0
+        }
     }
 }
 

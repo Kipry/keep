@@ -861,9 +861,9 @@ private struct StreakMonthGrid: View {
             }
 
             LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(Array(cells.enumerated()), id: \.offset) { _, day in
+                ForEach(Array(cells.enumerated()), id: \.offset) { idx, day in
                     if let day {
-                        dayCell(day)
+                        dayCell(day, column: idx % 7)
                     } else {
                         Color.clear.frame(height: 34)
                     }
@@ -875,13 +875,35 @@ private struct StreakMonthGrid: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
     }
 
-    private func dayCell(_ day: Date) -> some View {
+    // Streak band: pre-blended amber-over-card colour. An opaque fill lets the
+    // per-cell half-bands overlap invisibly in the column gaps — translucent
+    // stubs would show hairline seams at non-integral .flexible() widths.
+    private static let bandColor = Color(red: 0.369, green: 0.237, blue: 0.141)
+
+    private func dayCell(_ day: Date, column: Int) -> some View {
         let dayKey = calendar.startOfDay(for: day)
         let active = recordingDays.contains(dayKey)
         let isToday = calendar.isDate(day, inSameDayAs: today)
         let inFuture = day > today
         let isSelected = selectedDay == dayKey
+        let prev = calendar.date(byAdding: .day, value: -1, to: dayKey)
+        let next = calendar.date(byAdding: .day, value: 1, to: dayKey)
+        let connectsLeft  = active && prev.map { recordingDays.contains(calendar.startOfDay(for: $0)) } == true
+        let connectsRight = active && next.map { recordingDays.contains(calendar.startOfDay(for: $0)) } == true
         return ZStack {
+            // Connector band behind the dot: consecutive recorded days read as
+            // one continuous run. At row/month edges the half-band stops at the
+            // cell edge as a stub, signalling the streak continues.
+            if connectsLeft || connectsRight {
+                HStack(spacing: 0) {
+                    (connectsLeft  ? Self.bandColor : Color.clear).frame(maxWidth: .infinity)
+                    (connectsRight ? Self.bandColor : Color.clear).frame(maxWidth: .infinity)
+                }
+                .frame(height: 26)
+                .padding(.leading,  connectsLeft  && column > 0 ? -3.5 : 0)
+                .padding(.trailing, connectsRight && column < 6 ? -3.5 : 0)
+                .allowsHitTesting(false)
+            }
             Circle()
                 .fill(active ? Theme.amber : Color(white: inFuture ? 0.11 : 0.18))
                 .shadow(color: isSelected ? Theme.amber.opacity(0.55) : .clear, radius: 7)

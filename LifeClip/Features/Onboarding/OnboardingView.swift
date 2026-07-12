@@ -46,6 +46,26 @@ struct OnboardingView: View {
             }
             .ignoresSafeArea(edges: .bottom)
         }
+        // Swipe left/right anywhere to page through the steps — attached to the
+        // root (not stepContent, whose .id(step) identity swap would kill an
+        // in-flight gesture). simultaneousGesture + 24pt threshold keeps the
+        // Back/Skip/CTA buttons fully tappable.
+        .simultaneousGesture(stepSwipe)
+    }
+
+    private var stepSwipe: some Gesture {
+        DragGesture(minimumDistance: 24)
+            .onEnded { v in
+                let dx = v.translation.width
+                guard abs(dx) > 60, abs(dx) > abs(v.translation.height) * 1.2 else { return }
+                if dx < 0, step < totalSteps - 1 {   // never completes onboarding
+                    forward = true
+                    withAnimation(.easeInOut(duration: 0.35)) { step += 1 }
+                } else if dx > 0, step > 0 {
+                    forward = false
+                    withAnimation(.easeInOut(duration: 0.35)) { step -= 1 }
+                }
+            }
     }
 
     @ViewBuilder
