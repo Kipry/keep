@@ -120,7 +120,49 @@ struct TimelineData {
     }
 }
 
+// MARK: - Month segments (shared by the timeline and the Places scrubber)
+
+struct MonthSeg: Identifiable {
+    let id = UUID()
+    let date: Date
+    let startTag: Int
+    let days: Int
+    let shortLabel: String  // "MMM" — pre-computed, no per-frame DateFormatter
+    let fullLabel: String   // "MMMM"
+    func label(short: Bool) -> String { short ? shortLabel : fullLabel }
+}
+
+extension TimelineData {
+    /// Month boundaries across the timeline's day range with pre-formatted
+    /// labels. Compute once per data rebuild and cache — the UUID identity of
+    /// each segment is only stable within one computed array.
+    func monthSegments(calendar: Calendar) -> [MonthSeg] {
+        var segs: [MonthSeg] = []
+        guard var cursor = calendar.date(from: calendar.dateComponents([.year, .month], from: startDate)) else { return [] }
+        let end = calendar.date(byAdding: .day, value: total, to: startDate) ?? startDate
+        // Allocate formatters once for the whole loop, not once per segment.
+        let shortFmt = DateFormatter(); shortFmt.locale = .current; shortFmt.dateFormat = "MMM"
+        let fullFmt  = DateFormatter(); fullFmt.locale  = .current; fullFmt.dateFormat = "MMMM"
+        var guardCount = 0
+        while cursor < end && guardCount < 600 {
+            let days = calendar.range(of: .day, in: .month, for: cursor)?.count ?? 30
+            let startTag = calendar.dateComponents([.day], from: startDate, to: cursor).day ?? 0
+            segs.append(MonthSeg(
+                date: cursor, startTag: startTag, days: days,
+                shortLabel: shortFmt.string(from: cursor).uppercased(),
+                fullLabel:  fullFmt.string(from: cursor).uppercased()
+            ))
+            cursor = calendar.date(byAdding: .month, value: 1, to: cursor) ?? end
+            guardCount += 1
+        }
+        return segs
+    }
+}
+
 // MARK: - Diary timeline screen
+
+/// The diary's two faces: the scrubbable timeline and the places map.
+private enum DiaryMode { case time, places }
 
 struct DiaryTimelineView: View {
     /// False while another tab is showing (the pager keeps all pages mounted,
@@ -148,6 +190,9 @@ struct DiaryTimelineView: View {
     @State private var activeBand: TimelineBand?
     // Month segments change only when timeline data is rebuilt.
     @State private var cachedMonthSegs: [MonthSeg] = []
+    // Places view: aggregated once per rebuild, like cachedMonthSegs.
+    @State private var diaryMode: DiaryMode = .time
+    @State private var placesData: PlacesData = .empty
     private let selectionFeedback = UISelectionFeedbackGenerator()
 
     private let calendar = Calendar.current
@@ -189,8 +234,10 @@ struct DiaryTimelineView: View {
         .onChange(of: projects.count) { _, _ in rebuild() }
         .onChange(of: focusedDay) { _, _ in refreshFocusedDay() }
         .onChange(of: isActive) { _, active in if !active { stopAutoplay() } }
+        .onChange(of: diaryMode) { _, _ in stopAutoplay() }
         .onDisappear { stopAutoplay() }
-        .fullScreenCover(item: $selectedProject) { project in
+        // Rebuild on return so clips added from the map's preview card show up.
+        .fullScreenCover(item: $selectedProject, onDismiss: { rebuild() }) { project in
             ProjectDetailView(project: project, recordOnAppear: false)
         }
     }
@@ -220,28 +267,43 @@ struct DiaryTimelineView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 12)
 
-            // Preview: grows to fill all spare height so the timeline strip is
-            // pinned to the bottom (near the tab bar) and a 9:16 clip shows tall.
-            preview(data: data)
-                .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 22))
-                .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
-                .padding(.horizontal, 12)
-                .padding(.top, 10)
-                .layoutPriority(1)
+            if diaryMode == .places {
+                // Map twin of the diary — mounted only while visible so MapKit's
+                // resources are freed when switching back to the timeline.
+                PlacesMapView(
+                    data: data,
+                    places: placesData,
+                    centerDay: $centerDay,
+                    isActive: isActive && diaryMode == .places,
+                    onOpenProject: { project in
+                        stopAutoplay()
+                        selectedProject = project
+                    }
+                )
+            } else {
+                // Preview: grows to fill all spare height so the timeline strip is
+                // pinned to the bottom (near the tab bar) and a 9:16 clip shows tall.
+                preview(data: data)
+                    .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 22))
+                    .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
+                    .padding(.horizontal, 12)
+                    .padding(.top, 10)
+                    .layoutPriority(1)
 
-            // Timeline strip pushed to the bottom
-            controlRow(data: data)
-                .padding(.horizontal, 24)
-                .padding(.top, 10)
+                // Timeline strip pushed to the bottom
+                controlRow(data: data)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 10)
 
-            scrubber(width: width, cx: cx, data: data)
-                .padding(.top, 8)
+                scrubber(width: width, cx: cx, data: data)
+                    .padding(.top, 8)
 
-            bigDate(data: data)
-                .padding(.top, 6)
-                .padding(.bottom, 4)
-                .frame(maxWidth: .infinity)
+                bigDate(data: data)
+                    .padding(.top, 6)
+                    .padding(.bottom, 4)
+                    .frame(maxWidth: .infinity)
+            }
         }
         .padding(.top, 10)
     }
@@ -249,7 +311,7 @@ struct DiaryTimelineView: View {
     // MARK: Header
 
     private func header(data: TimelineData) -> some View {
-        HStack(alignment: .bottom) {
+        HStack(alignment: .bottom, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("DIARY")
                     .font(.mono(10, weight: .medium))
@@ -258,23 +320,57 @@ struct DiaryTimelineView: View {
                 Text("Your Timeline")
                     .font(.hand(32))
                     .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
             }
             Spacer()
-            Button {
-                stopAutoplay()
-                animateTo(Double(data.todayTag))
-            } label: {
-                Text("TODAY")
-                    .font(.mono(11))
-                    .tracking(1)
-                    .foregroundStyle(Theme.amber)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Theme.amber.opacity(0.12), in: Capsule())
-                    .overlay(Capsule().stroke(Theme.amber.opacity(0.4), lineWidth: 1))
+
+            modePill
+
+            // In places mode the map's own control row carries TODAY (it also
+            // has to stop the flyover) — avoid a second, racing button here.
+            if diaryMode == .time {
+                Button {
+                    stopAutoplay()
+                    animateTo(Double(data.todayTag))
+                } label: {
+                    Text("TODAY")
+                        .font(.mono(11))
+                        .tracking(1)
+                        .foregroundStyle(Theme.amber)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Theme.amber.opacity(0.12), in: Capsule())
+                        .overlay(Capsule().stroke(Theme.amber.opacity(0.4), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
+    }
+
+    // "Zeit | Orte" switch — same pill language as the zoom selector.
+    private var modePill: some View {
+        HStack(spacing: 2) {
+            modePillButton("Time", mode: .time)
+            modePillButton("Places", mode: .places)
+        }
+        .padding(3)
+        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 11))
+    }
+
+    private func modePillButton(_ label: LocalizedStringKey, mode: DiaryMode) -> some View {
+        let on = diaryMode == mode
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) { diaryMode = mode }
+        } label: {
+            Text(label)
+                .font(.mono(11, weight: on ? .medium : .regular))
+                .tracking(0.3)
+                .foregroundStyle(on ? Theme.ink : .white.opacity(0.55))
+                .padding(.horizontal, 11).padding(.vertical, 6)
+                .background(on ? Theme.amber : .clear, in: RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: Preview window
@@ -716,38 +812,6 @@ struct DiaryTimelineView: View {
 
     // MARK: - Helpers
 
-    private struct MonthSeg: Identifiable {
-        let id = UUID()
-        let date: Date
-        let startTag: Int
-        let days: Int
-        let shortLabel: String  // "MMM" — pre-computed, no per-frame DateFormatter
-        let fullLabel: String   // "MMMM"
-        func label(short: Bool) -> String { short ? shortLabel : fullLabel }
-    }
-
-    private func monthSegments(data: TimelineData) -> [MonthSeg] {
-        var segs: [MonthSeg] = []
-        guard var cursor = calendar.date(from: calendar.dateComponents([.year, .month], from: data.startDate)) else { return [] }
-        let end = calendar.date(byAdding: .day, value: data.total, to: data.startDate) ?? data.startDate
-        // Allocate formatters once for the whole loop, not once per segment.
-        let shortFmt = DateFormatter(); shortFmt.locale = .current; shortFmt.dateFormat = "MMM"
-        let fullFmt  = DateFormatter(); fullFmt.locale  = .current; fullFmt.dateFormat = "MMMM"
-        var guardCount = 0
-        while cursor < end && guardCount < 600 {
-            let days = calendar.range(of: .day, in: .month, for: cursor)?.count ?? 30
-            let startTag = calendar.dateComponents([.day], from: data.startDate, to: cursor).day ?? 0
-            segs.append(MonthSeg(
-                date: cursor, startTag: startTag, days: days,
-                shortLabel: shortFmt.string(from: cursor).uppercased(),
-                fullLabel:  fullFmt.string(from: cursor).uppercased()
-            ))
-            cursor = calendar.date(byAdding: .month, value: 1, to: cursor) ?? end
-            guardCount += 1
-        }
-        return segs
-    }
-
     private func visibleRange(width: CGFloat, data: TimelineData) -> [Int] {
         let half = Double(width / 2 / px) + 2
         let lo = max(0, Int((centerDay - half).rounded(.down)))
@@ -903,7 +967,10 @@ struct DiaryTimelineView: View {
             // First build: open the diary on today, not on the latest project.
             if centerDay == 0 { centerDay = Double(new.todayTag) }
             centerDay = clampDay(centerDay)
-            cachedMonthSegs = monthSegments(data: new)
+            cachedMonthSegs = new.monthSegments(calendar: calendar)
+            placesData = PlacesData.build(data: new, calendar: calendar)
+        } else {
+            placesData = .empty
         }
         refreshFocusedDay()
     }

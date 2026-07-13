@@ -35,6 +35,10 @@
 		A10000000000000000000F1B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000F1A /* SettingsView.swift */; };
 		A10000000000000000001001B /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000001001A /* OnboardingView.swift */; };
 		A10000000000000000001101B /* DiaryTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000001101A /* DiaryTimelineView.swift */; };
+		A407405FED9C35D616ACFF85 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9F151E83C53BBFA749E340 /* LocationService.swift */; };
+		855D8D4958D1BC1DE4460B24 /* PlacesData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 358D483CD9078CE50FA58E00 /* PlacesData.swift */; };
+		E07254987DE2B3065FE091BF /* PlacesMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF966B9A69CB473C1905BA20 /* PlacesMapView.swift */; };
+		8884B4F67DEE3500CEE77622 /* PlacesScrubberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D7D78F9F9B18231FE79E80 /* PlacesScrubberView.swift */; };
 		C328CD4A2FB728B300443F80 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD492FB728B300443F80 /* WidgetKit.framework */; };
 		C328CD4C2FB728B300443F80 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD4B2FB728B300443F80 /* SwiftUI.framework */; };
 		C328CD592FB728B400443F80 /* LifeClipWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C328CD472FB728B300443F80 /* LifeClipWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -102,6 +106,10 @@
 		A10000000000000000000F1A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A10000000000000000001001A /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		A10000000000000000001101A /* DiaryTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryTimelineView.swift; sourceTree = "<group>"; };
+		DA9F151E83C53BBFA749E340 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		358D483CD9078CE50FA58E00 /* PlacesData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesData.swift; sourceTree = "<group>"; };
+		AF966B9A69CB473C1905BA20 /* PlacesMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesMapView.swift; sourceTree = "<group>"; };
+		40D7D78F9F9B18231FE79E80 /* PlacesScrubberView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesScrubberView.swift; sourceTree = "<group>"; };
 		C328CD472FB728B300443F80 /* LifeClipWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LifeClipWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C328CD492FB728B300443F80 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		C328CD4B2FB728B300443F80 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -197,6 +205,7 @@
 			children = (
 				C328CD612FB72AD700443F80 /* WidgetDataStore.swift */,
 				A1000000000000000000005A /* CameraService.swift */,
+				DA9F151E83C53BBFA749E340 /* LocationService.swift */,
 				A1000000000000000000006A /* VideoComposer.swift */,
 			);
 			path = Services;
@@ -216,6 +225,7 @@
 				A10000000000000000000F0A /* Settings */,
 				A10000000000000000001000A /* Onboarding */,
 				A10000000000000000001100A /* Timeline */,
+				6EBF5B95E6DA9F043182A4A5 /* Places */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -242,6 +252,16 @@
 				A10000000000000000001101A /* DiaryTimelineView.swift */,
 			);
 			path = Timeline;
+			sourceTree = "<group>";
+		};
+		6EBF5B95E6DA9F043182A4A5 /* Places */ = {
+			isa = PBXGroup;
+			children = (
+				358D483CD9078CE50FA58E00 /* PlacesData.swift */,
+				AF966B9A69CB473C1905BA20 /* PlacesMapView.swift */,
+				40D7D78F9F9B18231FE79E80 /* PlacesScrubberView.swift */,
+			);
+			path = Places;
 			sourceTree = "<group>";
 		};
 		A1000000000000000000013A /* Camera */ = {
@@ -496,6 +516,10 @@
 				A10000000000000000000F1B /* SettingsView.swift in Sources */,
 				A10000000000000000001001B /* OnboardingView.swift in Sources */,
 				A10000000000000000001101B /* DiaryTimelineView.swift in Sources */,
+				A407405FED9C35D616ACFF85 /* LocationService.swift in Sources */,
+				855D8D4958D1BC1DE4460B24 /* PlacesData.swift in Sources */,
+				E07254987DE2B3065FE091BF /* PlacesMapView.swift in Sources */,
+				8884B4F67DEE3500CEE77622 /* PlacesScrubberView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

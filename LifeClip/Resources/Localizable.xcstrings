@@ -2,6 +2,55 @@
   "sourceLanguage" : "en",
   "strings" : {
 
+    "Location" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ortung" } } }
+    },
+    "Save Location" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Standort speichern" } } }
+    },
+    "Precise" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Genau" } } }
+    },
+    "Nearby" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ungefähr" } } }
+    },
+    "Off" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Aus" } } }
+    },
+    "Time" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Zeit" } } }
+    },
+    "Places" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Orte" } } }
+    },
+    "No places yet" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Noch keine Orte" } } }
+    },
+    "New clips remember where they were captured — enable location in Settings." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Neue Clips merken sich, wo sie aufgenommen wurden — aktiviere die Ortung in den Einstellungen." } } }
+    },
+    "Unknown place" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Unbekannter Ort" } } }
+    },
+    "1 CLIP" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "1 CLIP" } } }
+    },
+    "Remembers where each clip was captured — shown on the Places map. \"Nearby\" stores only the rough area (~1 km). Everything stays on your device." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Merkt sich, wo jeder Clip aufgenommen wurde — sichtbar auf der Orte-Karte. „Ungefähr\" speichert nur die grobe Umgebung (~1 km). Alles bleibt auf deinem Gerät." } } }
+    },
+
     "Memories" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Rückblicke" } } }
