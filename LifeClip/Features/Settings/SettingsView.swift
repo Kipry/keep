@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @AppStorage("defaultRecordingDuration") private var defaultDuration: Double = 1.0
+    @AppStorage("locationGranularity") private var locationGranularity = "place"
     @AppStorage("didOnboard") private var didOnboard = true
     @Environment(\.dismiss) private var dismiss
 
@@ -16,6 +17,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     header
                     recordingSection
+                    locationSection
                     tutorialSection
                     aboutSection
                 }
@@ -79,6 +81,53 @@ struct SettingsView: View {
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
             .padding(.horizontal, 20)
         }
+    }
+
+    // MARK: - Location section
+
+    private var locationSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("Location")
+
+            VStack(spacing: 0) {
+                row {
+                    Text("Save Location")
+                        .foregroundStyle(.white)
+                    Spacer()
+                    HStack(spacing: 6) {
+                        granularityButton("Precise", value: "precise")
+                        granularityButton("Nearby",  value: "place")
+                        granularityButton("Off",     value: "off")
+                    }
+                }
+                rowDivider
+                row {
+                    Text("Remembers where each clip was captured — shown on the Places map. \"Nearby\" stores only the rough area (~1 km). Everything stays on your device.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .lineSpacing(2)
+                        .padding(.vertical, 10)
+                }
+            }
+            .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+            .padding(.horizontal, 20)
+        }
+    }
+
+    private func granularityButton(_ label: LocalizedStringKey, value: String) -> some View {
+        Button { locationGranularity = value } label: {
+            Text(label)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(locationGranularity == value ? Theme.ink : .white.opacity(0.6))
+                .padding(.horizontal, 10)
+                .frame(height: 30)
+                .background(
+                    locationGranularity == value ? Theme.amber : Color(white: 0.22),
+                    in: RoundedRectangle(cornerRadius: 8)
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Tutorial section

@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import SwiftData
 
@@ -23,6 +24,20 @@ final class Clip {
     var isPhoto: Bool = false
     var photoDuration: Double = 3.0
     var photoSourceURLString: String? = nil
+
+    // MARK: Location
+    // Where the clip was captured. Precision depends on the user's granularity
+    // setting ("place" stores coordinates rounded to ~1 km). placeName arrives
+    // asynchronously via reverse geocoding and may stay nil.
+    var latitude: Double? = nil
+    var longitude: Double? = nil
+    var placeName: String? = nil
+
+    /// Capture location, when the clip has one.
+    var coordinate: CLLocationCoordinate2D? {
+        guard let latitude, let longitude else { return nil }
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
 
     /// Duration actually used in the compiled video (respects trim / photo duration).
     var effectiveDuration: Double {
@@ -107,6 +122,9 @@ final class Clip {
         newClip.isPhoto = isPhoto
         newClip.photoDuration = photoDuration
         newClip.photoSourceURLString = photoSourceURLString
+        newClip.latitude = latitude
+        newClip.longitude = longitude
+        newClip.placeName = placeName
         newClip.project = targetProject
         targetProject.updatedAt = Date()
         context.insert(newClip)

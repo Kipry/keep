@@ -36,6 +36,8 @@
     <string>keep. needs photo library access to import existing videos.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>keep. needs permission to save compiled videos to your photo library.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>keep. uses your location to remember where each moment was captured.</string>
 
     <!-- Device requirements -->
     <key>UIRequiredDeviceCapabilities</key>

@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import AVFoundation
+import CoreLocation
 import Photos
 import PhotosUI
 import UniformTypeIdentifiers
@@ -580,7 +581,8 @@ struct ProjectDetailView: View {
         }
     }
 
-    private func addClip(fileURL: URL, duration: Double, createdAt: Date? = nil) {
+    private func addClip(fileURL: URL, duration: Double, createdAt: Date? = nil,
+                         location: CLLocationCoordinate2D? = nil) {
         // Commit any stale drag state so the display stays in sync
         if !dragClips.isEmpty { commitDragOrder() }
         // Use max existing order + 1 so deletions don't create duplicate order values
@@ -589,6 +591,7 @@ struct ProjectDetailView: View {
         clip.project = project
         project.updatedAt = Date()
         modelContext.insert(clip)
+        attachLocation(to: clip, imported: location)
         Task {
             if let img = await composer.thumbnail(from: fileURL),
                let data = img.jpegData(compressionQuality: 0.7) {
@@ -599,9 +602,32 @@ struct ProjectDetailView: View {
         }
     }
 
+    // Stamps the clip with its capture location: an imported asset's own
+    // coordinate when available, otherwise the camera's one-shot fix (with a
+    // 30s retroactive window for "opened camera, instantly recorded" saves).
+    // Reverse geocoding fills placeName asynchronously.
+    private func attachLocation(to clip: Clip, imported: CLLocationCoordinate2D?) {
+        if let imported {
+            clip.latitude = imported.latitude
+            clip.longitude = imported.longitude
+        } else if let fix = LocationService.shared.takeFix() {
+            clip.latitude = fix.latitude
+            clip.longitude = fix.longitude
+        } else {
+            LocationService.shared.onNextFix(within: 30) { coord in
+                clip.latitude = coord.latitude
+                clip.longitude = coord.longitude
+                LocationService.shared.geocodeIfNeeded(clip)
+            }
+            return
+        }
+        LocationService.shared.geocodeIfNeeded(clip)
+    }
+
     // Imports a still photo: stores the source image, renders it to a short
     // still-video so it composes like any other clip, and tags it as a photo.
-    private func addPhotoClip(imageData: Data, phDate: Date? = nil) async {
+    private func addPhotoClip(imageData: Data, phDate: Date? = nil,
+                              location: CLLocationCoordinate2D? = nil) async {
         guard let ui = UIImage(data: imageData)?.normalizedUp() else { return }
         let imports = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -625,6 +651,11 @@ struct ProjectDetailView: View {
         clip.project = project
         project.updatedAt = Date()
         modelContext.insert(clip)
+        if let location {
+            clip.latitude = location.latitude
+            clip.longitude = location.longitude
+            LocationService.shared.geocodeIfNeeded(clip)
+        }
 
         if let thumb = ui.downscaled(maxEdge: 320).jpegData(compressionQuality: 0.7) {
             clip.thumbnailData = thumb
@@ -665,22 +696,27 @@ struct ProjectDetailView: View {
         isImporting = true
         defer { isImporting = false; importSelections = [] }
         for item in items {
-            // PHAsset.creationDate is the authoritative original capture time.
+            // PHAsset carries the authoritative capture time AND location.
             // item.itemIdentifier is the PHAsset local identifier — fetching it is
             // synchronous and instant (Photos library cache, no I/O).
-            let phDate: Date? = item.itemIdentifier.flatMap { id in
-                PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
-                    .firstObject?.creationDate
+            let asset: PHAsset? = item.itemIdentifier.flatMap { id in
+                PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject
+            }
+            let phDate = asset?.creationDate
+            // Imported coordinates respect the same granularity setting as live captures.
+            let phLocation = asset?.location.flatMap {
+                LocationGranularity.current.apply(to: $0.coordinate)
             }
 
             let types = item.supportedContentTypes
             if types.contains(where: { $0.conforms(to: .movie) }) {
                 if let video = try? await item.loadTransferable(type: VideoTransferable.self) {
-                    addClip(fileURL: video.url, duration: video.duration, createdAt: phDate ?? video.creationDate)
+                    addClip(fileURL: video.url, duration: video.duration,
+                            createdAt: phDate ?? video.creationDate, location: phLocation)
                 }
             } else if types.contains(where: { $0.conforms(to: .image) }) {
                 if let data = try? await item.loadTransferable(type: Data.self) {
-                    await addPhotoClip(imageData: data, phDate: phDate)
+                    await addPhotoClip(imageData: data, phDate: phDate, location: phLocation)
                 }
             }
         }
