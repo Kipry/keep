@@ -2,6 +2,23 @@
   "sourceLanguage" : "en",
   "strings" : {
 
+    "As you record, new clips appear here — clips from before don't have a saved location." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Sobald du aufnimmst, erscheinen neue Clips hier — Clips von früher haben keinen gespeicherten Ort." } } }
+    },
+    "Turn on location in Settings so new clips remember where they were captured." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Aktiviere die Ortung in den Einstellungen, damit neue Clips sich merken, wo sie aufgenommen wurden." } } }
+    },
+    "Moments without a location" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Momente ohne Ort" } } }
+    },
+    "Some clips have no saved location, so they aren't shown on the map. They're still in your timeline." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Manche Clips haben keinen gespeicherten Ort und erscheinen daher nicht auf der Karte. Im Tagebuch sind sie weiterhin da." } } }
+    },
+
     "Location" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ortung" } } }
@@ -33,10 +50,6 @@
     "No places yet" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Noch keine Orte" } } }
-    },
-    "New clips remember where they were captured — enable location in Settings." : {
-      "extractionState" : "manual",
-      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Neue Clips merken sich, wo sie aufgenommen wurden — aktiviere die Ortung in den Einstellungen." } } }
     },
     "Unknown place" : {
       "extractionState" : "manual",

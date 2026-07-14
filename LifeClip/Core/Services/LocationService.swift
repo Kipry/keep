@@ -66,6 +66,18 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
     }
 
+    /// Whether new clips will actually capture a location — false only when the
+    /// setting is off or the user denied/restricted access. `.notDetermined`
+    /// counts as enabled (the prompt appears when the camera opens). Drives the
+    /// wording of the empty Places state, nothing else.
+    var isEnabled: Bool {
+        guard LocationGranularity.current != .off else { return false }
+        switch manager.authorizationStatus {
+        case .denied, .restricted: return false
+        default: return true
+        }
+    }
+
     // MARK: One-shot fix
 
     /// Called when the camera opens. First use (with location enabled in

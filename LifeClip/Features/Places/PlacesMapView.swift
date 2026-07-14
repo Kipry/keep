@@ -23,6 +23,7 @@ struct PlacesMapView: View {
     @State private var isPlaying = false
     @State private var flyTask: Task<Void, Never>?
     @State private var slideThumb: UIImage?
+    @State private var showUnlocatedInfo = false
 
     private let calendar = Calendar.current
 
@@ -116,12 +117,41 @@ struct PlacesMapView: View {
 
                 if places.places.isEmpty { emptyOverlay }
             }
+            .overlay(alignment: .topLeading) {
+                // Some clips have no location and can't appear on the map — make
+                // that visible rather than silently dropping them.
+                if !places.places.isEmpty && places.unlocatedCount > 0 {
+                    unlocatedChip
+                }
+            }
             .overlay(alignment: .bottom) {
                 if let place = activePlace { previewCard(for: place) }
             }
             .onAppear { viewWidth = geo.size.width }
             .onChange(of: geo.size.width) { _, w in viewWidth = w }
         }
+        .alert("Moments without a location", isPresented: $showUnlocatedInfo) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Some clips have no saved location, so they aren't shown on the map. They're still in your timeline.")
+        }
+    }
+
+    private var unlocatedChip: some View {
+        Button { showUnlocatedInfo = true } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "mappin.slash")
+                Text("\(places.unlocatedCount)")
+            }
+            .font(.mono(10, weight: .medium))
+            .foregroundStyle(.white.opacity(0.85))
+            .padding(.horizontal, 9)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .padding(12)
     }
 
     @ViewBuilder
@@ -298,14 +328,20 @@ struct PlacesMapView: View {
     // MARK: Empty state
 
     private var emptyOverlay: some View {
-        VStack(spacing: 10) {
+        // Honest, context-aware copy: distinguish "location is off" from
+        // "location is on, there's just nothing located yet" (e.g. only older
+        // clips, whose capture location can't be recovered).
+        let enabled = LocationService.shared.isEnabled
+        return VStack(spacing: 10) {
             Image(systemName: "mappin.slash")
                 .font(.system(size: 34))
                 .foregroundStyle(.white.opacity(0.25))
             Text("No places yet")
                 .font(.hand(22))
                 .foregroundStyle(.white.opacity(0.7))
-            Text("New clips remember where they were captured — enable location in Settings.")
+            Text(enabled
+                 ? "As you record, new clips appear here — clips from before don't have a saved location."
+                 : "Turn on location in Settings so new clips remember where they were captured.")
                 .font(.system(size: 12.5))
                 .foregroundStyle(.white.opacity(0.4))
                 .multilineTextAlignment(.center)

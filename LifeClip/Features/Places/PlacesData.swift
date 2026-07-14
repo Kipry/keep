@@ -62,22 +62,31 @@ struct PlacesData {
     let routeSegments: [[CLLocationCoordinate2D]]
     /// Sorted day-tags on which at least one place was first visited.
     let daysWithPlaces: [Int]
+    /// Active clips that carry no coordinate — excluded from the map but
+    /// surfaced as a subtle count so they aren't silently forgotten.
+    let unlocatedCount: Int
 
-    static let empty = PlacesData(places: [], routeSegments: [], daysWithPlaces: [])
+    static let empty = PlacesData(places: [], routeSegments: [], daysWithPlaces: [], unlocatedCount: 0)
 
     // MARK: Build
 
     static func build(data: TimelineData, calendar: Calendar) -> PlacesData {
-        // 1. Collect located, active clips across all projects.
+        // 1. Collect located, active clips across all projects (and count the rest).
         var located: [(clip: Clip, project: Project, coord: CLLocationCoordinate2D)] = []
+        var unlocatedCount = 0
         for band in data.bands {
             for clip in band.project.activeClips {
                 if let coord = clip.coordinate {
                     located.append((clip, band.project, coord))
+                } else {
+                    unlocatedCount += 1
                 }
             }
         }
-        guard !located.isEmpty else { return .empty }
+        // Keep the unlocated count even when nothing is on the map yet.
+        guard !located.isEmpty else {
+            return PlacesData(places: [], routeSegments: [], daysWithPlaces: [], unlocatedCount: unlocatedCount)
+        }
 
         // 2. Group by 3-decimal grid (~110 m)…
         var groups: [String: [(clip: Clip, project: Project, coord: CLLocationCoordinate2D)]] = [:]
@@ -131,7 +140,8 @@ struct PlacesData {
         }
 
         let days = Array(Set(places.map(\.firstDayTag))).sorted()
-        return PlacesData(places: places, routeSegments: segments, daysWithPlaces: days)
+        return PlacesData(places: places, routeSegments: segments, daysWithPlaces: days,
+                          unlocatedCount: unlocatedCount)
     }
 
     /// Quadratic bezier between two map points, bulging perpendicular to the
