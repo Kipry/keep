@@ -34,6 +34,9 @@ struct ContentView: View {
                 // Pin the 3-page strip's leading edge at x = 0 — a bare 3w-wide
                 // HStack would be centered by the ZStack (leading edge at -w).
                 .frame(width: w, alignment: .leading)
+                // Confine rendering AND hit-testing to the visible window so the
+                // off-screen pages can't receive stray touches.
+                .clipped()
             }
             .contentShape(Rectangle())
             // Edge-swipe between the main pages. Starting near a screen edge keeps

@@ -287,6 +287,15 @@ struct DiaryTimelineView: View {
                     .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 22))
                     .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.08), lineWidth: 1))
+                    // Hit region == the visible card. Defining contentShape AFTER
+                    // the frame/clip keeps the preview's tap from bleeding up over
+                    // the header (which was hijacking the Time/Places toggle).
+                    .contentShape(RoundedRectangle(cornerRadius: 22))
+                    .onTapGesture {
+                        guard let band = activeBand else { return }
+                        stopAutoplay()
+                        selectedProject = band.project
+                    }
                     .padding(.horizontal, 12)
                     .padding(.top, 10)
                     .layoutPriority(1)
@@ -385,10 +394,8 @@ struct DiaryTimelineView: View {
                 previewEmpty(data: data)
             }
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if let band = activeBand { stopAutoplay(); selectedProject = band.project }
-        }
+        // Tap target is attached in content() AFTER the frame/clip, so the hit
+        // region stays confined to the visible card (see below).
     }
 
     @ViewBuilder
