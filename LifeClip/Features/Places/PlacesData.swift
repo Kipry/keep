@@ -57,16 +57,13 @@ enum MapItem: Identifiable {
 struct PlacesData {
     /// Chronological by first visit.
     let places: [Place]
-    /// Pre-sampled curved route points, one segment per consecutive place pair.
-    /// The revealed polyline is `routeSegments.prefix(revealedCount).flatMap { $0 }`.
-    let routeSegments: [[CLLocationCoordinate2D]]
     /// Sorted day-tags on which at least one place was first visited.
     let daysWithPlaces: [Int]
     /// Active clips that carry no coordinate — excluded from the map but
     /// surfaced as a subtle count so they aren't silently forgotten.
     let unlocatedCount: Int
 
-    static let empty = PlacesData(places: [], routeSegments: [], daysWithPlaces: [], unlocatedCount: 0)
+    static let empty = PlacesData(places: [], daysWithPlaces: [], unlocatedCount: 0)
 
     // MARK: Build
 
@@ -85,7 +82,7 @@ struct PlacesData {
         }
         // Keep the unlocated count even when nothing is on the map yet.
         guard !located.isEmpty else {
-            return PlacesData(places: [], routeSegments: [], daysWithPlaces: [], unlocatedCount: unlocatedCount)
+            return PlacesData(places: [], daysWithPlaces: [], unlocatedCount: unlocatedCount)
         }
 
         // 2. Group by 3-decimal grid (~110 m)…
@@ -129,25 +126,15 @@ struct PlacesData {
         }
         places.sort { ($0.firstDayTag, $0.heroClip.createdAt) < ($1.firstDayTag, $1.heroClip.createdAt) }
 
-        // 4. Pre-sample the curved route between consecutive places.
-        var segments: [[CLLocationCoordinate2D]] = []
-        for i in 1..<max(places.count, 1) {
-            segments.append(curvedSegment(
-                MKMapPoint(places[i - 1].coordinate),
-                MKMapPoint(places[i].coordinate),
-                sign: i.isMultiple(of: 2) ? 1 : -1
-            ))
-        }
-
         let days = Array(Set(places.map(\.firstDayTag))).sorted()
-        return PlacesData(places: places, routeSegments: segments, daysWithPlaces: days,
-                          unlocatedCount: unlocatedCount)
+        return PlacesData(places: places, daysWithPlaces: days, unlocatedCount: unlocatedCount)
     }
 
     /// Quadratic bezier between two map points, bulging perpendicular to the
     /// connecting line (alternating sides). Sampled in Mercator space so the
-    /// curve doesn't distort with latitude.
-    private static func curvedSegment(_ a: MKMapPoint, _ b: MKMapPoint, sign: Double) -> [CLLocationCoordinate2D] {
+    /// curve doesn't distort with latitude. Built on demand by the map so the
+    /// route follows the current cluster nodes rather than raw coordinates.
+    static func curvedSegment(_ a: MKMapPoint, _ b: MKMapPoint, sign: Double) -> [CLLocationCoordinate2D] {
         let dx = b.x - a.x, dy = b.y - a.y
         let len = (dx * dx + dy * dy).squareRoot()
         guard len > 0 else { return [a.coordinate, b.coordinate] }

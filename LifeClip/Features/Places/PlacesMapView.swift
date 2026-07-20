@@ -26,6 +26,9 @@ struct PlacesMapView: View {
     @State private var showUnlocatedInfo = false
 
     private let calendar = Calendar.current
+    /// The route shows only travel within this many days before the focused
+    /// day; older segments fade out and drop off the trailing edge.
+    private let routeWindowDays = 10
 
     // MARK: Derived state
 
@@ -45,9 +48,58 @@ struct PlacesMapView: View {
         PlacesData.clusters(for: revealedPlaces, visibleRect: visibleRect, viewWidth: viewWidth)
     }
 
-    private var revealedRoute: [CLLocationCoordinate2D] {
-        let segmentCount = max(0, revealedPlaces.count - 1)
-        return places.routeSegments.prefix(segmentCount).flatMap { $0 }
+    // Route drawn between the CURRENTLY VISIBLE nodes (cluster centroids or
+    // single places), so it always meets the pins at any zoom, and windowed to
+    // the last `routeWindowDays` before the focused day with older segments
+    // fading out — keeping long histories from cluttering the map.
+    private struct RouteSegment: Identifiable {
+        let id: Int
+        let coords: [CLLocationCoordinate2D]
+        let opacity: Double
+    }
+
+    private func routeSegments(from items: [MapItem]) -> [RouteSegment] {
+        // Which node (cluster or single place) each place currently belongs to.
+        var nodeID: [String: String] = [:]
+        var nodeCoord: [String: CLLocationCoordinate2D] = [:]
+        for item in items {
+            switch item {
+            case .place(let p):
+                nodeID[p.key] = p.key
+                nodeCoord[p.key] = p.coordinate
+            case .cluster(let id, let coord, let members):
+                for m in members { nodeID[m.key] = id; nodeCoord[m.key] = coord }
+            }
+        }
+        // Chronological node path; collapse consecutive stays at the same node
+        // (a back-and-forth trip still produces two segments).
+        var nodes: [(coord: CLLocationCoordinate2D, day: Int)] = []
+        var lastID: String?
+        for place in revealedPlaces {
+            guard let id = nodeID[place.key], let coord = nodeCoord[place.key] else { continue }
+            if id == lastID { continue }
+            lastID = id
+            nodes.append((coord, place.firstDayTag))
+        }
+        guard nodes.count > 1 else { return [] }
+
+        var result: [RouteSegment] = []
+        for i in 1..<nodes.count {
+            let opacity = routeOpacity(age: focusedDay - nodes[i].day)
+            guard opacity > 0.03 else { continue }
+            let coords = PlacesData.curvedSegment(MKMapPoint(nodes[i - 1].coord),
+                                                  MKMapPoint(nodes[i].coord),
+                                                  sign: i.isMultiple(of: 2) ? 1 : -1)
+            result.append(RouteSegment(id: i, coords: coords, opacity: opacity))
+        }
+        return result
+    }
+
+    // Recent travel stays solid; the tail fades to nothing at the window edge.
+    private func routeOpacity(age: Int) -> Double {
+        if age <= 2 { return 1 }
+        let t = Double(age - 2) / Double(routeWindowDays - 2)
+        return max(0, 1 - t)
     }
 
     // MARK: Body
@@ -97,13 +149,18 @@ struct PlacesMapView: View {
 
     private var mapArea: some View {
         GeometryReader { geo in
+            // Cluster once, then derive both the pins and the route from the same
+            // assignment so the route always terminates on the visible dots.
+            let clustered = mapItems
+            let segments = routeVisible ? routeSegments(from: clustered) : []
             ZStack {
                 Map(position: $camera) {
-                    if routeVisible && revealedRoute.count > 1 {
-                        MapPolyline(coordinates: revealedRoute)
-                            .stroke(Theme.amber, style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [7, 6]))
+                    ForEach(segments) { seg in
+                        MapPolyline(coordinates: seg.coords)
+                            .stroke(Theme.amber.opacity(seg.opacity),
+                                    style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [7, 6]))
                     }
-                    ForEach(mapItems) { item in
+                    ForEach(clustered) { item in
                         Annotation("", coordinate: item.coordinate, anchor: .center) {
                             annotationView(for: item)
                         }
