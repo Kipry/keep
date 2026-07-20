@@ -24,6 +24,9 @@ struct PlacesMapView: View {
     @State private var flyTask: Task<Void, Never>?
     @State private var slideThumb: UIImage?
     @State private var showUnlocatedInfo = false
+    // One-shot: seed an explicit camera so the map is never .automatic while
+    // pins exist (see seedCameraIfNeeded — prevents a re-fit feedback loop).
+    @State private var didSeedCamera = false
 
     private let calendar = Calendar.current
     /// The route shows only travel within this many days before the focused
@@ -184,7 +187,10 @@ struct PlacesMapView: View {
             .overlay(alignment: .bottom) {
                 if let place = activePlace { previewCard(for: place) }
             }
-            .onAppear { viewWidth = geo.size.width }
+            .onAppear {
+                viewWidth = geo.size.width
+                seedCameraIfNeeded()
+            }
             .onChange(of: geo.size.width) { _, w in viewWidth = w }
         }
         .alert("Moments without a location", isPresented: $showUnlocatedInfo) {
@@ -410,6 +416,36 @@ struct PlacesMapView: View {
     }
 
     // MARK: Camera
+
+    /// One-time explicit framing so the camera is never `.automatic` while pins
+    /// exist. `.automatic` re-fits whenever MapContent changes; our annotation
+    /// set depends on `visibleRect` (clustering), and `visibleRect` is fed back
+    /// by `onMapCameraChange`, so automatic + non-empty pins ping-pong forever.
+    /// An explicit region pins the camera, so content changes never move it.
+    private func seedCameraIfNeeded() {
+        guard !didSeedCamera else { return }
+        let seed = revealedPlaces.isEmpty ? places.places : revealedPlaces
+        guard let region = Self.fittingRegion(for: seed) else { return }  // no pins → stay .automatic
+        didSeedCamera = true
+        camera = .region(region)
+    }
+
+    private static func fittingRegion(for places: [Place]) -> MKCoordinateRegion? {
+        guard let first = places.first else { return nil }
+        var minLat = first.coordinate.latitude,  maxLat = minLat
+        var minLon = first.coordinate.longitude, maxLon = minLon
+        for p in places.dropFirst() {
+            minLat = min(minLat, p.coordinate.latitude);  maxLat = max(maxLat, p.coordinate.latitude)
+            minLon = min(minLon, p.coordinate.longitude); maxLon = max(maxLon, p.coordinate.longitude)
+        }
+        let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2,
+                                            longitude: (minLon + maxLon) / 2)
+        // 1.4x padding keeps pins off the edges; the floor handles the
+        // single-place / zero-span case with a sensible neighbourhood zoom.
+        let span = MKCoordinateSpan(latitudeDelta:  max((maxLat - minLat) * 1.4, 0.01),
+                                    longitudeDelta: max((maxLon - minLon) * 1.4, 0.01))
+        return MKCoordinateRegion(center: center, span: span)
+    }
 
     private func fly(to place: Place) {
         let cam = MapCamera(centerCoordinate: place.coordinate, distance: 1400)

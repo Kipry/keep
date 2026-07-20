@@ -161,7 +161,12 @@ struct PlacesData {
             return places.map { .place($0) }
         }
         let mapPointsPerScreenPoint = visibleRect.size.width / Double(viewWidth)
-        let zoomBucket = (log2(mapPointsPerScreenPoint)).rounded()
+        guard mapPointsPerScreenPoint.isFinite, mapPointsPerScreenPoint > 0 else {
+            return places.map { .place($0) }
+        }
+        // Clamp so pow() can't overflow to inf (collapsing everything into one
+        // cluster) or underflow the cell to a degenerate value.
+        let zoomBucket = min(24, max(-2, log2(mapPointsPerScreenPoint).rounded()))
         let cell = 44.0 * pow(2.0, zoomBucket)   // ~44pt in map points
 
         var drafts: [(seed: MKMapPoint, members: [Place])] = []
