@@ -541,6 +541,8 @@ private struct LookbackClipViewer: View {
             if old < clips.count { players[clips[old].id]?.pause() }
             if new < clips.count { play(clips[new]) }
         }
+        .onAppear { PlaybackAudio.activate() }   // audible over the silent switch
+        .onDisappear { PlaybackAudio.deactivate() }
     }
 
     @ViewBuilder

@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import UIKit
 import AVFoundation
+import ImageIO
 
 // MARK: - Geometry / data model
 //
@@ -1043,7 +1044,17 @@ private struct TimelineThumb: View {
         // scrolling past this clip. Only settle after 150 ms of stability.
         try? await Task.sleep(for: .milliseconds(150))
         guard !Task.isCancelled else { return }
-        // Upgrade to a full-res frame decoded from the video file
+
+        // Photos: upgrade from the ORIGINAL still, not a frame of the rendered
+        // .mov — the .mov can be stale or mis-oriented, whereas the source jpg
+        // is always the exact image the user imported.
+        if clip.isPhoto, let src = clip.photoSourceURL,
+           let img = Self.downsampledImage(at: src, maxPixel: 1080) {
+            hiResImage = img
+            return
+        }
+
+        // Videos: upgrade to a full-res frame decoded from the video file
         let url = clip.fileURL
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         let asset = AVURLAsset(url: url)
@@ -1053,6 +1064,20 @@ private struct TimelineThumb: View {
         guard let cgImg = try? await gen.image(at: .zero).image,
               !Task.isCancelled else { return }
         hiResImage = UIImage(cgImage: cgImg)
+    }
+
+    // Memory-efficient downscale straight from the file (ImageIO), preserving
+    // aspect and applying EXIF orientation — avoids holding full-resolution
+    // photos in memory while scrubbing.
+    private static func downsampledImage(at url: URL, maxPixel: CGFloat) -> UIImage? {
+        let opts = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixel
+        ] as CFDictionary
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, opts) else { return nil }
+        return UIImage(cgImage: cg)
     }
 }
 
