@@ -2,6 +2,68 @@
   "sourceLanguage" : "en",
   "strings" : {
 
+    "As you record, new clips appear here — clips from before don't have a saved location." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Sobald du aufnimmst, erscheinen neue Clips hier — Clips von früher haben keinen gespeicherten Ort." } } }
+    },
+    "Turn on location in Settings so new clips remember where they were captured." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Aktiviere die Ortung in den Einstellungen, damit neue Clips sich merken, wo sie aufgenommen wurden." } } }
+    },
+    "Moments without a location" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Momente ohne Ort" } } }
+    },
+    "Some clips have no saved location, so they aren't shown on the map. They're still in your timeline." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Manche Clips haben keinen gespeicherten Ort und erscheinen daher nicht auf der Karte. Im Tagebuch sind sie weiterhin da." } } }
+    },
+
+    "Location" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ortung" } } }
+    },
+    "Save Location" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Standort speichern" } } }
+    },
+    "Precise" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Genau" } } }
+    },
+    "Nearby" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Ungefähr" } } }
+    },
+    "Off" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Aus" } } }
+    },
+    "Time" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Zeit" } } }
+    },
+    "Places" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Orte" } } }
+    },
+    "No places yet" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Noch keine Orte" } } }
+    },
+    "Unknown place" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Unbekannter Ort" } } }
+    },
+    "1 CLIP" : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "1 CLIP" } } }
+    },
+    "Remembers where each clip was captured — shown on the Places map. \"Nearby\" stores only the rough area (~1 km). Everything stays on your device." : {
+      "extractionState" : "manual",
+      "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Merkt sich, wo jeder Clip aufgenommen wurde — sichtbar auf der Orte-Karte. „Ungefähr\" speichert nur die grobe Umgebung (~1 km). Alles bleibt auf deinem Gerät." } } }
+    },
+
     "Memories" : {
       "extractionState" : "manual",
       "localizations" : { "de" : { "stringUnit" : { "state" : "translated", "value" : "Rückblicke" } } }

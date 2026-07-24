@@ -206,6 +206,7 @@ struct ProjectPlayerView: View {
     private func teardown() {
         player?.pause()
         if let obs = timeObserver { player?.removeTimeObserver(obs); timeObserver = nil }
+        PlaybackAudio.deactivate()
     }
 
     // MARK: - Composition
@@ -258,6 +259,7 @@ struct ProjectPlayerView: View {
             self.currentTime = time.seconds
         }
 
+        PlaybackAudio.activate()   // audible over the silent switch
         player = newPlayer
         newPlayer.play()
     }
@@ -293,4 +295,21 @@ struct VideoLayerView: UIViewRepresentable {
 final class PlayerLayerView: UIView {
     override class var layerClass: AnyClass { AVPlayerLayer.self }
     var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+}
+
+// MARK: - PlaybackAudio
+// Preview/playback surfaces must set the session to .playback, otherwise
+// AVPlayer audio follows the ring/silent switch (silent when muted) and, right
+// after a recording, is left in the camera's quiet .measurement session.
+
+enum PlaybackAudio {
+    static func activate() {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .moviePlayback)
+        try? session.setActive(true)
+    }
+
+    static func deactivate() {
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
 }

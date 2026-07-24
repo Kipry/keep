@@ -55,7 +55,13 @@ struct CameraView: View {
                 cameraUI
             }
         }
-        .task { durationLimit = defaultDuration; await setupCamera() }
+        .task {
+            durationLimit = defaultDuration
+            // Warm up a one-shot location fix (and show the opt-in prompt on
+            // first use) so it's ready by the time the clip is saved.
+            LocationService.shared.prime()
+            await setupCamera()
+        }
         .onDisappear { teardown() }
         .onChange(of: scenePhase) { _, phase in
             // Returning from Settings after granting access: retry setup so the

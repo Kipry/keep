@@ -5,10 +5,10 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 ## Projekt-Fakten (zum Nachschlagen)
 | | |
 |---|---|
-| App-Bundle-ID | `com.lifeclip.app` |
-| Widget-Bundle-ID | `com.lifeclip.app.LifeClipWidget` |
-| App-Gruppe | `group.com.lifeclip.app` |
-| Team-ID | `PAZWVYN25U` |
+| App-Bundle-ID | `com.kipry.keep.app` |
+| Widget-Bundle-ID | `com.kipry.keep.app.LifeClipWidget` |
+| App-Gruppe | `group.com.kipry.keep.app` |
+| Team-ID | `<deine neue Team-ID>` |
 | Version / Build | `1.0` / `1` |
 | Mindest-iOS | 18.0 |
 | Kategorie | Lifestyle |
@@ -17,14 +17,14 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 ---
 
 ## 0. Voraussetzungen
-- [ ] **Apple Developer Program** aktiv ($99/Jahr). Prüfen, dass Team `PAZWVYN25U` Mitgliedschaft hat und die Rolle „Account Holder/Admin" vorhanden ist.
+- [ ] **Apple Developer Program** aktiv ($99/Jahr). Prüfen, dass Team `<deine neue Team-ID>` Mitgliedschaft hat und die Rolle „Account Holder/Admin" vorhanden ist.
 - [ ] Ein **Mac mit Xcode** (aktuelle Version). Der Archive-Build kann nur dort erstellt werden.
 
 ## 1. Identifiers & App-Gruppe im Developer-Portal
 (developer.apple.com → Certificates, Identifiers & Profiles)
-- [ ] **App Group** `group.com.lifeclip.app` anlegen (falls noch nicht vorhanden).
-- [ ] App-ID `com.lifeclip.app` registrieren, Capability **App Groups** aktivieren und die Gruppe zuweisen.
-- [ ] Widget-App-ID `com.lifeclip.app.LifeClipWidget` registrieren, ebenfalls **App Groups** + Gruppe zuweisen.
+- [ ] **App Group** `group.com.kipry.keep.app` anlegen (falls noch nicht vorhanden).
+- [ ] App-ID `com.kipry.keep.app` registrieren, Capability **App Groups** aktivieren und die Gruppe zuweisen.
+- [ ] Widget-App-ID `com.kipry.keep.app.LifeClipWidget` registrieren, ebenfalls **App Groups** + Gruppe zuweisen.
 > Bei Automatic Signing legt Xcode die IDs meist selbst an — dann hier nur prüfen, dass die App-Gruppe bei **beiden** IDs gesetzt ist. Ohne das schlägt das Signing fehl.
 
 ## 2. Datenschutz- & Support-Seite hosten
@@ -34,7 +34,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 
 ## 3. App-Datensatz in App Store Connect anlegen
 (appstoreconnect.apple.com → Apps → +)
-- [ ] Plattform iOS, Name **keep.**, Primärsprache **Deutsch**, Bundle-ID `com.lifeclip.app`, SKU frei wählbar.
+- [ ] Plattform iOS, Name **keep.**, Primärsprache **Deutsch**, Bundle-ID `com.kipry.keep.app`, SKU frei wählbar.
 - [ ] Falls „keep." als Name belegt ist: Alternativname überlegen (der Anzeigename in der App bleibt „keep.").
 
 ## 4. Store-Listing füllen (aus `store/listing.md`)

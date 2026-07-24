@@ -12,7 +12,7 @@ private struct ProjectSnapshot: Codable {
 }
 
 private func loadSnapshot() -> ProjectSnapshot? {
-    guard let defaults = UserDefaults(suiteName: "group.com.lifeclip.app"),
+    guard let defaults = UserDefaults(suiteName: "group.com.kipry.keep.app"),
           let data = defaults.data(forKey: "lastProject"),
           let snap = try? JSONDecoder().decode(ProjectSnapshot.self, from: data) else { return nil }
     return snap
