@@ -1,4 +1,4 @@
-# LifeClip
+# keep.
 
 A daily life capture iOS app — record short clips and compile them into a video.
 Built as a technically superior alternative to Glimpse, fixing its critical audio bug and adding backup, import, and soft-delete.
@@ -12,23 +12,23 @@ Built as a technically superior alternative to Glimpse, fixing its critical audi
 ## Xcode Setup
 
 1. Open Xcode → **File › New › Project** → **iOS App**
-   - Product Name: `LifeClip`
-   - Bundle ID: `com.yourname.LifeClip`
+   - Product Name: `Keep`
+   - Bundle ID: `com.kipry.keep.app`
    - Interface: SwiftUI
    - Language: Swift
    - **Uncheck** Core Data (we use SwiftData)
 
-2. Delete the auto-generated `ContentView.swift` and `LifeClipApp.swift`.
+2. Delete the auto-generated `ContentView.swift` and `KeepApp.swift`.
 
-3. Drag the `LifeClip/` folder from this repo into the Xcode project navigator.
+3. Drag the `Keep/` folder from this repo into the Xcode project navigator.
    - Make sure **"Copy items if needed"** is checked.
-   - Add to target: `LifeClip`.
+   - Add to target: `Keep`.
 
 4. In the project target settings:
    - **Deployment Info**: iOS 17.0
    - **Signing**: select your development team
 
-5. Replace the auto-generated `Info.plist` entries with the ones from `LifeClip/Info.plist`,
+5. Replace the auto-generated `Info.plist` entries with the ones from `Keep/Info.plist`,
    or merge the keys into your project's Info tab.
 
 6. Build and run on a physical device.
@@ -36,7 +36,7 @@ Built as a technically superior alternative to Glimpse, fixing its critical audi
 ## Architecture
 
 ```
-LifeClip/
+Keep/
 ├── Core/
 │   ├── Models/          # SwiftData: Clip, Project
 │   └── Services/        # CameraService, VideoComposer

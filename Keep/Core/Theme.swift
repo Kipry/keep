@@ -24,7 +24,7 @@ enum Theme {
 
 // MARK: - Typography
 //
-// Three-font system matching the LifeClip / design-canvas spec:
+// Three-font system matching the Keep / design-canvas spec:
 //   .hand   → PatrickHand-Regular   warm, organic display text
 //   .mono   → JetBrainsMono-Regular / -Medium  precise data labels
 //   .scrawl → Caveat-Medium          decorative / handwritten accents
@@ -54,7 +54,7 @@ extension Font {
 // MARK: - Named type-scale tokens (mirrors wireframe spec)
 
 extension Font {
-    static var appWordmark:  Font { .hand(36) }   // "LifeClip"
+    static var appWordmark:  Font { .hand(36) }   // "keep."
     static var screenTitle:  Font { .hand(26) }   // project name hero
     static var navTitle:     Font { .hand(22) }   // compact nav header
     static var cardTitle:    Font { .hand(15) }   // name on grid card

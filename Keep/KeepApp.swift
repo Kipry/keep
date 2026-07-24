@@ -5,7 +5,7 @@ import CoreText
 // MARK: - Deep-link state
 
 /// Shared observable that any view in the hierarchy can read/write.
-/// Set by LifeClipApp.onOpenURL; consumed by ProjectListView /
+/// Set by KeepApp.onOpenURL; consumed by ProjectListView /
 /// ProjectDetailView to navigate straight into the camera.
 @Observable
 final class AppDeepLink {
@@ -16,7 +16,7 @@ final class AppDeepLink {
 // MARK: - App entry point
 
 @main
-struct LifeClipApp: App {
+struct KeepApp: App {
 
     @State private var deepLink = AppDeepLink()
 

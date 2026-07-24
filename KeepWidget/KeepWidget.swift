@@ -20,22 +20,22 @@ private func loadSnapshot() -> ProjectSnapshot? {
 
 // MARK: - Timeline
 
-struct LifeClipEntry: TimelineEntry {
+struct KeepEntry: TimelineEntry {
     let date: Date
     let snapshot: ProjectSnapshot?
 }
 
-struct LifeClipProvider: TimelineProvider {
-    func placeholder(in context: Context) -> LifeClipEntry {
-        LifeClipEntry(date: .now, snapshot: ProjectSnapshot(
+struct KeepProvider: TimelineProvider {
+    func placeholder(in context: Context) -> KeepEntry {
+        KeepEntry(date: .now, snapshot: ProjectSnapshot(
             id: "preview", name: "Summer 2026",
             clipCount: 12, totalDuration: 36, thumbnailData: nil))
     }
-    func getSnapshot(in context: Context, completion: @escaping (LifeClipEntry) -> Void) {
-        completion(LifeClipEntry(date: .now, snapshot: loadSnapshot()))
+    func getSnapshot(in context: Context, completion: @escaping (KeepEntry) -> Void) {
+        completion(KeepEntry(date: .now, snapshot: loadSnapshot()))
     }
-    func getTimeline(in context: Context, completion: @escaping (Timeline<LifeClipEntry>) -> Void) {
-        let entry = LifeClipEntry(date: .now, snapshot: loadSnapshot())
+    func getTimeline(in context: Context, completion: @escaping (Timeline<KeepEntry>) -> Void) {
+        let entry = KeepEntry(date: .now, snapshot: loadSnapshot())
         completion(Timeline(entries: [entry], policy: .never))
     }
 }
@@ -63,7 +63,7 @@ private func durationLabel(_ t: Double) -> String {
 
 struct HomeWidgetView: View {
     @Environment(\.widgetFamily) private var family
-    let entry: LifeClipEntry
+    let entry: KeepEntry
 
     var body: some View {
         switch family {
@@ -134,7 +134,7 @@ struct HomeWidgetView: View {
 
             // Info pane — right half
             VStack(alignment: .leading, spacing: 0) {
-                Text("LIFECLIP")
+                Text("KEEP.")
                     .font(.system(size: 8, weight: .semibold, design: .monospaced))
                     .tracking(2.5)
                     .foregroundStyle(.white.opacity(0.3))
@@ -152,7 +152,7 @@ struct HomeWidgetView: View {
                         .foregroundStyle(.white.opacity(0.45))
                         .padding(.top, 3)
                 } else {
-                    Text("Open LifeClip\nto get started")
+                    Text("Open keep.\nto get started")
                         .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.3))
                 }
@@ -188,7 +188,7 @@ struct HomeWidgetView: View {
 // MARK: - Lock-screen widget view (accessoryCircular)
 
 struct LockWidgetView: View {
-    let entry: LifeClipEntry
+    let entry: KeepEntry
 
     var body: some View {
         ZStack {
@@ -213,29 +213,29 @@ struct LockWidgetView: View {
 // MARK: - Widget configurations
 
 // Home-screen widget (small + medium)
-struct LifeClipHomeWidget: Widget {
+struct KeepHomeWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "LifeClipHomeWidget", provider: LifeClipProvider()) { entry in
+        StaticConfiguration(kind: "KeepHomeWidget", provider: KeepProvider()) { entry in
             HomeWidgetView(entry: entry)
                 .containerBackground(
                     Color(red: 0.051, green: 0.051, blue: 0.051),
                     for: .widget
                 )
         }
-        .configurationDisplayName("LifeClip")
+        .configurationDisplayName("keep.")
         .description("Tap to record a clip into your latest project.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
 // Lock-screen widget (circular)
-struct LifeClipLockWidget: Widget {
+struct KeepLockWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "LifeClipLockWidget", provider: LifeClipProvider()) { entry in
+        StaticConfiguration(kind: "KeepLockWidget", provider: KeepProvider()) { entry in
             LockWidgetView(entry: entry)
                 .containerBackground(.clear, for: .widget)
         }
-        .configurationDisplayName("LifeClip · REC")
+        .configurationDisplayName("keep. · REC")
         .description("Quick-record into your latest project from the Lock Screen.")
         .supportedFamilies([.accessoryCircular])
     }
@@ -243,9 +243,9 @@ struct LifeClipLockWidget: Widget {
 
 // Bundle — registers both widgets
 @main
-struct LifeClipWidgetBundle: WidgetBundle {
+struct KeepWidgetBundle: WidgetBundle {
     var body: some Widget {
-        LifeClipHomeWidget()
-        LifeClipLockWidget()
+        KeepHomeWidget()
+        KeepLockWidget()
     }
 }

@@ -14,7 +14,7 @@
     <key>NSPrivacyAccessedAPITypes</key>
     <array>
         <!-- UserDefaults: reads the project snapshot written by the main app
-             via the shared App Group container (group.com.lifeclip.app).
+             via the shared App Group container (group.com.kipry.keep.app).
              Reason CA92.1: read info accessible only within the app extension. -->
         <dict>
             <key>NSPrivacyAccessedAPIType</key>

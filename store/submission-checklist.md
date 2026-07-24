@@ -6,7 +6,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 | | |
 |---|---|
 | App-Bundle-ID | `com.kipry.keep.app` |
-| Widget-Bundle-ID | `com.kipry.keep.app.LifeClipWidget` |
+| Widget-Bundle-ID | `com.kipry.keep.app.widget` |
 | App-Gruppe | `group.com.kipry.keep.app` |
 | Team-ID | `<deine neue Team-ID>` |
 | Version / Build | `1.0` / `1` |
@@ -24,7 +24,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 (developer.apple.com → Certificates, Identifiers & Profiles)
 - [ ] **App Group** `group.com.kipry.keep.app` anlegen (falls noch nicht vorhanden).
 - [ ] App-ID `com.kipry.keep.app` registrieren, Capability **App Groups** aktivieren und die Gruppe zuweisen.
-- [ ] Widget-App-ID `com.kipry.keep.app.LifeClipWidget` registrieren, ebenfalls **App Groups** + Gruppe zuweisen.
+- [ ] Widget-App-ID `com.kipry.keep.app.widget` registrieren, ebenfalls **App Groups** + Gruppe zuweisen.
 > Bei Automatic Signing legt Xcode die IDs meist selbst an — dann hier nur prüfen, dass die App-Gruppe bei **beiden** IDs gesetzt ist. Ohne das schlägt das Signing fehl.
 
 ## 2. Datenschutz- & Support-Seite hosten
@@ -55,7 +55,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 - [ ] Länder/Regionen wählen.
 
 ## 8. Build erstellen & hochladen (Xcode)
-- [ ] In Xcode: Schema **LifeClip**, Ziel „Any iOS Device (arm64)".
+- [ ] In Xcode: Schema **Keep**, Ziel „Any iOS Device (arm64)".
 - [ ] `Product → Archive`. Muss ohne Signing-/Entitlement-Fehler durchlaufen.
 - [ ] Im Organizer: `Distribute App → App Store Connect → Upload`.
 - [ ] Export-Compliance wird dank `ITSAppUsesNonExemptEncryption = false` **nicht** mehr abgefragt.
