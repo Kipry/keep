@@ -55,7 +55,7 @@
                 <string>lifeclip</string>
             </array>
             <key>CFBundleURLName</key>
-            <string>com.kipry.keep</string>
+            <string>com.kipry.keep.app</string>
         </dict>
     </array>
 

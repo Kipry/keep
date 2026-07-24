@@ -4,7 +4,7 @@ import WidgetKit
 // Writes the "last active project" snapshot to the shared App Group so the
 // widget can display it without accessing SwiftData directly.
 enum WidgetDataStore {
-    static let groupID = "group.com.kipry.keep"
+    static let groupID = "group.com.kipry.keep.app"
     static let key     = "lastProject"
 
     struct Snapshot: Codable {
