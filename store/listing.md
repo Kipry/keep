@@ -7,7 +7,7 @@ Zwei Sprachen: **Deutsch (Primär)** und **English (U.S.)**.
 
 ## Allgemein (sprachunabhängig)
 
-- **Bundle-ID:** `com.lifeclip.app`
+- **Bundle-ID:** `com.kipry.keep`
 - **Primäre Kategorie:** Lifestyle (`public.app-category.lifestyle`, bereits im Projekt gesetzt)
 - **Sekundäre Kategorie (optional):** Foto & Video
 - **Preis:** kostenlos (empfohlen für v1)
