@@ -215,18 +215,22 @@ struct DiaryTimelineView: View {
     private var px: CGFloat { zoom.pxPerDay }
 
     var body: some View {
-        GeometryReader { geo in
-            let cx = geo.size.width / 2
-            ZStack(alignment: .top) {
-                Theme.background.ignoresSafeArea()
-                RadialGradient(colors: [Theme.amber.opacity(0.06), .clear],
-                               center: .init(x: 0.5, y: 0.04), startRadius: 0, endRadius: 320)
-                    .ignoresSafeArea()
+        // Backgrounds sit OUTSIDE the GeometryReader: nested inside it their
+        // ignoresSafeArea() didn't reach past the reader's own frame, which left
+        // a hard-edged band across the top of this tab.
+        ZStack(alignment: .top) {
+            Theme.background.ignoresSafeArea()
+            RadialGradient(colors: [Theme.amber.opacity(0.06), .clear],
+                           center: .init(x: 0.5, y: 0.04), startRadius: 0, endRadius: 320)
+                .ignoresSafeArea()
 
+            GeometryReader { geo in
+                let cx = geo.size.width / 2
                 if let data, !data.bands.isEmpty {
                     content(width: geo.size.width, cx: cx, data: data)
                 } else {
                     emptyScreen
+                        .frame(width: geo.size.width, height: geo.size.height)
                 }
             }
         }
@@ -265,8 +269,8 @@ struct DiaryTimelineView: View {
     private func content(width: CGFloat, cx: CGFloat, data: TimelineData) -> some View {
         VStack(spacing: 0) {
             header(data: data)
-                .padding(.horizontal, 24)
-                .padding(.top, 12)
+                .padding(.horizontal, Layout.gutter)
+                .padding(.top, Layout.headerTop)
 
             if diaryMode == .places {
                 // Map twin of the diary — mounted only while visible so MapKit's
@@ -303,7 +307,7 @@ struct DiaryTimelineView: View {
 
                 // Timeline strip pushed to the bottom
                 controlRow(data: data)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, Layout.gutter)
                     .padding(.top, 10)
 
                 scrubber(width: width, cx: cx, data: data)
@@ -315,45 +319,33 @@ struct DiaryTimelineView: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        .padding(.top, 10)
     }
 
     // MARK: Header
 
     private func header(data: TimelineData) -> some View {
-        HStack(alignment: .bottom, spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("DIARY")
-                    .font(.mono(10, weight: .medium))
-                    .tracking(2.5)
-                    .foregroundStyle(.white.opacity(0.35))
-                Text("Your Timeline")
-                    .font(.hand(32))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-            }
-            Spacer()
+        ScreenHeader(eyebrow: Text("DIARY"), title: Text("Your Timeline")) {
+            HStack(spacing: 10) {
+                modePill
 
-            modePill
-
-            // In places mode the map's own control row carries TODAY (it also
-            // has to stop the flyover) — avoid a second, racing button here.
-            if diaryMode == .time {
-                Button {
-                    stopAutoplay()
-                    animateTo(Double(data.todayTag))
-                } label: {
-                    Text("TODAY")
-                        .font(.mono(11))
-                        .tracking(1)
-                        .foregroundStyle(Theme.amber)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Theme.amber.opacity(0.12), in: Capsule())
-                        .overlay(Capsule().stroke(Theme.amber.opacity(0.4), lineWidth: 1))
+                // In places mode the map's own control row carries TODAY (it also
+                // has to stop the flyover) — avoid a second, racing button here.
+                if diaryMode == .time {
+                    Button {
+                        stopAutoplay()
+                        animateTo(Double(data.todayTag))
+                    } label: {
+                        Text("TODAY")
+                            .font(.mono(11))
+                            .tracking(1)
+                            .foregroundStyle(Theme.amber)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Theme.amber.opacity(0.12), in: Capsule())
+                            .overlay(Capsule().stroke(Theme.amber.opacity(0.4), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -804,17 +796,27 @@ struct DiaryTimelineView: View {
 
     // MARK: Empty screen (no projects at all)
 
+    /// Empty diary. Keeps the same header block and offsets as the populated
+    /// screen so the tab's top edge doesn't jump when the first clip lands.
     private var emptyScreen: some View {
-        VStack(spacing: 16) {
-            TimelineLens(size: 72).opacity(0.5)
-            Text("Your Timeline")
-                .font(.hand(28))
-                .foregroundStyle(.white)
-            Text("Record your first clips — they'll line up here as a scrubbable diary.")
-                .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.4))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 48)
+        VStack(spacing: 0) {
+            ScreenHeader(eyebrow: Text("DIARY"), title: Text("Your Timeline"))
+                .padding(.horizontal, Layout.gutter)
+                .padding(.top, Layout.headerTop)
+
+            Spacer()
+
+            VStack(spacing: 16) {
+                TimelineLens(size: 72).opacity(0.5)
+                Text("Record your first clips — they'll line up here as a scrubbable diary.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 48)
+            }
+
+            Spacer()
+            Spacer()
         }
     }
 

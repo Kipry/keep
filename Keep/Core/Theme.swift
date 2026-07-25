@@ -54,6 +54,7 @@ extension Font {
 // MARK: - Named type-scale tokens (mirrors wireframe spec)
 
 extension Font {
+    static var pageTitle:    Font { .hand(32) }   // tab-level screen title
     static var appWordmark:  Font { .hand(36) }   // "keep."
     static var screenTitle:  Font { .hand(26) }   // project name hero
     static var navTitle:     Font { .hand(22) }   // compact nav header
@@ -65,6 +66,53 @@ extension Font {
     static var monoCaption:  Font { .mono(9)  }   // dates, subtitles
     static var durBadge:     Font { .mono(9,  weight: .medium) }
     static var clipBadge:    Font { .mono(10, weight: .medium) }
+}
+
+// MARK: - Screen layout
+
+/// Shared geometry for the top-level tabs. Centralised because Library, Diary
+/// and Memories had drifted to three different gutters and header offsets,
+/// which showed up as the title jumping when swiping between tabs.
+enum Layout {
+    /// Horizontal inset for all top-level screens.
+    static let gutter: CGFloat = 24
+    /// Gap between the safe-area top and the header block.
+    static let headerTop: CGFloat = 20
+}
+
+// MARK: - Shared screen header
+
+/// The eyebrow + title block every tab shows at the top, with an optional
+/// trailing control. Takes `Text` rather than strings so callers keep their
+/// own localisation and can pass a formatted date as the eyebrow.
+struct ScreenHeader<Trailing: View>: View {
+    let eyebrow: Text
+    let title: Text
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                eyebrow
+                    .font(.eyebrow)
+                    .tracking(2.5)
+                    .foregroundStyle(.white.opacity(0.35))
+                title
+                    .font(.pageTitle)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            Spacer(minLength: 8)
+            trailing
+        }
+    }
+}
+
+extension ScreenHeader where Trailing == EmptyView {
+    init(eyebrow: Text, title: Text) {
+        self.init(eyebrow: eyebrow, title: title) { EmptyView() }
+    }
 }
 
 // MARK: - Scroll edge fade

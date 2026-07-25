@@ -82,7 +82,7 @@ struct ProjectDetailView: View {
             content
         }
         .offset(x: backSwipeX)
-        .background(Color.black.ignoresSafeArea())
+        .background(Theme.background.ignoresSafeArea())
         // Swipe in from the left edge to go back to the library.
         .simultaneousGesture(backSwipeGesture)
         // fullScreenCover presentation — owns the full screen, no nav bar involved
@@ -1205,23 +1205,27 @@ private struct ClipPreviewCarousel: View {
         if clip.isPhoto {
             // Show the original still image directly — always correctly oriented,
             // independent of how the backing still-video was rendered.
-            ZStack {
-                Color.black
-                if let img = photoImage(for: clip) {
-                    Image(uiImage: img)
-                        .resizable()
-                        .scaledToFit()
+            Zoomable(isActive: index == currentIndex) {
+                ZStack {
+                    Color.black
+                    if let img = photoImage(for: clip) {
+                        Image(uiImage: img)
+                            .resizable()
+                            .scaledToFit()
+                    }
                 }
             }
         } else {
-            ZStack {
-                Color.black
-                if let player = players[clip.id] {
-                    VideoLayerView(player: player)
-                        .onTapGesture {
-                            if player.timeControlStatus == .playing { player.pause() }
-                            else { player.play() }
-                        }
+            Zoomable(isActive: index == currentIndex) {
+                ZStack {
+                    Color.black
+                    if let player = players[clip.id] {
+                        VideoLayerView(player: player)
+                            .onTapGesture {
+                                if player.timeControlStatus == .playing { player.pause() }
+                                else { player.play() }
+                            }
+                    }
                 }
             }
             .onAppear {

@@ -106,18 +106,20 @@ struct OnThisDayView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            // Theme.background, not Color.black — pure black made this tab read
+            // a shade darker than Library/Diary and showed as a band at the top.
+            Theme.background.ignoresSafeArea()
             if allClips.isEmpty {
                 emptyState
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 28) {
                         header
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, Layout.gutter)
                         statsGrid
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, Layout.gutter)
                         streakCard
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, Layout.gutter)
                         if !lastWeekGroups.isEmpty {
                             lookbackSection("Last Week", groups: lastWeekGroups)
                         }
@@ -129,12 +131,10 @@ struct OnThisDayView: View {
                         }
                         if lastWeekGroups.isEmpty && lastMonthGroups.isEmpty && lastYearGroups.isEmpty {
                             noLookbackHint
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, Layout.gutter)
                         }
                     }
-                    // Match the top offset of the other tabs (Library / Diary)
-                    // so the title sits at the same height across the app.
-                    .padding(.top, 20)
+                    .padding(.top, Layout.headerTop)
                     .padding(.bottom, 120)
                 }
             }
@@ -170,17 +170,7 @@ struct OnThisDayView: View {
     // Matches the DIARY / LIBRARY headers: mono eyebrow (here the date) above a
     // hand-lettered title, bottom-aligned with the trailing action button.
     private var header: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(headerDateLabel)
-                    .font(.mono(10, weight: .medium))
-                    .tracking(2.5)
-                    .foregroundStyle(.white.opacity(0.35))
-                Text("Memories")
-                    .font(.hand(32))
-                    .foregroundStyle(.white)
-            }
-            Spacer()
+        ScreenHeader(eyebrow: Text(headerDateLabel), title: Text("Memories")) {
             Button { showSettings = true } label: {
                 Image(systemName: "gearshape")
                     .font(.system(size: 17, weight: .medium))
@@ -312,7 +302,7 @@ struct OnThisDayView: View {
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.amber)
                 .tracking(0.8)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, Layout.gutter)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 16) {
@@ -342,7 +332,7 @@ struct OnThisDayView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, Layout.gutter)
             }
         }
     }
@@ -374,21 +364,35 @@ struct OnThisDayView: View {
 
     // MARK: - Empty state
 
+    /// Empty memories tab. Carries the same header as the populated screen —
+    /// otherwise the tab looked like a different app when there's no data yet
+    /// (and Settings, which lives in the header, became unreachable).
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "film.stack")
-                .font(.system(size: 44))
-                .foregroundStyle(Theme.amber.opacity(0.4))
-            Text("No Recordings Yet")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white)
-            Text("Record your first clip —\nyour memories will appear here soon.")
-                .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.4))
-                .multilineTextAlignment(.center)
-                .lineSpacing(2)
+        VStack(spacing: 0) {
+            header
+                .padding(.horizontal, Layout.gutter)
+                .padding(.top, Layout.headerTop)
+
+            Spacer()
+
+            VStack(spacing: 14) {
+                Image(systemName: "film.stack")
+                    .font(.system(size: 44))
+                    .foregroundStyle(Theme.amber.opacity(0.4))
+                Text("No Recordings Yet")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text("Record your first clip —\nyour memories will appear here soon.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+            }
+            .padding(.horizontal, 40)
+
+            Spacer()
+            Spacer()
         }
-        .padding(.horizontal, 40)
     }
 }
 
@@ -548,23 +552,27 @@ private struct LookbackClipViewer: View {
     @ViewBuilder
     private func page(for clip: Clip, i: Int) -> some View {
         if clip.isPhoto {
-            ZStack {
-                Color.black
-                if let img = photoImage(clip) {
-                    Image(uiImage: img)
-                        .resizable()
-                        .scaledToFit()
+            Zoomable(isActive: i == index) {
+                ZStack {
+                    Color.black
+                    if let img = photoImage(clip) {
+                        Image(uiImage: img)
+                            .resizable()
+                            .scaledToFit()
+                    }
                 }
             }
         } else {
-            ZStack {
-                Color.black
-                if let player = players[clip.id] {
-                    VideoLayerView(player: player)
-                        .onTapGesture {
-                            if player.timeControlStatus == .playing { player.pause() }
-                            else { player.play() }
-                        }
+            Zoomable(isActive: i == index) {
+                ZStack {
+                    Color.black
+                    if let player = players[clip.id] {
+                        VideoLayerView(player: player)
+                            .onTapGesture {
+                                if player.timeControlStatus == .playing { player.pause() }
+                                else { player.play() }
+                            }
+                    }
                 }
             }
             .onAppear {
@@ -634,7 +642,7 @@ private struct StreakDetailView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            Theme.background.ignoresSafeArea()
 
             // The stats card sits outside the scroll view so it stays pinned
             // while the month grids scroll away underneath it.

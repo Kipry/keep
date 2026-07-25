@@ -35,15 +35,19 @@ struct ProjectListView: View {
             // dissolving softly at the top edge (same treatment as the streak view).
             VStack(alignment: .leading, spacing: 0) {
                 header
-                    .padding(.horizontal, 24)
-                    .padding(.top, 20)
+                    .padding(.horizontal, Layout.gutter)
+                    .padding(.top, Layout.headerTop)
                     .padding(.bottom, 12)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        if displayedProjects.isEmpty {
-                            isSearching ? AnyView(noResultsState) : AnyView(emptyState)
-                        } else {
+                if displayedProjects.isEmpty {
+                    // Outside the ScrollView on purpose: a Spacer inside one has
+                    // no free height to claim, which left the empty state stuck
+                    // under the header instead of centred.
+                    (isSearching ? AnyView(noResultsState) : AnyView(emptyState))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 0) {
                             LazyVGrid(
                                 columns: [
                                     GridItem(.flexible(), spacing: 14),
@@ -76,14 +80,14 @@ struct ProjectListView: View {
                                     }
                                 }
                             }
-                            .padding(.horizontal, 24)
-                        }
+                            .padding(.horizontal, Layout.gutter)
 
-                        Spacer(minLength: 110)
+                            Spacer(minLength: 110)
+                        }
+                        .padding(.top, 12)
                     }
-                    .padding(.top, 12)
+                    .topEdgeFade()
                 }
-                .topEdgeFade()
             }
 
             // ── Amber FAB ────────────────────────────────────────────────
@@ -151,17 +155,7 @@ struct ProjectListView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .bottom) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("YOUR LIBRARY")
-                        .font(.eyebrow)
-                        .tracking(2)
-                        .foregroundStyle(.white.opacity(0.35))
-                    Text("keep.")
-                        .font(.appWordmark)
-                        .foregroundStyle(.white)
-                }
-                Spacer()
+            ScreenHeader(eyebrow: Text("YOUR LIBRARY"), title: Text("keep.")) {
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) { isSearching.toggle() }
                     if !isSearching { searchText = "" }
@@ -201,7 +195,6 @@ struct ProjectListView: View {
 
     private var noResultsState: some View {
         VStack(spacing: 16) {
-            Spacer(minLength: 60)
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 40))
                 .foregroundStyle(.white.opacity(0.12))
@@ -209,14 +202,15 @@ struct ProjectListView: View {
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.38))
                 .multilineTextAlignment(.center)
-            Spacer()
         }
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Layout.gutter)
+        // Nudged up so the block reads as centred above the tab bar rather
+        // than sitting optically low.
+        .padding(.bottom, 60)
     }
 
     private var emptyState: some View {
         VStack(spacing: 20) {
-            Spacer(minLength: 80)
             Image(systemName: "film.stack")
                 .font(.system(size: 56))
                 .foregroundStyle(.white.opacity(0.12))
@@ -229,9 +223,9 @@ struct ProjectListView: View {
                     .foregroundStyle(.white.opacity(0.38))
                     .multilineTextAlignment(.center)
             }
-            Spacer()
         }
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Layout.gutter)
+        .padding(.bottom, 60)
     }
 
     // MARK: - Actions

@@ -23,6 +23,7 @@
 		A100000000000000000004AB /* CompilationOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000004AA /* CompilationOptionsView.swift */; };
 		A100000000000000000007AB /* ProjectPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000007AA /* ProjectPlayerView.swift */; };
 		A100000000000000000009AB /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000009AA /* Theme.swift */; };
+		C9D93A1A05D3BC3A3CF84A28 /* Zoomable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DDB57BD1463D329736BBBC7 /* Zoomable.swift */; };
 		A10000000000000000000A1B /* PatrickHand-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A1A /* PatrickHand-Regular.ttf */; };
 		A10000000000000000000A2B /* JetBrainsMono-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */; };
 		A10000000000000000000A3B /* JetBrainsMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */; };
@@ -93,6 +94,7 @@
 		A100000000000000000004AA /* CompilationOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompilationOptionsView.swift; sourceTree = "<group>"; };
 		A100000000000000000007AA /* ProjectPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPlayerView.swift; sourceTree = "<group>"; };
 		A100000000000000000009AA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		9DDB57BD1463D329736BBBC7 /* Zoomable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zoomable.swift; sourceTree = "<group>"; };
 		A10000000000000000000A1A /* PatrickHand-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PatrickHand-Regular.ttf"; sourceTree = "<group>"; };
 		A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Regular.ttf"; sourceTree = "<group>"; };
 		A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Medium.ttf"; sourceTree = "<group>"; };
@@ -189,6 +191,7 @@
 				A1000000000000000000010A /* Models */,
 				A1000000000000000000011A /* Services */,
 				A100000000000000000009AA /* Theme.swift */,
+				9DDB57BD1463D329736BBBC7 /* Zoomable.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -514,6 +517,7 @@
 				A10000000000000000000B1B /* ExportProgressOverlay.swift in Sources */,
 				A100000000000000000007AB /* ProjectPlayerView.swift in Sources */,
 				A100000000000000000009AB /* Theme.swift in Sources */,
+				C9D93A1A05D3BC3A3CF84A28 /* Zoomable.swift in Sources */,
 				A10000000000000000000C1B /* OnThisDayView.swift in Sources */,
 				A10000000000000000000C3B /* ClipTrimView.swift in Sources */,
 				A10000000000000000000C5B /* ArchiveView.swift in Sources */,
