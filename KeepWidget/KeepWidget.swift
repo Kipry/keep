@@ -22,7 +22,7 @@ private func loadSnapshot() -> ProjectSnapshot? {
 
 struct KeepEntry: TimelineEntry {
     let date: Date
-    let snapshot: ProjectSnapshot?
+    fileprivate let snapshot: ProjectSnapshot?
 }
 
 struct KeepProvider: TimelineProvider {
