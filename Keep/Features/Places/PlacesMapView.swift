@@ -24,6 +24,9 @@ struct PlacesMapView: View {
     @State private var flyTask: Task<Void, Never>?
     @State private var slideThumb: UIImage?
     @State private var showUnlocatedInfo = false
+    /// The place whose clip list is open. Set by tapping the preview card, or
+    /// by tapping an already-selected pin a second time.
+    @State private var detailPlace: Place?
     // One-shot: seed an explicit camera so the map is never .automatic while
     // pins exist (see seedCameraIfNeeded — prevents a re-fit feedback loop).
     @State private var didSeedCamera = false
@@ -146,6 +149,15 @@ struct PlacesMapView: View {
             if !active { stopFlyover() }
         }
         .onDisappear { stopFlyover() }
+        .sheet(item: $detailPlace) { place in
+            PlaceDetailSheet(
+                place: place,
+                relativeLabel: relativeLabel(forDay: place.firstDayTag),
+                onOpenProject: { project in onOpenProject(project) }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: Map
@@ -224,9 +236,15 @@ struct PlacesMapView: View {
             let isActivePin = place.id == activePlace?.id
             Button {
                 stopFlyover()
+                // One tap does the obvious thing: show what was recorded here.
+                // The day focus moves along, so dismissing the sheet leaves the
+                // map and the scrubber on this place. Passing `place` straight
+                // through avoids depending on which pin ends up "active" — with
+                // several places on the same day that isn't necessarily this one.
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                     centerDay = Double(place.firstDayTag)
                 }
+                detailPlace = place
             } label: {
                 ZStack(alignment: .topTrailing) {
                     Group {
@@ -268,10 +286,9 @@ struct PlacesMapView: View {
 
         case .cluster(_, _, let members):
             Button {
-                // Zoom toward the cluster; the smaller span resolves it.
-                let cam = MapCamera(centerCoordinate: item.coordinate, distance: clusterZoomDistance())
-                if reduceMotion { camera = .camera(cam) }
-                else { withAnimation(.easeInOut(duration: 0.5)) { camera = .camera(cam) } }
+                // Frame the members themselves rather than guessing a zoom step,
+                // so a tap always actually breaks the cluster apart.
+                expand(members, around: item.coordinate)
             } label: {
                 Text("\(members.reduce(0) { $0 + $1.clipCount })")
                     .font(.mono(11, weight: .medium))
@@ -289,10 +306,8 @@ struct PlacesMapView: View {
 
     private func previewCard(for place: Place) -> some View {
         Button {
-            if let project = place.project {
-                stopFlyover()
-                onOpenProject(project)
-            }
+            stopFlyover()
+            detailPlace = place
         } label: {
             HStack(spacing: 12) {
                 Group {
@@ -308,8 +323,10 @@ struct PlacesMapView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 9))
                 .overlay(RoundedRectangle(cornerRadius: 9).stroke(Theme.paper.opacity(0.5), lineWidth: 1.5))
 
+                // The place leads, the project is context — the card opens the
+                // clips recorded here, so it should name the place.
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(place.project?.name ?? "—")
+                    Text(place.displayName ?? String(localized: "Unknown place"))
                         .font(.hand(20))
                         .foregroundStyle(.white)
                         .lineLimit(1)
@@ -334,11 +351,12 @@ struct PlacesMapView: View {
     }
 
     private func cardSubtitle(for place: Place) -> String {
-        let name = (place.displayName ?? String(localized: "Unknown place")).uppercased()
         let clips = place.clipCount == 1
             ? String(localized: "1 CLIP")
             : String(localized: "\(place.clipCount) CLIPS")
-        return "\(name) · \(clips) · \(relativeLabel(forDay: place.firstDayTag))"
+        var parts = [clips, relativeLabel(forDay: place.firstDayTag)]
+        if let project = place.project?.name { parts.append(project.uppercased()) }
+        return parts.joined(separator: " · ")
     }
 
     // MARK: Controls
@@ -462,11 +480,21 @@ struct PlacesMapView: View {
         return min(1.2, max(0.4, meters / 80_000))
     }
 
-    private func clusterZoomDistance() -> Double {
-        // Halve the current viewport height as a simple "zoom in one step".
-        let metersPerMapPoint = MKMetersPerMapPointAtLatitude(visibleRect.origin.coordinate.latitude)
-        let currentMeters = visibleRect.size.height * metersPerMapPoint
-        return max(600, currentMeters * 0.35)
+    /// Zooms so the cluster's own members fill the viewport, which is what
+    /// actually separates them. A fixed "zoom one step in" could leave a tight
+    /// cluster still clustered, so a tap appeared to do nothing.
+    private func expand(_ members: [Place], around fallbackCenter: CLLocationCoordinate2D) {
+        let position: MapCameraPosition
+        if let region = Self.fittingRegion(for: members) {
+            position = .region(region)
+        } else {
+            let metersPerMapPoint = MKMetersPerMapPointAtLatitude(visibleRect.origin.coordinate.latitude)
+            let currentMeters = visibleRect.size.height * metersPerMapPoint
+            position = .camera(MapCamera(centerCoordinate: fallbackCenter,
+                                         distance: max(600, currentMeters * 0.35)))
+        }
+        if reduceMotion { camera = position }
+        else { withAnimation(.easeInOut(duration: 0.5)) { camera = position } }
     }
 
     // MARK: Flyover

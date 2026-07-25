@@ -40,6 +40,8 @@
 		855D8D4958D1BC1DE4460B24 /* PlacesData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 358D483CD9078CE50FA58E00 /* PlacesData.swift */; };
 		E07254987DE2B3065FE091BF /* PlacesMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF966B9A69CB473C1905BA20 /* PlacesMapView.swift */; };
 		8884B4F67DEE3500CEE77622 /* PlacesScrubberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D7D78F9F9B18231FE79E80 /* PlacesScrubberView.swift */; };
+		AFB2CB2406C296FD556FC669 /* ClipViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1C91A588EE9E83B3832F68 /* ClipViewer.swift */; };
+		D70497924E6708296CAD3865 /* PlaceDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A90E8DF4381FFE4AA6526CB /* PlaceDetailSheet.swift */; };
 		C328CD4A2FB728B300443F80 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD492FB728B300443F80 /* WidgetKit.framework */; };
 		C328CD4C2FB728B300443F80 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD4B2FB728B300443F80 /* SwiftUI.framework */; };
 		C328CD592FB728B400443F80 /* KeepWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C328CD472FB728B300443F80 /* KeepWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -113,6 +115,8 @@
 		358D483CD9078CE50FA58E00 /* PlacesData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesData.swift; sourceTree = "<group>"; };
 		AF966B9A69CB473C1905BA20 /* PlacesMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesMapView.swift; sourceTree = "<group>"; };
 		40D7D78F9F9B18231FE79E80 /* PlacesScrubberView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesScrubberView.swift; sourceTree = "<group>"; };
+		9F1C91A588EE9E83B3832F68 /* ClipViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipViewer.swift; sourceTree = "<group>"; };
+		9A90E8DF4381FFE4AA6526CB /* PlaceDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceDetailSheet.swift; sourceTree = "<group>"; };
 		C328CD472FB728B300443F80 /* KeepWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KeepWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C328CD492FB728B300443F80 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		C328CD4B2FB728B300443F80 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -266,6 +270,7 @@
 				358D483CD9078CE50FA58E00 /* PlacesData.swift */,
 				AF966B9A69CB473C1905BA20 /* PlacesMapView.swift */,
 				40D7D78F9F9B18231FE79E80 /* PlacesScrubberView.swift */,
+				9A90E8DF4381FFE4AA6526CB /* PlaceDetailSheet.swift */,
 			);
 			path = Places;
 			sourceTree = "<group>";
@@ -283,6 +288,7 @@
 			isa = PBXGroup;
 			children = (
 				A1000000000000000000009A /* ClipCell.swift */,
+				9F1C91A588EE9E83B3832F68 /* ClipViewer.swift */,
 			);
 			path = Clips;
 			sourceTree = "<group>";
@@ -528,6 +534,8 @@
 				855D8D4958D1BC1DE4460B24 /* PlacesData.swift in Sources */,
 				E07254987DE2B3065FE091BF /* PlacesMapView.swift in Sources */,
 				8884B4F67DEE3500CEE77622 /* PlacesScrubberView.swift in Sources */,
+				AFB2CB2406C296FD556FC669 /* ClipViewer.swift in Sources */,
+				D70497924E6708296CAD3865 /* PlaceDetailSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

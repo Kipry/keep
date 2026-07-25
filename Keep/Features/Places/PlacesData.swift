@@ -164,10 +164,17 @@ struct PlacesData {
         guard mapPointsPerScreenPoint.isFinite, mapPointsPerScreenPoint > 0 else {
             return places.map { .place($0) }
         }
-        // Clamp so pow() can't overflow to inf (collapsing everything into one
+        // Quantized so panning never re-clusters and a continuous pinch doesn't
+        // churn — but in HALF-octave steps. Whole octaves meant the effective
+        // radius could land up to ~1.4x above the nominal one, which swallowed
+        // pins that were still clearly apart on screen.
+        // Clamped so pow() can't overflow to inf (collapsing everything into one
         // cluster) or underflow the cell to a degenerate value.
-        let zoomBucket = min(24, max(-2, log2(mapPointsPerScreenPoint).rounded()))
-        let cell = 44.0 * pow(2.0, zoomBucket)   // ~44pt in map points
+        let zoomBucket = min(24, max(-2, (log2(mapPointsPerScreenPoint) * 2).rounded() / 2))
+        // ~34pt in map points. Pins are 54pt wide, so neighbours may overlap a
+        // little before merging — deliberately closer than the old 44pt, which
+        // collapsed distinct spots into one as soon as you zoomed out.
+        let cell = 34.0 * pow(2.0, zoomBucket)
 
         var drafts: [(seed: MKMapPoint, members: [Place])] = []
         for place in places {
