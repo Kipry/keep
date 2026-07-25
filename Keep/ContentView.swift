@@ -48,10 +48,7 @@ struct ContentView: View {
             AppTabBar(selectedTab: selectedTab, onSelect: switchTab)
         }
         .onboardingGate()
-        .task {
-            ClipFileRepair.run(in: modelContext)
-            await ClipRescueImport.run(in: modelContext)
-        }
+        .task { ClipFileRepair.run(in: modelContext) }
     }
 
     private func edgeSwipe(width: CGFloat) -> some Gesture {
