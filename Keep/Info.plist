@@ -52,7 +52,7 @@
         <dict>
             <key>CFBundleURLSchemes</key>
             <array>
-                <string>lifeclip</string>
+                <string>keep</string>
             </array>
             <key>CFBundleURLName</key>
             <string>com.kipry.keep.app</string>

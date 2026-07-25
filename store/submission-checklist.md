@@ -76,7 +76,7 @@ Der Simulator kann Kamera/Widget/Haptik nicht abbilden. Auf einem echten iPhone 
 - [ ] Berechtigungs-Ablehnung → „Open Settings"-Screen erscheint statt schwarzem Bild.
 - [ ] Foto-Import (Hochkant bleibt korrekt orientiert).
 - [ ] Export inkl. vorangestelltem **Bumper** mit Projekttitel + Zeitraum.
-- [ ] **Sperrbildschirm-Widget** hinzufügen → Tap öffnet direkt die Aufnahme (Deep-Link `lifeclip://record/<id>`).
+- [ ] **Sperrbildschirm-Widget** hinzufügen → Tap öffnet direkt die Aufnahme (Deep-Link `keep://record/<id>`).
 - [ ] Erststart mit 0 Projekten (Empty-States).
 
 ## Mögliche Review-Nachfragen (vorbereitet)

@@ -46,11 +46,11 @@ private let amber = Color(red: 0.941, green: 0.529, blue: 0.227)
 private let ink   = Color(red: 0.102, green: 0.102, blue: 0.102)
 
 private func recordURL(for id: String) -> URL {
-    URL(string: "lifeclip://record/\(id)")!
+    URL(string: "keep://record/\(id)")!
 }
 
 private func openURL(for id: String) -> URL {
-    URL(string: "lifeclip://open/\(id)")!
+    URL(string: "keep://open/\(id)")!
 }
 
 private func durationLabel(_ t: Double) -> String {

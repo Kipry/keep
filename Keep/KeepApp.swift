@@ -31,10 +31,10 @@ struct KeepApp: App {
         .modelContainer(for: [Project.self, Clip.self])
     }
 
-    // lifeclip://record/<UUID>  →  open project + start recording
-    // lifeclip://open/<UUID>    →  just open project detail
+    // keep://record/<UUID>  →  open project + start recording
+    // keep://open/<UUID>    →  just open project detail
     private func handleDeepLink(_ url: URL) {
-        guard url.scheme == "lifeclip",
+        guard url.scheme == "keep",
               let idString = url.pathComponents.dropFirst().first,
               let id = UUID(uuidString: idString) else { return }
         switch url.host {
