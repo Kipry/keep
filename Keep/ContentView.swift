@@ -9,6 +9,7 @@ enum AppTab {
 // MARK: - Root view
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var selectedTab: AppTab = .projects
     @State private var dragOffset: CGFloat = 0
 
@@ -47,6 +48,7 @@ struct ContentView: View {
             AppTabBar(selectedTab: selectedTab, onSelect: switchTab)
         }
         .onboardingGate()
+        .task { ClipFileRepair.run(in: modelContext) }
     }
 
     private func edgeSwipe(width: CGFloat) -> some Gesture {
