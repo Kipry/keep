@@ -29,23 +29,44 @@ enum Theme {
 //   .mono   → JetBrainsMono-Regular / -Medium  precise data labels
 //   .scrawl → Caveat-Medium          decorative / handwritten accents
 
+// Every branded font is built with `relativeTo:`. The two-argument
+// `Font.custom(_:size:)` produces a fixed point size that ignores Dynamic Type
+// entirely — with ~70 call sites going through these three functions, that one
+// omission made most of the app's text unscalable for anyone who enlarges it.
 extension Font {
     /// Patrick Hand — titles, project names, navigation labels, buttons
     static func hand(_ size: CGFloat) -> Font {
-        .custom("PatrickHand-Regular", size: size)
+        .custom("PatrickHand-Regular", size: size, relativeTo: textStyle(for: size))
     }
 
     /// JetBrains Mono — clip counts, durations, timestamps, eyebrow labels
     static func mono(_ size: CGFloat, weight: MonoWeight = .regular) -> Font {
+        let style = textStyle(for: size)
         switch weight {
-        case .medium:  return .custom("JetBrainsMono-Medium",  size: size)
-        case .regular: return .custom("JetBrainsMono-Regular", size: size)
+        case .medium:  return .custom("JetBrainsMono-Medium",  size: size, relativeTo: style)
+        case .regular: return .custom("JetBrainsMono-Regular", size: size, relativeTo: style)
         }
     }
 
     /// Caveat — decorative / scrawl text ("add to the reel", "+" FAB glyph)
     static func scrawl(_ size: CGFloat) -> Font {
-        .custom("Caveat-Medium", size: size)
+        .custom("Caveat-Medium", size: size, relativeTo: textStyle(for: size))
+    }
+
+    /// Anchors each size to the nearest system text style so it scales at a
+    /// sensible rate — small captions grow less than headlines, as they do in
+    /// system typography.
+    private static func textStyle(for size: CGFloat) -> Font.TextStyle {
+        switch size {
+        case ..<11:  return .caption2
+        case ..<13:  return .caption
+        case ..<15:  return .footnote
+        case ..<17:  return .subheadline
+        case ..<20:  return .body
+        case ..<24:  return .title3
+        case ..<30:  return .title2
+        default:     return .title
+        }
     }
 
     enum MonoWeight { case regular, medium }

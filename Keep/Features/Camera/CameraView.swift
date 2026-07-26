@@ -248,6 +248,7 @@ struct CameraView: View {
                     .padding(12)
                     .background(.black.opacity(0.4), in: Circle())
             }
+            .accessibilityLabel("Close camera")
 
             Spacer()
 
@@ -282,6 +283,8 @@ struct CameraView: View {
                     .padding(12)
                     .background(.black.opacity(0.4), in: Circle())
             }
+            .accessibilityLabel("Light")
+            .accessibilityValue(torchOn ? "On" : "Off")
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -308,6 +311,10 @@ struct CameraView: View {
 
                 Spacer()
 
+                // The shutter is a ZStack driven by a DragGesture, so it had no
+                // accessibility representation at all — the app's core action
+                // was unreachable with VoiceOver. Exposed as a single button
+                // whose activation runs the same path as a tap.
                 RecordButton(
                     isRecording: camera.isRecording,
                     progress: (isHoldRecording || isLocked) ? 0
@@ -316,6 +323,11 @@ struct CameraView: View {
                     onRelease:   { handleRelease() },
                     onDrag:      { handleDrag($0) }
                 )
+                .accessibilityElement(children: .ignore)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(camera.isRecording ? "Stop recording" : "Record")
+                .accessibilityHint("Records a clip into this project")
+                .accessibilityAction { Task { await handleRecordTap() } }
 
                 Spacer()
 
@@ -326,6 +338,7 @@ struct CameraView: View {
                         .frame(width: 52, height: 52)
                         .background(.black.opacity(0.4), in: Circle())
                 }
+                .accessibilityLabel("Switch camera")
             }
             .padding(.horizontal, 36)
         }

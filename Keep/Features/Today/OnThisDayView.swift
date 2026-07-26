@@ -186,6 +186,7 @@ struct OnThisDayView: View {
                     .frame(width: 36, height: 36)
                     .background(Color(white: 0.12), in: Circle())
             }
+            .accessibilityLabel("Settings")
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
     }

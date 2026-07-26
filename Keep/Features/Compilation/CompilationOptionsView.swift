@@ -50,6 +50,7 @@ struct CompilationOptionsView: View {
                     .frame(width: 36, height: 36)
                     .background(.white.opacity(0.1), in: Circle())
             }
+            .accessibilityLabel("Close")
             Spacer()
             Text("EXPORT")
                 .font(.eyebrow)

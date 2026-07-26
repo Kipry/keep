@@ -346,6 +346,7 @@ struct DiaryTimelineView: View {
                 .background(on ? Theme.amber : .clear, in: RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
     }
 
     // MARK: Preview window
@@ -486,6 +487,7 @@ struct DiaryTimelineView: View {
                             .background(on ? Theme.amber : .clear, in: RoundedRectangle(cornerRadius: 8))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
                 }
             }
             .padding(3)

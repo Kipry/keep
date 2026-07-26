@@ -121,6 +121,7 @@ struct ClipViewer: View {
                             .padding(12)
                             .background(.black.opacity(0.5), in: Circle())
                     }
+                    .accessibilityLabel("Close")
                     Spacer()
                     if clips.count > 1 {
                         Text("\(index + 1) / \(clips.count)")

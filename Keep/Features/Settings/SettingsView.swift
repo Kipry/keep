@@ -51,6 +51,7 @@ struct SettingsView: View {
                     .frame(width: 32, height: 32)
                     .background(Color(white: 0.18), in: Circle())
             }
+            .accessibilityLabel("Close")
         }
         .padding(.horizontal, 20)
     }
@@ -79,6 +80,7 @@ struct SettingsView: View {
                                     )
                             }
                             .buttonStyle(.plain)
+                            .accessibilityAddTraits(defaultDuration == d ? [.isButton, .isSelected] : .isButton)
                         }
                     }
                 }
@@ -140,6 +142,7 @@ struct SettingsView: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(locationGranularity == value ? [.isButton, .isSelected] : .isButton)
     }
 
     // MARK: - Library section

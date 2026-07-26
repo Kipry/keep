@@ -100,6 +100,7 @@ struct ProjectListView: View {
                     .background(Theme.amber, in: Circle())
                     .shadow(color: Theme.ink.opacity(0.55), radius: 0, x: 2, y: 3)
             }
+            .accessibilityLabel("New project")
             .padding(.trailing, 20)
             .padding(.bottom, 36)
         }
@@ -179,6 +180,7 @@ struct ProjectListView: View {
                         .frame(width: 36, height: 36)
                         .background(.white.opacity(0.1), in: Circle())
                 }
+                .accessibilityLabel(isSearching ? "Close search" : "Search projects")
             }
 
             if isSearching {

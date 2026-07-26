@@ -159,6 +159,7 @@ private struct AppTabBar: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
+        .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
         .animation(.easeInOut(duration: 0.18), value: selectedTab)
     }
 }
