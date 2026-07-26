@@ -183,9 +183,11 @@ struct ProjectDetailView: View {
                 .presentationDetents([.height(280)])
         }
         .sheet(item: $clipToCopy) { clip in
-            ProjectPickerSheet(clip: clip, currentProjectID: project.id) {
+            ProjectPickerSheet(clip: clip, currentProjectID: project.id) { copied in
                 clipToCopy = nil
-                copyToastText = String(localized: "Clip Copied")
+                copyToastText = copied > 0
+                    ? String(localized: "Clip Copied")
+                    : String(localized: "Copy Failed")
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showCopyToast = true }
                 Task {
                     try? await Task.sleep(nanoseconds: 2_200_000_000)
@@ -198,11 +200,14 @@ struct ProjectDetailView: View {
             set: { if !$0 { clipsToBulkCopy = nil } }
         )) {
             if let clips = clipsToBulkCopy {
-                BulkProjectPickerSheet(clips: clips, currentProjectID: project.id) {
+                BulkProjectPickerSheet(clips: clips, currentProjectID: project.id) { copied in
                     clipsToBulkCopy = nil
                     isSelectMode = false
                     selectedClipIDs.removeAll()
-                    copyToastText = String(localized: "\(clips.count) Clips Copied")
+                    // Reports what actually landed, not what was asked for.
+                    copyToastText = copied == 0
+                        ? String(localized: "Copy Failed")
+                        : String(localized: "\(copied) Clips Copied")
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { showCopyToast = true }
                     Task {
                         try? await Task.sleep(nanoseconds: 2_200_000_000)
@@ -1092,7 +1097,7 @@ private struct FilmCell: View {
 private struct ProjectPickerSheet: View {
     let clip: Clip
     let currentProjectID: UUID
-    let onCopied: () -> Void
+    let onCopied: (Int) -> Void
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -1112,9 +1117,9 @@ private struct ProjectPickerSheet: View {
         NavigationStack {
             List(otherProjects) { project in
                 Button {
-                    clip.copy(into: project, context: modelContext)
+                    let ok = clip.copy(into: project, context: modelContext)
                     try? modelContext.save()
-                    onCopied()
+                    onCopied(ok ? 1 : 0)
                 } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 3) {
@@ -1311,7 +1316,7 @@ private struct ClipPreviewCarousel: View {
 private struct BulkProjectPickerSheet: View {
     let clips: [Clip]
     let currentProjectID: UUID
-    let onCopied: () -> Void
+    let onCopied: (Int) -> Void
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -1331,11 +1336,14 @@ private struct BulkProjectPickerSheet: View {
         NavigationStack {
             List(otherProjects) { project in
                 Button {
-                    for clip in clips {
-                        clip.copy(into: project, context: modelContext)
+                    // Count the copies that actually landed — a failed file
+                    // copy used to still report success.
+                    var copied = 0
+                    for clip in clips where clip.copy(into: project, context: modelContext) {
+                        copied += 1
                     }
                     try? modelContext.save()
-                    onCopied()
+                    onCopied(copied)
                 } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 3) {

@@ -130,7 +130,10 @@ struct ClipTrimView: View {
             queue: .main
         ) { [weak p] time in
             guard let p else { return }
-            currentTime = time.seconds
+            // NaN until the item is ready; it feeds the playhead's x position.
+            let seconds = time.seconds
+            guard seconds.isFinite else { return }
+            currentTime = seconds
             if currentTime >= trimEnd {
                 p.seek(to: CMTime(seconds: trimStart, preferredTimescale: 600))
                 if isPlaying { p.play() }

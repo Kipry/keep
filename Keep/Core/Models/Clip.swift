@@ -111,22 +111,32 @@ final class Clip {
         }
     }
 
-    /// Copies this clip's video file to a new location and inserts a new Clip
-    /// into `targetProject`. File and model record are fully independent —
-    /// deleting one will not affect the other.
-    func copy(into targetProject: Project, context: ModelContext) {
+    /// Copies this clip's video file and inserts a new Clip into
+    /// `targetProject`. The video files are independent, so deleting one clip
+    /// won't affect the other. A photo clip's *source image* is shared by
+    /// reference, so re-rendering one copy's display duration affects both.
+    ///
+    /// Returns false if the file couldn't be copied — callers previously
+    /// reported success unconditionally, so a failed copy showed a "Clip
+    /// Copied" toast and no clip.
+    @discardableResult
+    func copy(into targetProject: Project, context: ModelContext) -> Bool {
         let src = fileURL
         let ext = src.pathExtension.isEmpty ? "mov" : src.pathExtension
-        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return false }
         let clipsDir = docs.appendingPathComponent("Clips", isDirectory: true)
         try? FileManager.default.createDirectory(at: clipsDir, withIntermediateDirectories: true)
         let dst = clipsDir.appendingPathComponent(UUID().uuidString).appendingPathExtension(ext)
         do {
             try FileManager.default.copyItem(at: src, to: dst)
         } catch {
-            return
+            return false
         }
-        let newClip = Clip(fileURL: dst, duration: duration, order: targetProject.activeClips.count, createdAt: createdAt)
+        // max+1, matching the recording path — activeClips.count produced
+        // duplicate order values whenever the target had soft-deleted clips,
+        // making the filmstrip order non-deterministic.
+        let nextOrder = (targetProject.activeClips.map(\.order).max() ?? -1) + 1
+        let newClip = Clip(fileURL: dst, duration: duration, order: nextOrder, createdAt: createdAt)
         newClip.thumbnailData = thumbnailData
         newClip.trimStart = trimStart
         newClip.trimEnd   = trimEnd
@@ -139,5 +149,6 @@ final class Clip {
         newClip.project = targetProject
         targetProject.updatedAt = Date()
         context.insert(newClip)
+        return true
     }
 }

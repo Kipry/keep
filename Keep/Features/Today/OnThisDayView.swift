@@ -4,10 +4,18 @@ import AVFoundation
 
 struct OnThisDayView: View {
     @Query(filter: #Predicate<Clip> { !$0.isDeleted })
-    private var allClips: [Clip]
+    private var storedClips: [Clip]
 
     @Query(filter: #Predicate<Project> { !$0.isDeleted })
     private var projects: [Project]
+
+    /// Clips of trashed projects were still counted in every stat and in the
+    /// streak, so the in-app numbers disagreed with the widget's — which has
+    /// always filtered them (`WidgetDataStore.refresh`). Only `grouped(from:to:)`
+    /// got this right before.
+    private var allClips: [Clip] {
+        storedClips.filter { !($0.project?.isDeleted ?? false) }
+    }
 
     @State private var showSettings = false
     @State private var showStreakDetail = false

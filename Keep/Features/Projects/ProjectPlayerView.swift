@@ -115,7 +115,11 @@ struct ProjectPlayerView: View {
 
     private var scrubBar: some View {
         GeometryReader { geo in
-            let progress = duration > 0 ? min(currentTime / duration, 1.0) : 0
+            // CMTime.seconds is NaN until the item is ready, and min(.nan, 1.0)
+            // returns .nan — which reached .frame(width:) and .offset(x:) and
+            // produced CoreGraphics NaN errors with undefined layout.
+            let raw = duration > 0 ? currentTime / duration : 0
+            let progress = raw.isFinite ? min(max(raw, 0), 1.0) : 0
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(.white.opacity(0.2))
@@ -233,13 +237,22 @@ struct ProjectPlayerView: View {
                 let srcVideo = try? await asset.loadTracks(withMediaType: .video).first
             else { continue }
 
-            let range = CMTimeRange(start: .zero, duration: dur)
+            // Honour the clip's trim, as the export and the single-clip viewer
+            // both do. Playing the untrimmed asset here meant the preview and
+            // the exported video were different films.
+            let start = CMTime(seconds: max(0, clip.trimStart), preferredTimescale: 600)
+            let endSeconds = min(clip.trimEnd ?? dur.seconds, dur.seconds)
+            let end = CMTime(seconds: endSeconds, preferredTimescale: 600)
+            let span = CMTimeSubtract(end, start)
+            guard span.seconds > 0 else { continue }
+
+            let range = CMTimeRange(start: start, duration: span)
             try? videoTrack.insertTimeRange(range, of: srcVideo, at: cursor)
             if let srcAudio = try? await asset.loadTracks(withMediaType: .audio).first {
                 try? audioTrack.insertTimeRange(range, of: srcAudio, at: cursor)
             }
             if firstAsset == nil { firstAsset = asset }
-            cursor = CMTimeAdd(cursor, dur)
+            cursor = CMTimeAdd(cursor, span)
         }
 
         if let first = firstAsset,
@@ -256,7 +269,10 @@ struct ProjectPlayerView: View {
         let interval = CMTime(seconds: 0.1, preferredTimescale: 600)
         timeObserver = newPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
             guard !self.isDragging else { return }
-            self.currentTime = time.seconds
+            // Reject NaN at the source rather than only where it's drawn.
+            let seconds = time.seconds
+            guard seconds.isFinite else { return }
+            self.currentTime = seconds
         }
 
         PlaybackAudio.activate()   // audible over the silent switch

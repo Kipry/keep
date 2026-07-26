@@ -18,6 +18,7 @@ struct ProjectListView: View {
     @State private var projectToRename: Project?
     @State private var renameText = ""
     @State private var selectedProject: Project?
+    @State private var deepLinkMissing = false
     @State private var recordOnNextOpen = false
     @State private var searchText = ""
     @State private var isSearching = false
@@ -124,6 +125,11 @@ struct ProjectListView: View {
         }
         .onChange(of: deepLink.pendingRecordProjectID) { _, _ in handlePendingDeepLink() }
         .onChange(of: deepLink.pendingOpenProjectID)   { _, _ in handlePendingOpen() }
+        .alert("Project Not Found", isPresented: $deepLinkMissing) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("That project has been archived or deleted. Your other projects are here in the library.")
+        }
         .alert("New Project", isPresented: $isCreatingProject) {
             TextField("Project name", text: $newProjectName)
             Button("Create") { createProject() }
@@ -237,17 +243,29 @@ struct ProjectListView: View {
 
     // MARK: - Actions
 
+    /// An empty `projects` means the query hasn't delivered yet, so a miss is
+    /// worth retrying. A miss against a populated list means the project is
+    /// archived, trashed or gone — retrying forever would just re-scan on every
+    /// mutation for the rest of the session while the user sees nothing at all.
+    private func resolveDeepLink(_ id: UUID) -> Project?? {
+        if let project = projects.first(where: { $0.id == id }) { return project }
+        return projects.isEmpty ? nil : .some(nil)
+    }
+
     private func handlePendingOpen() {
         guard let id = deepLink.pendingOpenProjectID else { return }
-        guard let project = projects.first(where: { $0.id == id }) else { return }
+        guard let outcome = resolveDeepLink(id) else { return }   // retry later
         deepLink.pendingOpenProjectID = nil
+        guard let project = outcome else { deepLinkMissing = true; return }
         if selectedProject?.id != id { selectedProject = project }
     }
 
     private func handlePendingDeepLink() {
         guard let id = deepLink.pendingRecordProjectID else { return }
-        guard let project = projects.first(where: { $0.id == id }) else {
-            // Projects not loaded yet — will retry when `projects` changes.
+        guard let outcome = resolveDeepLink(id) else { return }   // retry later
+        guard let project = outcome else {
+            deepLink.pendingRecordProjectID = nil
+            deepLinkMissing = true
             return
         }
         // Always arm the flag so ProjectDetailView opens the camera regardless

@@ -32,9 +32,12 @@ final class Project {
             .sorted { $0.order < $1.order }
     }
 
-    /// Total duration of all active clips in seconds.
+    /// Total duration of all active clips in seconds, as they will actually
+    /// play — `effectiveDuration` accounts for trims and photo display time.
+    /// Summing raw `duration` here made the project header disagree with both
+    /// the widget and the finished export.
     var totalDuration: Double {
-        activeClips.reduce(0) { $0 + $1.duration }
+        activeClips.reduce(0) { $0 + $1.effectiveDuration }
     }
 
     func softDelete() {
