@@ -724,6 +724,7 @@ struct ProjectDetailView: View {
             if project.activeClips.count == 1 { project.coverThumbnailData = thumb }
         }
         WidgetDataStore.refresh(context: modelContext)
+        return true
     }
 
     // Reads the original capture date from a still image's EXIF metadata.
