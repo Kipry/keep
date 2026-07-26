@@ -6,6 +6,9 @@ struct SettingsView: View {
     @AppStorage("didOnboard") private var didOnboard = true
     @Environment(\.dismiss) private var dismiss
 
+    @State private var showArchive = false
+    @State private var showTrash = false
+
     private var appVersion: String {
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "—"
     }
@@ -18,6 +21,7 @@ struct SettingsView: View {
                     header
                     recordingSection
                     locationSection
+                    librarySection
                     tutorialSection
                     aboutSection
                 }
@@ -26,6 +30,8 @@ struct SettingsView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .fullScreenCover(isPresented: $showArchive) { ArchiveView() }
+        .fullScreenCover(isPresented: $showTrash) { TrashView() }
     }
 
     // MARK: - Header
@@ -128,6 +134,53 @@ struct SettingsView: View {
                 )
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Library section
+    //
+    // The only way into the archive and the trash. Both screens existed (or,
+    // for the trash, were promised by the delete dialog) with no entry point
+    // anywhere in the app, which made archiving and deleting irreversible.
+
+    private var librarySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("Library")
+
+            VStack(spacing: 0) {
+                row {
+                    Button { showArchive = true } label: {
+                        HStack {
+                            Text("Archive")
+                                .foregroundStyle(.white)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.3))
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                Divider().overlay(.white.opacity(0.08)).padding(.horizontal, 16)
+                row {
+                    Button { showTrash = true } label: {
+                        HStack {
+                            Text("Trash")
+                                .foregroundStyle(.white)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.3))
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+            .padding(.horizontal, 20)
+        }
     }
 
     // MARK: - Tutorial section

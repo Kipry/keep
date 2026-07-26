@@ -100,6 +100,17 @@ final class Clip {
         deletedAt = nil
     }
 
+    /// Removes this clip's files from disk. Deleting the SwiftData record alone
+    /// leaves the video (and a photo clip's source image) orphaned forever —
+    /// unreachable but still occupying storage and still inflating the user's
+    /// iCloud backup. Call this immediately before deleting the record.
+    func deleteFile() {
+        try? FileManager.default.removeItem(at: fileURL)
+        if let photo = photoSourceURL {
+            try? FileManager.default.removeItem(at: photo)
+        }
+    }
+
     /// Copies this clip's video file to a new location and inserts a new Clip
     /// into `targetProject`. File and model record are fully independent —
     /// deleting one will not affect the other.

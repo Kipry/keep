@@ -24,6 +24,7 @@ struct ProjectDetailView: View {
     @State private var importSelections: [PhotosPickerItem] = []
     @State private var isImporting = false
     @State private var clipToDelete: Clip?
+    @State private var showBulkDeleteConfirm = false
     @State private var clipToCopy: Clip?
     @State private var clipToTrim: Clip?
     @State private var clipToSetDuration: Clip?
@@ -122,14 +123,38 @@ struct ProjectDetailView: View {
             isPresented: Binding(get: { clipToDelete != nil }, set: { if !$0 { clipToDelete = nil } }),
             titleVisibility: .visible
         ) {
-            Button("Delete Clip", role: .destructive) {
+            Button("Move to Trash", role: .destructive) {
                 if let c = clipToDelete {
-                    modelContext.delete(c)
+                    // Was modelContext.delete(c): a permanent erase that also
+                    // orphaned the video file, while the multi-select path right
+                    // below soft-deletes. Same gesture, two different fates.
+                    c.softDelete()
                     try? modelContext.save()
+                    WidgetDataStore.refresh(context: modelContext)
                     clipToDelete = nil
                 }
             }
             Button("Cancel", role: .cancel) { clipToDelete = nil }
+        } message: {
+            Text("The clip will be moved to trash and can be restored at any time.")
+        }
+        .confirmationDialog(
+            selectedClipIDs.count == 1
+                ? "Move 1 clip to trash?"
+                : "Move \(selectedClipIDs.count) clips to trash?",
+            isPresented: $showBulkDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Move to Trash", role: .destructive) {
+                for clip in selectedClips { clip.softDelete() }
+                try? modelContext.save()
+                WidgetDataStore.refresh(context: modelContext)
+                selectedClipIDs.removeAll()
+                isSelectMode = false
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("They can be restored from the trash at any time.")
         }
         .alert("Export Failed",
                isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
@@ -457,11 +482,11 @@ struct ProjectDetailView: View {
                     .frame(height: 56)
             } else {
                 HStack(spacing: 10) {
+                    // Asks before deleting N clips. The single-clip path always
+                    // confirmed; the bulk one — the more destructive of the two —
+                    // deleted on the first tap with no way back.
                     Button {
-                        for clip in selectedClips { clip.softDelete() }
-                        try? modelContext.save()
-                        selectedClipIDs.removeAll()
-                        isSelectMode = false
+                        showBulkDeleteConfirm = true
                     } label: {
                         Label("Delete \(selectedClipIDs.count)", systemImage: "trash")
                             .font(.system(size: 14, weight: .semibold))

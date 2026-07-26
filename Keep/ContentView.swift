@@ -51,6 +51,7 @@ struct ContentView: View {
         .onboardingGate()
         .task {
             ClipFileRepair.run(in: modelContext)
+            TrashSweep.run(in: modelContext)
             VideoComposer.purgeExports()
         }
         // Widget deep link (keep://diary). Handled here rather than in a page,

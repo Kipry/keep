@@ -3,6 +3,7 @@ import SwiftData
 
 struct ArchiveView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
 
     @Query(
         filter: #Predicate<Project> { $0.isArchived && !$0.isDeleted },
@@ -20,21 +21,25 @@ struct ArchiveView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    // Header
+                    // Shared header component, so this screen's title sits at the
+                    // same height and size as every other one — it previously
+                    // hand-rolled its own with a larger font and a 4pt narrower
+                    // gutter than its own content grid.
                     HStack(alignment: .bottom) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("ARCHIVED")
-                                .font(.eyebrow)
-                                .tracking(2)
-                                .foregroundStyle(.white.opacity(0.35))
-                            Text("Archive")
-                                .font(.appWordmark)
-                                .foregroundStyle(.white)
+                        ScreenHeader(eyebrow: Text("ARCHIVED"), title: Text("Archive"))
+                        Button { dismiss() } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .frame(width: 32, height: 32)
+                                .background(Color(white: 0.14), in: Circle())
                         }
-                        Spacer()
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Close")
+                        .padding(.leading, 10)
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 20)
+                    .padding(.horizontal, Layout.gutter)
+                    .padding(.top, Layout.headerTop)
                     .padding(.bottom, 24)
 
                     if archivedProjects.isEmpty {
@@ -67,7 +72,7 @@ struct ArchiveView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, Layout.gutter)
                     }
 
                     Spacer(minLength: 110)
