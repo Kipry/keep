@@ -61,6 +61,8 @@ struct KeepProvider: TimelineProvider {
 // MARK: - Palette (hardcoded — no dependency on the main app module)
 
 private let amber   = Color(red: 0.941, green: 0.529, blue: 0.227)   // #F0873A
+/// Darker amber for marks drawn ON the paper card, where #F0873A is too pale.
+private let amberDeep = Color(red: 0.788, green: 0.408, blue: 0.122) // #C9681F
 private let ink     = Color(red: 0.102, green: 0.102, blue: 0.102)   // #1A1A1A
 private let paper   = Color(red: 0.961, green: 0.902, blue: 0.784)   // #F5E6C8
 private let cream   = Color(red: 0.929, green: 0.851, blue: 0.639)   // #EDD9A3
@@ -97,49 +99,60 @@ struct HomeWidgetView: View {
 
     // MARK: Small
 
+    // The whole widget is one big polaroid — the medium's signature element at
+    // the only size where it can be the entire idea. A systemSmall widget has a
+    // single tap target (Link is ignored here, so the old REC button silently
+    // opened the project instead of recording), so it commits to the app's core
+    // action: tap anywhere to record into the running project.
+
     private var small: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        Group {
             if let snap = entry.snapshot {
-                Text(snap.name)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(.white)
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Text("\(snap.clipCount) clip\(snap.clipCount == 1 ? "" : "s") · \(durationLabel(snap.totalDuration))")
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.45))
-                    .padding(.top, 5)
-            } else {
-                Text("No project")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.3))
-            }
-
-            Spacer()
-
-            // Only the REC button triggers record deep-link; tapping elsewhere opens the project.
-            if let snap = entry.snapshot {
-                Link(destination: recordURL(for: snap.id)) {
-                    recPill
+                polaroidCard(image: snap.thumbnailData.flatMap(UIImage.init(data:)),
+                             fill: paper, showsPlaceholder: true, photoWidth: nil) {
+                    smallCaption(snap)
                 }
             } else {
-                recPill
+                polaroidCard(image: nil, fill: paper, showsPlaceholder: true, photoWidth: nil) {
+                    Text("New project")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(ink)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
-        .padding(16)
-        .widgetURL(entry.snapshot.map { openURL(for: $0.id) })
+        .padding(10)
+        .widgetURL(entry.snapshot.map { recordURL(for: $0.id) })
     }
 
-    private var recPill: some View {
-        Text("REC")
-            .font(.system(size: 15, weight: .bold))
-            .foregroundStyle(ink)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity)
-            .background(amber, in: Capsule())
+    private func smallCaption(_ snap: ProjectSnapshot) -> some View {
+        HStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(snap.name)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(ink)
+                    .lineLimit(1)
+                Text("\(snap.clipCount) CLIPS · \(durationLabel(snap.totalDuration))")
+                    .font(.system(size: 7.5, weight: .medium, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(ink.opacity(0.5))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            shutterMark
+        }
+    }
+
+    /// Miniature of the medium widget's ring-and-dot shutter, sized and
+    /// coloured to sit on the paper caption.
+    private var shutterMark: some View {
+        ZStack {
+            Circle().strokeBorder(amberDeep.opacity(0.55), lineWidth: 1.5)
+            Circle().fill(amberDeep).frame(width: 8, height: 8)
+        }
+        .frame(width: 18, height: 18)
+        .widgetAccentable()
     }
 
     // MARK: Medium — "the running project"
@@ -181,56 +194,86 @@ struct HomeWidgetView: View {
     private func polaroidStack(_ snap: ProjectSnapshot) -> some View {
         ZStack(alignment: .topLeading) {
             if snap.hasMultipleClips {
-                polaroidCard(image: nil, caption: nil, fill: cream, showsPlaceholder: false)
-                    .rotationEffect(.degrees(4))
-                    .offset(x: 5, y: 4)
+                polaroidCard(image: nil, fill: cream,
+                             showsPlaceholder: false, photoWidth: 54) {
+                    dateCaption(nil)
+                }
+                .rotationEffect(.degrees(4))
+                .offset(x: 5, y: 4)
             }
             polaroidCard(
                 image: snap.thumbnailData.flatMap(UIImage.init(data:)),
-                caption: snap.lastClipDate.map(Self.captionFormatter.string(from:)),
                 fill: paper,
-                showsPlaceholder: true
-            )
+                showsPlaceholder: true,
+                photoWidth: 54
+            ) {
+                dateCaption(snap.lastClipDate.map(Self.captionFormatter.string(from:)))
+            }
             .rotationEffect(.degrees(-1.5))
         }
         .frame(maxHeight: .infinity)
     }
 
-    private func polaroidCard(image: UIImage?, caption: String?,
-                              fill: Color, showsPlaceholder: Bool) -> some View {
+    @ViewBuilder
+    private func polaroidPhoto(image: UIImage?, fill: Color, showsPlaceholder: Bool) -> some View {
+        if let image {
+            Image(uiImage: image)
+                .resizable()
+                // Without this the tinted and clear home screen styles flatten
+                // the photo into the tint colour, so the clip vanished entirely
+                // — the one element that must stay recognisable.
+                .widgetAccentedRenderingMode(.fullColor)
+                .scaledToFill()
+        } else if showsPlaceholder {
+            Rectangle()
+                .fill(ink.opacity(0.10))
+                .overlay {
+                    Image(systemName: "film")
+                        .font(.system(size: 15))
+                        .foregroundStyle(ink.opacity(0.32))
+                }
+        } else {
+            Rectangle().fill(fill)
+        }
+    }
+
+    /// `photoWidth` nil means the photo fills the available width (small
+    /// widget); a value pins it (the medium's portrait frame).
+    private func polaroidCard<Caption: View>(
+        image: UIImage?,
+        fill: Color,
+        showsPlaceholder: Bool,
+        photoWidth: CGFloat?,
+        @ViewBuilder caption: () -> Caption
+    ) -> some View {
         VStack(spacing: 0) {
             Group {
-                if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else if showsPlaceholder {
-                    Rectangle()
-                        .fill(ink.opacity(0.10))
-                        .overlay {
-                            Image(systemName: "film")
-                                .font(.system(size: 15))
-                                .foregroundStyle(ink.opacity(0.32))
-                        }
+                if let photoWidth {
+                    polaroidPhoto(image: image, fill: fill, showsPlaceholder: showsPlaceholder)
+                        .frame(width: photoWidth)
+                        .frame(maxHeight: .infinity)
                 } else {
-                    Rectangle().fill(fill)
+                    polaroidPhoto(image: image, fill: fill, showsPlaceholder: showsPlaceholder)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .frame(width: 54)
-            .frame(maxHeight: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: 5))
 
-            Text(caption ?? " ")
-                .font(.system(size: 7, weight: .medium, design: .monospaced))
-                .tracking(0.7)
-                .foregroundStyle(ink.opacity(0.55))
-                .lineLimit(1)
+            caption()
                 .padding(.top, 6)
                 .padding(.bottom, 7)
         }
         .padding(.horizontal, 5)
         .padding(.top, 5)
         .background(fill, in: RoundedRectangle(cornerRadius: 9))
+    }
+
+    private func dateCaption(_ text: String?) -> some View {
+        Text(text ?? " ")
+            .font(.system(size: 7, weight: .medium, design: .monospaced))
+            .tracking(0.7)
+            .foregroundStyle(ink.opacity(0.55))
+            .lineLimit(1)
     }
 
     private static let captionFormatter: DateFormatter = {
@@ -340,7 +383,10 @@ struct HomeWidgetView: View {
 
     private var emptyBody: some View {
         HStack(spacing: 16) {
-            polaroidCard(image: nil, caption: nil, fill: paper, showsPlaceholder: true)
+            polaroidCard(image: nil, fill: paper,
+                         showsPlaceholder: true, photoWidth: 54) {
+                dateCaption(nil)
+            }
             VStack(alignment: .leading, spacing: 5) {
                 Text("New project")
                     .font(.system(size: 19, weight: .semibold))
