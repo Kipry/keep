@@ -27,10 +27,20 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 - [ ] Widget-App-ID `com.kipry.keep.app.widget` registrieren, ebenfalls **App Groups** + Gruppe zuweisen.
 > Bei Automatic Signing legt Xcode die IDs meist selbst an — dann hier nur prüfen, dass die App-Gruppe bei **beiden** IDs gesetzt ist. Ohne das schlägt das Signing fehl.
 
-## 2. Datenschutz- & Support-Seite hosten
-- [ ] `store/privacy-policy.html` und `store/support.html` irgendwo öffentlich hosten (z.B. GitHub Pages, kostenlos).
-- [ ] In beiden Dateien das Datum und die **Kontakt-E-Mail bestätigen/ersetzen** (aktuell `keep.dailymoments@gmail.com`).
+## 2. Datenschutz- & Support-Seite hosten (GitHub Pages)
+Die fertigen Seiten liegen in `docs/` — genau dort, wo GitHub Pages sie veröffentlichen kann
+(Pages kann nur aus dem Repo-Wurzelverzeichnis oder aus `/docs` liefern, nicht aus `store/`).
+
+- [ ] GitHub → Repo `Kipry/keep` → **Settings** → linke Spalte **Pages**.
+- [ ] Unter „Build and deployment": Source = **Deploy from a branch**,
+      Branch = `claude/plan-daily-video-app-P1yCX`, Ordner = **`/docs`** → **Save**.
+- [ ] 1–2 Minuten warten, dann prüfen:
+      - Datenschutz: `https://kipry.github.io/keep/privacy.html`
+      - Support: `https://kipry.github.io/keep/support.html`
 - [ ] Beide URLs notieren — sie kommen in Schritt 4.
+
+> Die Seiten sind zweisprachig (Deutsch oben, Englisch unten) — eine URL genügt Apple pro Sprache.
+> `docs/.nojekyll` verhindert, dass GitHub die Dateien durch seinen Jekyll-Renderer schickt.
 
 ## 3. App-Datensatz in App Store Connect anlegen
 (appstoreconnect.apple.com → Apps → +)
