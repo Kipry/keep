@@ -61,8 +61,6 @@ struct KeepProvider: TimelineProvider {
 // MARK: - Palette (hardcoded — no dependency on the main app module)
 
 private let amber   = Color(red: 0.941, green: 0.529, blue: 0.227)   // #F0873A
-/// Darker amber for marks drawn ON the paper card, where #F0873A is too pale.
-private let amberDeep = Color(red: 0.788, green: 0.408, blue: 0.122) // #C9681F
 private let ink     = Color(red: 0.102, green: 0.102, blue: 0.102)   // #1A1A1A
 private let paper   = Color(red: 0.961, green: 0.902, blue: 0.784)   // #F5E6C8
 private let cream   = Color(red: 0.929, green: 0.851, blue: 0.639)   // #EDD9A3
@@ -98,59 +96,103 @@ struct HomeWidgetView: View {
 
     // MARK: Small
 
-    // The whole widget is one big polaroid — the medium's signature element at
-    // the only size where it can be the entire idea. A systemSmall widget has a
-    // single tap target (Link is ignored here, so the old REC button silently
-    // opened the project instead of recording), so it commits to the app's core
-    // action: tap anywhere to record into the running project.
+    // At this size a thumbnail plus text leaves neither enough room, so the
+    // small widget answers the question that actually comes up daily — "am I
+    // still going?" — while the medium keeps the project and its footage. It
+    // reuses the medium's streak block and week strip rather than shrinking its
+    // layout, so the two are complementary rather than one being a crop of the
+    // other. Being image-free it also stays sharp in every rendering mode.
+    // A systemSmall widget has a single tap target, so the whole thing records.
 
     private var small: some View {
         Group {
             if let snap = entry.snapshot {
-                polaroidCard(image: snap.thumbnailData.flatMap(UIImage.init(data:)),
-                             fill: paper, showsPlaceholder: true, photoWidth: nil) {
-                    smallCaption(snap)
-                }
+                smallBody(snap)
             } else {
-                polaroidCard(image: nil, fill: paper, showsPlaceholder: true, photoWidth: nil) {
-                    Text("New project")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(ink)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
+                smallEmpty
             }
         }
-        .padding(10)
+        .padding(14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .widgetURL(entry.snapshot.map { recordURL(for: $0.id) })
     }
 
-    private func smallCaption(_ snap: ProjectSnapshot) -> some View {
-        HStack(spacing: 6) {
-            VStack(alignment: .leading, spacing: 1) {
+    private func smallBody(_ snap: ProjectSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 6) {
                 Text(snap.name)
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(ink)
+                    .foregroundStyle(.white.opacity(0.75))
                     .lineLimit(1)
-                Text("\(snap.clipCount) CLIPS · \(durationLabel(snap.totalDuration))")
-                    .font(.system(size: 7.5, weight: .medium, design: .monospaced))
-                    .tracking(0.8)
-                    .foregroundStyle(ink.opacity(0.5))
-                    .lineLimit(1)
+                Spacer(minLength: 4)
+                shutterMark
             }
-            Spacer(minLength: 4)
-            shutterMark
+
+            Spacer(minLength: 8)
+
+            // A bare "0" reads as failure, so a broken streak gets the sentence
+            // that says what to do instead of a number to feel bad about.
+            if snap.streakAlive {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 20))
+                    Text("\(snap.streak)")
+                        .font(.system(size: 34, weight: .semibold, design: .monospaced))
+                }
+                .foregroundStyle(amber)
+                .widgetAccentable()
+
+                Text(snap.streak == 1 ? "DAY IN A ROW" : "DAYS IN A ROW")
+                    .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
+                    .tracking(1)
+                    .foregroundStyle(.white.opacity(0.4))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .padding(.top, 3)
+            } else {
+                Text("Three seconds,\nand today is in.")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 10)
+
+            weekStrip(snap)
+            Text("THIS WEEK")
+                .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
+                .tracking(1)
+                .foregroundStyle(.white.opacity(0.32))
+                .padding(.top, 6)
         }
     }
 
-    /// Miniature of the medium widget's ring-and-dot shutter, sized and
-    /// coloured to sit on the paper caption.
+    private var smallEmpty: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Spacer(minLength: 0)
+                shutterMark
+            }
+            Spacer()
+            Text("New project")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+            Text("Three seconds,\nand today is in.")
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.45))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 3)
+            Spacer()
+        }
+    }
+
+    /// The medium widget's ring-and-dot shutter at small-widget scale.
     private var shutterMark: some View {
         ZStack {
-            Circle().strokeBorder(amberDeep.opacity(0.55), lineWidth: 1.5)
-            Circle().fill(amberDeep).frame(width: 8, height: 8)
+            Circle().strokeBorder(amber.opacity(0.5), lineWidth: 2)
+            Circle().fill(amber).frame(width: 14, height: 14)
         }
-        .frame(width: 18, height: 18)
+        .frame(width: 30, height: 30)
         .widgetAccentable()
     }
 
