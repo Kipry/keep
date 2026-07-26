@@ -150,7 +150,7 @@ struct HomeWidgetView: View {
                     .minimumScaleFactor(0.8)
                     .padding(.top, 3)
             } else {
-                Text("Three seconds,\nand today is in.")
+                Text("Three seconds, and today is in.")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
@@ -177,7 +177,7 @@ struct HomeWidgetView: View {
             Text("New project")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.white)
-            Text("Three seconds,\nand today is in.")
+            Text("Three seconds, and today is in.")
                 .font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.45))
                 .fixedSize(horizontal: false, vertical: true)

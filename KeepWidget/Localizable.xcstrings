@@ -78,17 +78,6 @@
         }
       }
     },
-    "Three seconds,\nand today is in.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drei Sekunden,\nund heute ist drin."
-          }
-        }
-      }
-    },
     "Three seconds, and today is in.": {
       "extractionState": "manual",
       "localizations": {

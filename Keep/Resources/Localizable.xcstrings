@@ -2212,28 +2212,6 @@
         }
       }
     },
-    "Search projects": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Projekte suchen"
-          }
-        }
-      }
-    },
-    "New project": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neues Projekt"
-          }
-        }
-      }
-    },
     "Close camera": {
       "extractionState": "manual",
       "localizations": {
@@ -2417,6 +2395,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kein Clip"
+          }
+        }
+      }
+    },
+    "Search": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suchen"
           }
         }
       }
