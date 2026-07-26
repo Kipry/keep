@@ -168,7 +168,7 @@ struct HomeWidgetView: View {
         // Asymmetric on purpose: the polaroid sits closer to the edge so it
         // reads as a physical card lying on the widget, and the extra gap goes
         // between the card and the text instead.
-        .padding(.leading, 12)
+        .padding(.leading, 8)
         .padding(.trailing, 16)
         .padding(.vertical, 13)
     }

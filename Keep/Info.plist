@@ -66,9 +66,16 @@
         <false/>
     </dict>
 
-    <!-- Launch screen (required for full-size rendering on iPhone) -->
+    <!-- Launch screen. Without a colour this defaults to white, which flashed
+         before the first (always dark) frame of the app. Deliberately not
+         appearance-dependent: every view forces preferredColorScheme(.dark),
+         so a light launch screen would flash into a dark UI whatever the
+         system setting. #0D0D0D matches Theme.background exactly, making the
+         handover seamless. -->
     <key>UILaunchScreen</key>
     <dict>
+        <key>UIColorName</key>
+        <string>LaunchBackground</string>
         <key>UIImageRespectsSafeAreaInsets</key>
         <true/>
     </dict>
