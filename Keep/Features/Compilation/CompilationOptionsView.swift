@@ -249,7 +249,7 @@ struct CompilationOptionsView: View {
 
     // MARK: - Helpers
 
-    private func sectionLabel(_ text: String) -> some View {
+    private func sectionLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(.eyebrow)
             .tracking(2)

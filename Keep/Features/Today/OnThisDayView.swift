@@ -159,14 +159,18 @@ struct OnThisDayView: View {
         }
     }
 
-    private func statCard(value: String, label: String) -> some View {
+    // `label` is a LocalizedStringKey and the uppercasing is done by the text
+    // renderer, not by String.uppercased() — that ran before lookup and threw
+    // the key away, so these four labels never translated.
+    private func statCard(value: String, label: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(value)
                 .font(.system(size: 26, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            Text(label.uppercased())
+            Text(label)
+                .textCase(.uppercase)
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.35))
                 .tracking(0.8)
@@ -252,7 +256,7 @@ struct OnThisDayView: View {
 
     // MARK: - Lookback section
 
-    private func lookbackSection(_ title: String, groups: [(Date, [Clip])]) -> some View {
+    private func lookbackSection(_ title: LocalizedStringKey, groups: [(Date, [Clip])]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.system(size: 12, weight: .semibold))
@@ -516,7 +520,7 @@ private struct StreakDetailView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
     }
 
-    private func legendItem(color: Color, label: String) -> some View {
+    private func legendItem(color: Color, label: LocalizedStringKey) -> some View {
         HStack(spacing: 5) {
             Circle().fill(color).frame(width: 9, height: 9)
             Text(label)

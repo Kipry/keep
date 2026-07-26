@@ -121,9 +121,9 @@ private struct AppTabBar: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            tabItem(.projects, icon: "square.grid.2x2",      label: "Projekte")
-            tabItem(.timeline, icon: "calendar.day.timeline.left", fillIcon: "calendar.day.timeline.left", label: "Tagebuch")
-            tabItem(.today,    icon: "sparkles", fillIcon: "sparkles", label: "Heute")
+            tabItem(.projects, icon: "square.grid.2x2",      label: "Projects")
+            tabItem(.timeline, icon: "calendar.day.timeline.left", fillIcon: "calendar.day.timeline.left", label: "Diary")
+            tabItem(.today,    icon: "sparkles", fillIcon: "sparkles", label: "Memories")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 10)
@@ -137,7 +137,11 @@ private struct AppTabBar: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func tabItem(_ tab: AppTab, icon: String, fillIcon: String? = nil, label: String) -> some View {
+    // LocalizedStringKey, not String: Text(_: String) is the *verbatim*
+    // initialiser, so these labels were baked in as German for every locale —
+    // even though the catalog already had the translations.
+    private func tabItem(_ tab: AppTab, icon: String, fillIcon: String? = nil,
+                         label: LocalizedStringKey) -> some View {
         let isActive = selectedTab == tab
         let activeIcon = fillIcon ?? (icon + ".fill")
         return Button {

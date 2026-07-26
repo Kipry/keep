@@ -589,7 +589,7 @@ struct ProjectDetailView: View {
 
     // MARK: - Progress overlay
 
-    private func progressOverlay(text: String) -> some View {
+    private func progressOverlay(text: LocalizedStringKey) -> some View {
         ZStack {
             Color.black.opacity(0.5).ignoresSafeArea()
             VStack(spacing: 16) {
