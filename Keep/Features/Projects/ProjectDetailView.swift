@@ -717,16 +717,36 @@ struct ProjectDetailView: View {
         }
     }
 
+    /// Read access to the Photos library, used only to recover a picked item's
+    /// original capture date and location.
+    private func ensurePhotoLibraryAccess() async -> Bool {
+        switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
+        case .authorized, .limited:
+            return true
+        case .notDetermined:
+            let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+            return status == .authorized || status == .limited
+        default:
+            return false
+        }
+    }
+
     private func importMedia(from items: [PhotosPickerItem]) async {
         isImporting = true
         defer { isImporting = false; importSelections = [] }
+
+        // PhotosPicker itself needs no permission, but PHAsset.fetchAssets does.
+        // Without it the fetch just returns empty, so every import silently fell
+        // back to "now" for the date and dropped the location entirely — with no
+        // sign anything was lost. Ask once; a refusal still imports, just
+        // without the original capture metadata.
+        let canReadLibrary = await ensurePhotoLibraryAccess()
+
         for item in items {
             // PHAsset carries the authoritative capture time AND location.
-            // item.itemIdentifier is the PHAsset local identifier — fetching it is
-            // synchronous and instant (Photos library cache, no I/O).
-            let asset: PHAsset? = item.itemIdentifier.flatMap { id in
+            let asset: PHAsset? = canReadLibrary ? item.itemIdentifier.flatMap { id in
                 PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject
-            }
+            } : nil
             let phDate = asset?.creationDate
             // Imported coordinates respect the same granularity setting as live captures.
             let phLocation = asset?.location.flatMap {

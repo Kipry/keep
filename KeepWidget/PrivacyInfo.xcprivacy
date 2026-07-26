@@ -14,14 +14,16 @@
     <key>NSPrivacyAccessedAPITypes</key>
     <array>
         <!-- UserDefaults: reads the project snapshot written by the main app
-             via the shared App Group container (group.com.kipry.keep.app).
-             Reason CA92.1: read info accessible only within the app extension. -->
+             via the shared App Group container (group.com.kipry.keep.app). -->
         <dict>
             <key>NSPrivacyAccessedAPIType</key>
             <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
             <key>NSPrivacyAccessedAPITypeReasons</key>
             <array>
-                <string>CA92.1</string>
+                <!-- 1C8F.1: data shared with other members of the same App
+                     Group. This is the extension's only UserDefaults access,
+                     and CA92.1 (app-only data) was declared for it by mistake. -->
+                <string>1C8F.1</string>
             </array>
         </dict>
     </array>

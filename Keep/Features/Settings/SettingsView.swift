@@ -122,7 +122,13 @@ struct SettingsView: View {
     }
 
     private func granularityButton(_ label: LocalizedStringKey, value: String) -> some View {
-        Button { locationGranularity = value } label: {
+        Button {
+            locationGranularity = value
+            // Turning location off also discards the cached place names. They
+            // are a location history in their own right and survived both the
+            // setting and the clips they came from until now.
+            if value == "off" { LocationService.shared.clearNameCache() }
+        } label: {
             Text(label)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(locationGranularity == value ? Theme.ink : .white.opacity(0.6))

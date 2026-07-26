@@ -118,6 +118,11 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     /// spot was seen before, otherwise via a queued MapKit reverse-geocode
     /// request (serialized, ~1 s apart, to stay well under rate limits).
     func geocodeIfNeeded(_ clip: Clip) {
+        // This request is the app's only network egress, and the privacy policy
+        // states it stops entirely when location is off. Without this guard a
+        // clip that already carried a coordinate — captured before the user
+        // switched off — would still send it to Apple.
+        guard LocationGranularity.current != .off else { return }
         guard clip.placeName == nil, let coordinate = clip.coordinate else { return }
         if let cached = nameCache[Self.cacheKey(for: coordinate)] {
             clip.placeName = cached
@@ -164,8 +169,20 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         }
     }
 
+    /// Two decimals ≈ 1.1 km — deliberately no finer than what "Nearby" itself
+    /// stores. At three decimals this cache was a ~110 m record of everywhere
+    /// the user had recorded, i.e. more precise than the coordinate they chose
+    /// to save, sitting in plaintext preferences.
     private static func cacheKey(for coordinate: CLLocationCoordinate2D) -> String {
-        String(format: "%.3f_%.3f", coordinate.latitude, coordinate.longitude)
+        String(format: "%.2f_%.2f", coordinate.latitude, coordinate.longitude)
+    }
+
+    /// Drops the whole cache. Called when the user turns location off and when
+    /// the trash is swept — otherwise place names outlived both the setting and
+    /// the clips they belonged to, with no way for the user to clear them.
+    func clearNameCache() {
+        nameCache = [:]
+        UserDefaults.standard.removeObject(forKey: "placeNameCache")
     }
 
     // MARK: CLLocationManagerDelegate

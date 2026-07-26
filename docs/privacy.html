@@ -31,7 +31,7 @@
 <li><strong>Videos &amp; Fotos</strong>, die du aufnimmst oder importierst: ausschließlich lokal im App-Speicher deines Geräts.</li>
 <li><strong>Projekt- und Nutzungsdaten</strong> (Projektnamen, Reihenfolge, Aufnahmedaten, Streak): lokal in der App-Datenbank auf dem Gerät.</li>
 <li><strong>Aufnahmeort</strong> (optional, siehe unten): Koordinaten und ein Ortsname werden zusammen mit dem Clip lokal gespeichert, damit die Karten-Ansicht „Orte" zeigen kann, wo ein Moment entstanden ist.</li>
-<li>Für das Sperrbildschirm-Widget wird eine kleine Vorschau (Projektname, Clip-Anzahl, Vorschaubild) in einer geräteinternen App-Gruppe abgelegt. Diese Daten verlassen das Gerät nicht.</li>
+<li>Für die Widgets wird eine kleine Vorschau (Projektname, Clip-Anzahl, Vorschaubild des zuletzt aufgenommenen Clips) in einer geräteinternen App-Gruppe abgelegt. Das Homescreen-Widget zeigt dieses Vorschaubild an. Diese Daten verlassen das Gerät nicht.</li>
 </ul>
 
 <h2>Standort</h2>
@@ -41,7 +41,7 @@
 <li><strong>Ungefähr</strong> (Voreinstellung): Die Koordinaten werden vor dem Speichern auf etwa 1,1 km gerundet. Das genügt für „welche Stadt bzw. welches Viertel", erlaubt aber keine Rückschlüsse auf eine genaue Adresse.</li>
 <li><strong>Genau:</strong> Die Koordinaten werden ungerundet gespeichert.</li>
 </ul>
-<p>Die Standortdaten werden <strong>lokal</strong> beim jeweiligen Clip abgelegt und von uns weder erhoben noch übertragen.</p>
+<p>Die Standortdaten werden <strong>lokal</strong> beim jeweiligen Clip abgelegt und von uns weder erhoben noch übertragen. Bereits ermittelte Ortsnamen werden zusätzlich lokal zwischengespeichert – gerundet auf dieselbe Genauigkeit wie die Stufe „Ungefähr“ –, damit derselbe Ort nicht mehrfach abgefragt werden muss. Dieser Zwischenspeicher wird gelöscht, sobald du die Standort-Funktion auf „Aus“ stellst.</p>
 <p><strong>Wichtige Ausnahme:</strong> Um einen lesbaren Ortsnamen anzuzeigen (z.B. „Berlin-Kreuzberg"), fragt die App über die Ortungsdienste von Apple eine sogenannte Rückwärts-Geokodierung an. Dabei werden die – je nach Einstellung gerundeten – Koordinaten an Apple übermittelt. Das ist die einzige Stelle, an der die App Daten das Gerät verlassen lässt. Es gelten die Datenschutzbestimmungen von Apple. Steht die Standort-Einstellung auf „Aus", findet auch das nicht statt.</p>
 
 <h2>Berechtigungen und warum sie nötig sind</h2>
@@ -61,7 +61,7 @@
 <p>Keine. Wenn du ein exportiertes Video selbst über das Teilen-Menü deines Geräts weitergibst, unterliegt das den Bestimmungen des jeweiligen Dienstes – das liegt außerhalb von keep.</p>
 
 <h2>Löschung</h2>
-<p>Du kannst Clips und Projekte jederzeit in der App löschen. Beim Deinstallieren der App werden alle lokal gespeicherten Daten vom Gerät entfernt.</p>
+<p>Du kannst Clips und Projekte jederzeit in der App löschen. Sie wandern zunächst in den Papierkorb (Einstellungen → Papierkorb) und lassen sich von dort wiederherstellen; nach 30 Tagen werden sie samt ihrer Videodateien endgültig entfernt. Über „Papierkorb leeren“ geht das auch sofort. Beim Deinstallieren der App werden alle lokal gespeicherten Daten vom Gerät entfernt.</p>
 
 <h2>Kinder</h2>
 <p>Die App ist für ein allgemeines Publikum bestimmt und erhebt wissentlich keine Daten von Kindern.</p>
@@ -85,7 +85,7 @@
 <li><strong>Videos &amp; photos</strong> you record or import: stored only in the app's local storage on your device.</li>
 <li><strong>Project &amp; usage data</strong> (project names, order, capture dates, streak): stored locally in the on-device app database.</li>
 <li><strong>Capture location</strong> (optional, see below): coordinates and a place name are stored locally alongside the clip so the "Places" map can show where a moment happened.</li>
-<li>For the lock screen widget, a small preview (project name, clip count, thumbnail) is written to an on-device App Group so the widget can display it. This never leaves the device.</li>
+<li>For the widgets, a small preview (project name, clip count, thumbnail of the most recent clip) is written to an on-device App Group. The home screen widget displays that thumbnail. This never leaves the device.</li>
 </ul>
 
 <h2>Location</h2>
@@ -95,7 +95,7 @@
 <li><strong>Approximate</strong> (default): coordinates are rounded to roughly 1.1 km before being stored. Enough for "which town or neighbourhood", but not enough to infer a precise address.</li>
 <li><strong>Precise:</strong> coordinates are stored unrounded.</li>
 </ul>
-<p>Location data is stored <strong>locally</strong> with the clip. We neither collect nor transmit it.</p>
+<p>Location data is stored <strong>locally</strong> with the clip. We neither collect nor transmit it. Place names already resolved are additionally cached on your device — rounded to the same precision as the &ldquo;Approximate&rdquo; setting — so the same spot isn&rsquo;t looked up twice. That cache is cleared as soon as you set the location feature to &ldquo;Off&rdquo;.</p>
 <p><strong>One important exception:</strong> to show a readable place name (e.g. "Berlin-Kreuzberg"), the app performs a reverse geocoding request through Apple's location services. This sends the — depending on your setting, rounded — coordinates to Apple. It is the only point at which the app lets any data leave your device, and Apple's privacy terms apply to it. With the location setting turned off, this does not happen either.</p>
 
 <h2>Permissions and why they're needed</h2>
@@ -114,7 +114,7 @@
 <p>None. If you choose to share an exported video via your device's share sheet, that is governed by the receiving service and is outside of keep.</p>
 
 <h2>Deletion</h2>
-<p>You can delete clips and projects anytime in the app. Uninstalling the app removes all locally stored data from the device.</p>
+<p>You can delete clips and projects anytime in the app. They go to the trash first (Settings &rarr; Trash) and can be restored from there; after 30 days they and their video files are removed for good. &ldquo;Empty Trash&rdquo; does the same immediately. Uninstalling the app removes all locally stored data from the device.</p>
 
 <h2>Children</h2>
 <p>The app is intended for a general audience and does not knowingly collect data from children.</p>

@@ -34,6 +34,9 @@
     <string>keep. needs microphone access to capture audio with your clips.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>keep. needs photo library access to import existing videos.</string>
+    <!-- Required even though the app never calls PhotoKit to save: the export
+         share sheet offers the system "Save Video" activity, and iOS terminates
+         the hosting app if it picks that without this key. Do not remove. -->
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>keep. needs permission to save compiled videos to your photo library.</string>
     <key>NSLocationWhenInUseUsageDescription</key>

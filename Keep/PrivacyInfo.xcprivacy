@@ -27,9 +27,11 @@
             <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
             <key>NSPrivacyAccessedAPITypeReasons</key>
             <array>
-                <!-- CA92.1: read/write data shared with app extensions (WidgetDataStore via App Group) -->
+                <!-- CA92.1: data accessible only to the app itself
+                     (defaultRecordingDuration, locationGranularity, didOnboard) -->
                 <string>CA92.1</string>
-                <!-- 1C8F.1: store app settings and user preferences (defaultRecordingDuration) -->
+                <!-- 1C8F.1: data shared with app extensions in the same App
+                     Group (the widget snapshot via WidgetDataStore) -->
                 <string>1C8F.1</string>
             </array>
         </dict>
