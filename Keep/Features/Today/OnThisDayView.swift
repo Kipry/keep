@@ -17,6 +17,18 @@ struct OnThisDayView: View {
         storedClips.filter { !($0.project?.isDeleted ?? false) }
     }
 
+    /// Everything derived from the clip list, computed once per change instead
+    /// of per body evaluation.
+    ///
+    /// These were plain computed properties, which SwiftUI does not memoise.
+    /// The body read each lookback group two or three times, `currentStreak`
+    /// re-derived `uniqueRecordingDays`, `bestStreak` re-derived both, and the
+    /// weekday row ran seven linear scans — roughly twenty full passes over
+    /// every clip in the database per evaluation, on a view that
+    /// `ContentView` keeps permanently mounted and therefore re-evaluates on
+    /// any data change anywhere in the app.
+    @State private var stats = MemoriesStats.empty
+
     @State private var showSettings = false
     @State private var showStreakDetail = false
     @State private var viewerClips: [Clip]?
@@ -25,90 +37,18 @@ struct OnThisDayView: View {
     private var cal: Calendar { .current }
     private var today: Date { cal.startOfDay(for: Date()) }
 
-    // MARK: - Stats
+    // Read-through accessors so the view body stays unchanged.
+    private var recordingDays: Int { stats.recordingDays }
+    private var totalDurationLabel: String { stats.totalDurationLabel }
+    private var uniqueRecordingDays: [Date] { stats.uniqueDays }
+    private var clipsByDay: [Date: [Clip]] { stats.clipsByDay }
+    private var currentStreak: Int { stats.currentStreak }
+    private var bestStreak: Int { stats.bestStreak }
+    private var lastWeekGroups: [(Date, [Clip])] { stats.lastWeek }
+    private var lastMonthGroups: [(Date, [Clip])] { stats.lastMonth }
+    private var lastYearGroups: [(Date, [Clip])] { stats.lastYear }
 
-    private var recordingDays: Int {
-        Set(allClips.map { cal.startOfDay(for: $0.createdAt) }).count
-    }
-
-    private var totalDurationLabel: String {
-        let t = allClips.reduce(0.0) { $0 + $1.effectiveDuration }
-        if t < 60   { return String(format: "%.0fs", t) }
-        if t < 3600 { return String(format: "%dm", Int(t) / 60) }
-        return String(format: "%dh %dm", Int(t) / 3600, (Int(t) % 3600) / 60)
-    }
-
-    // MARK: - Streak
-
-    private var uniqueRecordingDays: [Date] {
-        Set(allClips.map { cal.startOfDay(for: $0.createdAt) }).sorted(by: >)
-    }
-
-    // All clips bucketed by calendar day — powers the streak detail's day card.
-    private var clipsByDay: [Date: [Clip]] {
-        Dictionary(grouping: allClips) { cal.startOfDay(for: $0.createdAt) }
-            .mapValues { $0.sorted { $0.createdAt < $1.createdAt } }
-    }
-
-    private var currentStreak: Int {
-        let days = uniqueRecordingDays
-        guard let most = days.first else { return 0 }
-        let yesterday = cal.date(byAdding: .day, value: -1, to: today)!
-        guard most == today || most == yesterday else { return 0 }
-        var streak = 1, cur = most
-        for day in days.dropFirst() {
-            guard day == cal.date(byAdding: .day, value: -1, to: cur)! else { break }
-            streak += 1; cur = day
-        }
-        return streak
-    }
-
-    private var bestStreak: Int {
-        let days = uniqueRecordingDays
-        guard !days.isEmpty else { return 0 }
-        var best = 1, cur = 1
-        for i in 1..<days.count {
-            if days[i] == cal.date(byAdding: .day, value: -1, to: days[i - 1])! {
-                cur += 1; best = max(best, cur)
-            } else { cur = 1 }
-        }
-        return max(best, currentStreak)
-    }
-
-    private func hasClip(on day: Date) -> Bool {
-        allClips.contains { cal.startOfDay(for: $0.createdAt) == day }
-    }
-
-    // MARK: - Lookback data
-
-    private var lastWeekGroups: [(Date, [Clip])] {
-        let start = cal.date(byAdding: .day, value: -7, to: today)!
-        return grouped(from: start, to: today)
-    }
-
-    private var lastMonthGroups: [(Date, [Clip])] {
-        let firstThisMonth = cal.date(from: cal.dateComponents([.year, .month], from: Date()))!
-        let firstLastMonth = cal.date(byAdding: .month, value: -1, to: firstThisMonth)!
-        return grouped(from: firstLastMonth, to: firstThisMonth)
-    }
-
-    private var lastYearGroups: [(Date, [Clip])] {
-        let anchor = cal.date(byAdding: .year, value: -1, to: today)!
-        let start  = cal.date(byAdding: .day, value: -7, to: anchor)!
-        let end    = cal.date(byAdding: .day, value: 8,  to: anchor)!
-        return grouped(from: start, to: end)
-    }
-
-    private func grouped(from start: Date, to end: Date) -> [(Date, [Clip])] {
-        let matching = allClips
-            .filter {
-                let d = cal.startOfDay(for: $0.createdAt)
-                return d >= start && d < end && !($0.project?.isDeleted ?? false)
-            }
-            .sorted { $0.createdAt < $1.createdAt }
-        let byDay = Dictionary(grouping: matching) { cal.startOfDay(for: $0.createdAt) }
-        return byDay.keys.sorted().map { ($0, byDay[$0]!) }
-    }
+    private func hasClip(on day: Date) -> Bool { stats.daySet.contains(day) }
 
     // MARK: - Body
 
@@ -166,6 +106,13 @@ struct OnThisDayView: View {
                 calendar: cal
             )
         }
+        // Recomputed only when the clip set actually changes, not per frame.
+        .onAppear { rebuildStats() }
+        .onChange(of: storedClips) { _, _ in rebuildStats() }
+    }
+
+    private func rebuildStats() {
+        stats = MemoriesStats.build(clips: allClips, calendar: cal)
     }
 
     private func openViewer(_ clips: [Clip], at index: Int) {
@@ -267,7 +214,7 @@ struct OnThisDayView: View {
             // Last 7 days dots
             HStack(spacing: 0) {
                 ForEach(0..<7, id: \.self) { offset in
-                    let day = cal.date(byAdding: .day, value: -(6 - offset), to: today)!
+                    let day = cal.date(byAdding: .day, value: -(6 - offset), to: today) ?? today
                     let active = hasClip(on: day)
                     let isToday = offset == 6
                     VStack(spacing: 5) {

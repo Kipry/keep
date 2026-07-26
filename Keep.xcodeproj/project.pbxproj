@@ -48,6 +48,7 @@
 		C328CD622FB72AD700443F80 /* WidgetDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C328CD612FB72AD700443F80 /* WidgetDataStore.swift */; };
 		6F64E3A7CA3B974E470EA53A /* ClipFileRepair.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641C480235C501F716869E69 /* ClipFileRepair.swift */; };
 		8DDD0E0E5B6B36CE01C06E0D /* TrashSweep.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5D0C3509CD70CE81012C7B /* TrashSweep.swift */; };
+		AE435650A6DD218729E32302 /* MemoriesStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FEF1B8A70C659C2355B054E /* MemoriesStats.swift */; };
 		E099F9B396BEACE6D2995BD5 /* TrashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32B317E6D6DFB6B66D54B1DB /* TrashView.swift */; };
 		C328CD632FB72B1700443F80 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD492FB728B300443F80 /* WidgetKit.framework */; };
 		C3B3F5412FB67E7A00518F91 /* AppIcon-1024.png in Resources */ = {isa = PBXBuildFile; fileRef = C3B3F5402FB67E7A00518F91 /* AppIcon-1024.png */; };
@@ -127,6 +128,7 @@
 		C328CD612FB72AD700443F80 /* WidgetDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataStore.swift; sourceTree = "<group>"; };
 		641C480235C501F716869E69 /* ClipFileRepair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFileRepair.swift; sourceTree = "<group>"; };
 		BB5D0C3509CD70CE81012C7B /* TrashSweep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashSweep.swift; sourceTree = "<group>"; };
+		1FEF1B8A70C659C2355B054E /* MemoriesStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoriesStats.swift; sourceTree = "<group>"; };
 		32B317E6D6DFB6B66D54B1DB /* TrashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashView.swift; sourceTree = "<group>"; };
 		C3B3F5402FB67E7A00518F91 /* AppIcon-1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon-1024.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -220,6 +222,7 @@
 				A1000000000000000000005A /* CameraService.swift */,
 				641C480235C501F716869E69 /* ClipFileRepair.swift */,
 				BB5D0C3509CD70CE81012C7B /* TrashSweep.swift */,
+				1FEF1B8A70C659C2355B054E /* MemoriesStats.swift */,
 				DA9F151E83C53BBFA749E340 /* LocationService.swift */,
 				A1000000000000000000006A /* VideoComposer.swift */,
 			);
@@ -521,6 +524,7 @@
 				C328CD622FB72AD700443F80 /* WidgetDataStore.swift in Sources */,
 				6F64E3A7CA3B974E470EA53A /* ClipFileRepair.swift in Sources */,
 				8DDD0E0E5B6B36CE01C06E0D /* TrashSweep.swift in Sources */,
+				AE435650A6DD218729E32302 /* MemoriesStats.swift in Sources */,
 				E099F9B396BEACE6D2995BD5 /* TrashView.swift in Sources */,
 				A1000000000000000000008B /* CameraPreviewView.swift in Sources */,
 				A1000000000000000000009B /* ClipCell.swift in Sources */,

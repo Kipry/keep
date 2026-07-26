@@ -50,8 +50,21 @@ struct PlacesMapView: View {
     /// The place the camera follows: the most recently visited revealed one.
     private var activePlace: Place? { revealedPlaces.last }
 
-    private var mapItems: [MapItem] {
-        PlacesData.clusters(for: revealedPlaces, visibleRect: visibleRect, viewWidth: viewWidth)
+    /// Cached clustering. `PlacesData.clusters` is O(places²) and the route is
+    /// rebuilt from its result, so running it straight from the body meant the
+    /// whole thing re-ran at touch-sampling frequency while scrubbing —
+    /// `centerDay` is written continuously in the scrubber's drag. Only the
+    /// rounded day and the zoom actually change the outcome, so it is
+    /// recomputed on those instead. Same approach the timeline already takes
+    /// with its per-day caches.
+    @State private var cachedItems: [MapItem] = []
+
+    private var mapItems: [MapItem] { cachedItems }
+
+    private func rebuildClusters() {
+        cachedItems = PlacesData.clusters(for: revealedPlaces,
+                                          visibleRect: visibleRect,
+                                          viewWidth: viewWidth)
     }
 
     // Route drawn between the CURRENTLY VISIBLE nodes (cluster centroids or
@@ -185,6 +198,7 @@ struct PlacesMapView: View {
                 .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
                 .onMapCameraChange(frequency: .onEnd) { ctx in
                     visibleRect = ctx.rect   // clustering input only
+                    rebuildClusters()
                 }
 
                 if places.places.isEmpty { emptyOverlay }
@@ -202,8 +216,13 @@ struct PlacesMapView: View {
             .onAppear {
                 viewWidth = geo.size.width
                 seedCameraIfNeeded()
+                rebuildClusters()
             }
-            .onChange(of: geo.size.width) { _, w in viewWidth = w }
+            .onChange(of: geo.size.width) { _, w in viewWidth = w; rebuildClusters() }
+            // The rounded day, not centerDay — the reveal set only changes when
+            // the scrubber crosses a day boundary.
+            .onChange(of: focusedDay) { _, _ in rebuildClusters() }
+            .onChange(of: places.places.count) { _, _ in rebuildClusters() }
         }
         .alert("Moments without a location", isPresented: $showUnlocatedInfo) {
             Button("OK", role: .cancel) {}
