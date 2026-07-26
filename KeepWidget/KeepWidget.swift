@@ -15,7 +15,7 @@ private struct ProjectSnapshot: Codable {
     let streak: Int
     let week: [Bool]
     let hasMultipleClips: Bool
-    let lastClipDate: Date?
+    let featuredClipDate: Date?
 
     /// The streak is alive as long as it has any length — the app only counts
     /// days up to yesterday, so a morning without a recording doesn't kill it.
@@ -43,7 +43,7 @@ struct KeepProvider: TimelineProvider {
             clipCount: 46, totalDuration: 68, thumbnailData: nil,
             streak: 12,
             week: [true, true, false, true, true, true, false],
-            hasMultipleClips: true, lastClipDate: .now))
+            hasMultipleClips: true, featuredClipDate: .now))
     }
     func getSnapshot(in context: Context, completion: @escaping (KeepEntry) -> Void) {
         completion(KeepEntry(date: .now, snapshot: loadSnapshot()))
@@ -252,7 +252,7 @@ struct HomeWidgetView: View {
                 showsPlaceholder: true,
                 photoWidth: 54
             ) {
-                dateCaption(snap.lastClipDate.map(Self.captionFormatter.string(from:)))
+                dateCaption(snap.featuredClipDate.map(Self.captionFormatter.string(from:)))
             }
             .rotationEffect(.degrees(-1.5))
         }

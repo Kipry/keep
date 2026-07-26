@@ -25,8 +25,8 @@ enum WidgetDataStore {
         /// False while the project has a single clip — the stacked back card
         /// only makes sense once there's actually more than one.
         let hasMultipleClips: Bool
-        /// Caption under the polaroid: when this project was last added to.
-        let lastClipDate: Date?
+        /// When the clip shown on the polaroid was recorded — its caption.
+        let featuredClipDate: Date?
     }
 
     /// Recomputes and stores the snapshot. Call after anything that changes
@@ -48,16 +48,24 @@ enum WidgetDataStore {
         }
 
         let clips = project.activeClips
+        // Picture and caption come from ONE clip, so the polaroid can't end up
+        // dated with some other clip's timestamp. The newest rather than the
+        // project cover: the cover is set once from the first clip and then
+        // never moves, so the widget would show the oldest moment forever
+        // instead of the one just recorded. (It also isn't derivable — Project
+        // stores the cover's bytes, not which clip they came from.)
+        let featured = clips.filter { $0.thumbnailData != nil }
+                            .max(by: { $0.createdAt < $1.createdAt })
         let snapshot = Snapshot(
             id: project.id.uuidString,
             name: project.name,
             clipCount: clips.count,
             totalDuration: clips.reduce(0) { $0 + $1.effectiveDuration },
-            thumbnailData: project.coverThumbnailData ?? clips.first?.thumbnailData,
+            thumbnailData: featured?.thumbnailData,
             streak: streak(in: recordedDays, today: today, calendar: calendar),
             week: week(in: recordedDays, today: today, calendar: calendar),
             hasMultipleClips: clips.count > 1,
-            lastClipDate: clips.map(\.createdAt).max()
+            featuredClipDate: featured?.createdAt
         )
 
         guard let defaults = UserDefaults(suiteName: groupID),
