@@ -33,7 +33,7 @@ Die fertigen Seiten liegen in `docs/` — genau dort, wo GitHub Pages sie veröf
 
 - [ ] GitHub → Repo `Kipry/keep` → **Settings** → linke Spalte **Pages**.
 - [ ] Unter „Build and deployment": Source = **Deploy from a branch**,
-      Branch = `claude/plan-daily-video-app-P1yCX`, Ordner = **`/docs`** → **Save**.
+      Branch = `main`, Ordner = **`/docs`** → **Save**.
 - [ ] 1–2 Minuten warten, dann prüfen:
       - Datenschutz: `https://kipry.github.io/keep/privacy.html`
       - Support: `https://kipry.github.io/keep/support.html`
