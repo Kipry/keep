@@ -1,4 +1,7 @@
-import AVFoundation
+// AVAssetExportSession isn't Sendable, but the progress sequence below has to
+// observe it from a child task while the export runs — which is precisely the
+// pattern Apple's own iOS 18 API is shaped for.
+@preconcurrency import AVFoundation
 import UIKit
 import QuartzCore
 
@@ -612,30 +615,30 @@ actor VideoComposer {
             throw CompositionError.exportSessionFailed
         }
         let outputURL = makeExportURL()
-        session.outputURL                   = outputURL
-        session.outputFileType              = .mp4
         session.shouldOptimizeForNetworkUse = true
         if let vc = videoComposition { session.videoComposition = vc }
 
-        return try await withCheckedThrowingContinuation { continuation in
-            session.exportAsynchronously {
-                switch session.status {
-                case .completed: continuation.resume(returning: outputURL)
-                case .cancelled: continuation.resume(throwing: CompositionError.exportCancelled)
-                default:         continuation.resume(throwing: session.error ?? CompositionError.exportSessionFailed)
-                }
-            }
-            if let box = progressBox {
-                Task {
-                    while session.status != .completed
-                            && session.status != .failed
-                            && session.status != .cancelled {
-                        box.value = Double(session.progress)
-                        try? await Task.sleep(nanoseconds: 80_000_000)
+        // iOS 18 replaced exportAsynchronously + polled `status`/`progress`
+        // with an async throwing call and a progress sequence. The sequence
+        // finishes on its own once the export leaves the exporting state; the
+        // cancel in defer only matters if export throws first.
+        let progressTask = progressBox.map { box in
+            Task {
+                for await state in session.states(updateInterval: 0.08) {
+                    if case .exporting(let progress) = state {
+                        box.value = progress.fractionCompleted
                     }
                 }
             }
         }
+        defer { progressTask?.cancel() }
+
+        do {
+            try await session.export(to: outputURL, as: .mp4)
+        } catch is CancellationError {
+            throw CompositionError.exportCancelled
+        }
+        return outputURL
     }
 
     /// Exports are transient: they exist to be handed to the share sheet, and

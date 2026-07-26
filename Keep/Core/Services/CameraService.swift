@@ -1,4 +1,8 @@
-import AVFoundation
+// AVCaptureSession isn't marked Sendable, but start/stopRunning are documented
+// as safe to call off the main thread — which is exactly why they're dispatched
+// to a background queue below (they block). @preconcurrency silences those
+// module-level Sendable warnings without weakening our own isolation.
+@preconcurrency import AVFoundation
 import Combine
 import UIKit
 
@@ -263,7 +267,7 @@ final class CameraService: NSObject, ObservableObject {
             displayZoomFactor = Self.computeDisplayZoom(device.videoZoomFactor, device: device)
             return
         }
-        let factor = CGFloat(wideStart)
+        let factor = CGFloat(truncating: wideStart)
         try? device.lockForConfiguration()
         device.videoZoomFactor = factor
         device.unlockForConfiguration()
@@ -273,7 +277,7 @@ final class CameraService: NSObject, ObservableObject {
 
     private static func computeDisplayZoom(_ factor: CGFloat, device: AVCaptureDevice) -> CGFloat {
         if let first = device.virtualDeviceSwitchOverVideoZoomFactors.first {
-            return factor / CGFloat(first)
+            return factor / CGFloat(truncating: first)
         }
         return factor
     }

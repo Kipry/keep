@@ -627,11 +627,17 @@ struct CameraView: View {
         elapsed = 0
         recordingStart = Date()
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
-            guard let start = recordingStart else { return }
-            elapsed = Date().timeIntervalSince(start)
-            if !isHoldRecording && elapsed >= durationLimit {
-                camera.stopRecording()
-                stopTimer()
+            // The timer is scheduled on the main run loop, so this body always
+            // runs on the main actor — the compiler just can't see that through
+            // the nonisolated closure. Asserting it keeps the call synchronous;
+            // hopping via Task would delay the stop past the duration limit.
+            MainActor.assumeIsolated {
+                guard let start = recordingStart else { return }
+                elapsed = Date().timeIntervalSince(start)
+                if !isHoldRecording && elapsed >= durationLimit {
+                    camera.stopRecording()
+                    stopTimer()
+                }
             }
         }
     }
