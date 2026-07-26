@@ -268,7 +268,7 @@ struct DiaryTimelineView: View {
     @ViewBuilder
     private func content(width: CGFloat, cx: CGFloat, data: TimelineData) -> some View {
         VStack(spacing: 0) {
-            header(data: data)
+            header()
                 .padding(.horizontal, Layout.gutter)
                 .padding(.top, Layout.headerTop)
 
@@ -323,30 +323,14 @@ struct DiaryTimelineView: View {
 
     // MARK: Header
 
-    private func header(data: TimelineData) -> some View {
+    // TODAY used to live here, conditionally shown only in .time mode. Sharing
+    // an HStack with modePill meant the pill visually jumped sideways whenever
+    // TODAY appeared/disappeared on a mode switch — moved to controlRow, which
+    // only ever renders in .time mode anyway, so modePill is now the header's
+    // only trailing content and never resizes.
+    private func header() -> some View {
         ScreenHeader(eyebrow: Text("DIARY"), title: Text("Your Timeline")) {
-            HStack(spacing: 10) {
-                modePill
-
-                // In places mode the map's own control row carries TODAY (it also
-                // has to stop the flyover) — avoid a second, racing button here.
-                if diaryMode == .time {
-                    Button {
-                        stopAutoplay()
-                        animateTo(Double(data.todayTag))
-                    } label: {
-                        Text("TODAY")
-                            .font(.mono(11))
-                            .tracking(1)
-                            .foregroundStyle(Theme.amber)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Theme.amber.opacity(0.12), in: Capsule())
-                            .overlay(Capsule().stroke(Theme.amber.opacity(0.4), lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+            modePill
         }
     }
 
@@ -517,6 +501,22 @@ struct DiaryTimelineView: View {
             }
             .padding(3)
             .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 11))
+
+            Button {
+                stopAutoplay()
+                animateTo(Double(data.todayTag))
+            } label: {
+                Text("TODAY")
+                    .font(.mono(11))
+                    .tracking(1)
+                    .foregroundStyle(Theme.amber)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Theme.amber.opacity(0.12), in: Capsule())
+                    .overlay(Capsule().stroke(Theme.amber.opacity(0.4), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .padding(.leading, 8)
 
             Spacer()
 
@@ -974,8 +974,10 @@ struct DiaryTimelineView: View {
         let new = TimelineData.build(projects: projects, calendar: calendar)
         data = new
         if let new {
-            // First build: open the diary on today, not on the latest project.
-            if centerDay == 0 { centerDay = Double(new.todayTag) }
+            // First build: open on the most recent clip, not on today — with
+            // no recording yet today (the common case), landing on today just
+            // showed the "nothing here" empty state on every launch.
+            if centerDay == 0 { centerDay = Double(daysWithClips(in: new).last ?? new.todayTag) }
             centerDay = clampDay(centerDay)
             cachedMonthSegs = new.monthSegments(calendar: calendar)
             placesData = PlacesData.build(data: new, calendar: calendar)
