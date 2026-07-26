@@ -45,19 +45,20 @@ SO FUNKTIONIERT'S
 • Fotos importieren: Standbilder mit eigener Anzeigedauer einfügen
 • Export: alle Clips eines Projekts in einem Tap zu einem fertigen Video
 • Tagebuch-Zeitachse: durch deine Tage scrollen und zurückblicken
+• Orte-Karte: sieh auf einer Karte, wo deine Momente entstanden sind – mit Reiseroute durch die letzten Tage
 • Rückblicke & Streak: sieh, an welchen Tagen du festgehalten hast
 
 DEINE MOMENTE BLEIBEN BEI DIR
-keep. sammelt keine Daten. Alle Aufnahmen und Projekte bleiben lokal auf deinem Gerät. Kein Konto, kein Cloud-Zwang, kein Tracking, keine Weitergabe an Dritte.
+keep. sammelt keine Daten. Alle Aufnahmen und Projekte bleiben lokal auf deinem Gerät. Kein Konto, kein Cloud-Zwang, kein Tracking, keine Werbung. Ob der Aufnahmeort gespeichert wird, entscheidest du – wahlweise gar nicht, nur ungefähr oder genau.
 
 Halt den Moment. Bevor er weg ist.
 ```
 
 **Keywords** (max. 100 Zeichen, kommagetrennt, keine Leerzeichen nach Kommas)
 ```
-tagebuch,video,journal,clip,sekunde,rückblick,erinnerung,vlog,widget,sperrbildschirm,moment,alltag
+tagebuch,video,journal,clip,sekunde,rückblick,erinnerung,vlog,widget,sperrbildschirm,karte,orte
 ```
-> 99 Zeichen. „keep" nicht als Keyword nötig (App-Name deckt es ab).
+> 95 Zeichen. „keep" nicht als Keyword nötig (App-Name deckt es ab).
 
 **Werbetext / Promotional Text** (max. 170 Zeichen, jederzeit änderbar ohne Review)
 ```
@@ -70,7 +71,7 @@ Willkommen bei keep. – der ersten Version.
 
 • Aufnehmen direkt vom Sperrbildschirm
 • Projekte, Filmstreifen und Ein-Tap-Export
-• Tagebuch-Zeitachse, Rückblicke und Streak
+• Tagebuch-Zeitachse, Orte-Karte, Rückblicke und Streak
 • Fotos importieren
 
 Wir freuen uns über dein Feedback.
@@ -108,19 +109,20 @@ HOW IT WORKS
 • Import photos: drop in stills with their own on-screen duration
 • Export: turn a whole project into a finished video in one tap
 • Journal timeline: scroll through your days and look back
+• Places map: see where your moments happened, with a travel route through your recent days
 • Memories & streak: see the days you captured
 
 YOUR MOMENTS STAY YOURS
-keep. collects no data. Every recording and project stays local on your device. No account, no forced cloud, no tracking, nothing shared with third parties.
+keep. collects no data. Every recording and project stays local on your device. No account, no forced cloud, no tracking, no ads. Whether capture locations are saved is up to you — off, approximate, or precise.
 
 Hold the moment. Before it's gone.
 ```
 
 **Keywords** (max. 100 chars)
 ```
-journal,video,diary,clip,seconds,memories,vlog,widget,lockscreen,moment,everyday,capture,lookback
+journal,video,diary,clip,seconds,memories,vlog,widget,lockscreen,map,places,capture,lookback
 ```
-> 98 chars.
+> 92 chars.
 
 **Promotional Text** (max. 170 chars)
 ```
@@ -133,7 +135,7 @@ Welcome to keep. — our very first release.
 
 • Record straight from the lock screen
 • Projects, filmstrip and one-tap export
-• Journal timeline, memories and streak
+• Journal timeline, places map, memories and streak
 • Import photos
 
 We'd love your feedback.
@@ -145,12 +147,13 @@ We'd love your feedback.
 
 App Store Connect verlangt mindestens **ein 6.9"-iPhone-Set** (1320 × 2868 px, z.B. iPhone 16 Pro Max). Ein 6.5"-Set (1284 × 2778) ist optional als Fallback.
 
-Empfohlene 5–6 Motive (jeweils am echten Gerät oder Simulator aufnehmen):
+Empfohlene 6–7 Motive (jeweils am echten Gerät oder Simulator aufnehmen):
 1. Sperrbildschirm mit REC-Widget (der „Hero"-Moment)
 2. Kamera-Aufnahme mit laufendem Ring
 3. Projekt-Filmstreifen mit echten Clips
 4. Tagebuch-Zeitachse
-5. „Heute" mit Streak/Rückblicken
-6. Fertiges Export-Video / Teilen-Sheet
+5. Orte-Karte mit Pins und Reiseroute
+6. „Heute" mit Streak/Rückblicken
+7. Fertiges Export-Video / Teilen-Sheet
 
 Die vorhandenen Onboarding-Mocks (`OnboardingView.swift`) spiegeln 1–4 bereits pixelgenau und taugen als Bild-/Text-Vorlage.

@@ -8,7 +8,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 | App-Bundle-ID | `com.kipry.keep.app` |
 | Widget-Bundle-ID | `com.kipry.keep.app.widget` |
 | App-Gruppe | `group.com.kipry.keep.app` |
-| Team-ID | `<deine neue Team-ID>` |
+| Team-ID | `3832YDF43A` |
 | Version / Build | `1.0` / `1` |
 | Mindest-iOS | 18.0 |
 | Kategorie | Lifestyle |
@@ -17,7 +17,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 ---
 
 ## 0. Voraussetzungen
-- [ ] **Apple Developer Program** aktiv ($99/Jahr). Prüfen, dass Team `<deine neue Team-ID>` Mitgliedschaft hat und die Rolle „Account Holder/Admin" vorhanden ist.
+- [ ] **Apple Developer Program** aktiv ($99/Jahr). Prüfen, dass Team `3832YDF43A` Mitgliedschaft hat und die Rolle „Account Holder/Admin" vorhanden ist.
 - [ ] Ein **Mac mit Xcode** (aktuelle Version). Der Archive-Build kann nur dort erstellt werden.
 
 ## 1. Identifiers & App-Gruppe im Developer-Portal
@@ -29,7 +29,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 
 ## 2. Datenschutz- & Support-Seite hosten
 - [ ] `store/privacy-policy.html` und `store/support.html` irgendwo öffentlich hosten (z.B. GitHub Pages, kostenlos).
-- [ ] In beiden Dateien das Datum und die **Kontakt-E-Mail bestätigen/ersetzen** (aktuell `kpk.kipry@icloud.com`).
+- [ ] In beiden Dateien das Datum und die **Kontakt-E-Mail bestätigen/ersetzen** (aktuell `keep.dailymoments@gmail.com`).
 - [ ] Beide URLs notieren — sie kommen in Schritt 4.
 
 ## 3. App-Datensatz in App Store Connect anlegen
@@ -45,7 +45,8 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 
 ## 5. App-Privacy-Fragebogen
 (App Store Connect → App-Datenschutz)
-- [ ] **„Es werden keine Daten erfasst"** wählen. Das entspricht dem Privacy-Manifest (kein Tracking, keine Datensammlung, alles on-device).
+- [ ] **„Es werden keine Daten erfasst"** wählen. Apple definiert „erfasst" als *vom Gerät an den Entwickler oder Dritte übertragen* — genau das passiert nicht: Videos, Projekte und Standorte bleiben lokal, es gibt keine eigenen Server und kein Tracking. Das deckt sich mit dem Privacy-Manifest (`NSPrivacyCollectedDataTypes` ist leer).
+> **Zum Standort bewusst entschieden:** Die App speichert optional den Aufnahmeort (Voreinstellung: auf ~1,1 km gerundet) und fragt für den Ortsnamen eine Rückwärts-Geokodierung bei Apple an. Diese Anfrage läuft über die System-Ortungsdienste, nicht über uns — es werden also keine Daten an *uns* übertragen. Sollte die Review hier nachfragen, ist die Antwort: Standort wird nur lokal gespeichert, ist abschaltbar, und die Geokodierung ist eine reine Systemanfrage. Die Datenschutzerklärung beschreibt das im Abschnitt „Standort" ausdrücklich.
 
 ## 6. Altersfreigabe
 - [ ] Fragebogen ausfüllen → Ergebnis **4+** (keine anstößigen Inhalte, kein nutzergenerierter Online-Content, da nichts geteilt/hochgeladen wird).
@@ -77,9 +78,13 @@ Der Simulator kann Kamera/Widget/Haptik nicht abbilden. Auf einem echten iPhone 
 - [ ] Foto-Import (Hochkant bleibt korrekt orientiert).
 - [ ] Export inkl. vorangestelltem **Bumper** mit Projekttitel + Zeitraum.
 - [ ] **Sperrbildschirm-Widget** hinzufügen → Tap öffnet direkt die Aufnahme (Deep-Link `keep://record/<id>`).
-- [ ] Erststart mit 0 Projekten (Empty-States).
+- [ ] Erststart mit 0 Projekten (Empty-States auf allen drei Tabs).
+- [ ] **Orte:** Standortabfrage erscheint, Pins und Reiseroute stimmen, Tap auf einen Ort zeigt dessen Clips.
+- [ ] **Standort auf „Aus"** stellen → es wird keine Berechtigung mehr angefragt und kein Ort gespeichert.
+- [ ] Pinch-Zoom in der Clip-Vollbildansicht (und Wischen zum nächsten Clip funktioniert weiterhin).
 
 ## Mögliche Review-Nachfragen (vorbereitet)
 - **Sperrbildschirm-Widget/Deep-Link:** legitim über WidgetKit + Custom-URL-Scheme; kein Missbrauch.
 - **Lautstärketaste als Auslöser:** nutzt die offizielle `AVCaptureEventInteraction`-API (kein privater Hack).
 - **Helligkeits-Override** beim Front-Blitz: nur temporär während der Aufnahme, danach zurückgesetzt.
+- **Standortnutzung:** dient allein dazu, einem Clip seinen Aufnahmeort zuzuordnen (Karten-Ansicht „Orte"). Dreistufig einstellbar, standardmäßig auf ~1,1 km gerundet, komplett abschaltbar, keine Übertragung an uns. Der Zwecktext steht in `NSLocationWhenInUseUsageDescription`.

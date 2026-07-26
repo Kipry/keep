@@ -1,6 +1,6 @@
 # Support — keep.
 
-**Kontakt:** kpk.kipry@icloud.com  ⟵ *bitte bestätigen oder ändern*
+**Kontakt:** keep.dailymoments@gmail.com
 
 > Auch als hostbares HTML unter `support.html`. Die URL wird in App Store Connect
 > unter „Allgemeine App-Informationen → Support-URL" eingetragen (Pflichtfeld).
@@ -28,17 +28,20 @@ Ja. Beim Import kannst du Fotos wählen; sie werden mit einer einstellbaren Anze
 **Was passiert beim Löschen/Deinstallieren?**
 Gelöschte Clips wandern zunächst in den Papierkorb. Beim Deinstallieren der App werden alle lokalen Daten vom Gerät entfernt.
 
+**Was hat es mit der Orte-Karte auf sich?**
+Wenn du magst, merkt sich keep. zu jedem Clip, wo er aufgenommen wurde, und zeigt das als Karte mit Reiseroute. Du steuerst das in den Einstellungen unter „Standort": gar nicht, ungefähr (auf ca. 1,1 km gerundet, Voreinstellung) oder genau. Die Orte bleiben auf dem Gerät. Nur für den angezeigten Ortsnamen fragt die App die Ortungsdienste von Apple.
+
 **Welche iOS-Version wird benötigt?**
 iOS 18 oder neuer.
 
 ## Kontakt & Feedback
-Fragen, Fehler oder Wünsche: **kpk.kipry@icloud.com**
+Fragen, Fehler oder Wünsche: **keep.dailymoments@gmail.com**
 
 ---
 
 # Support — keep. (English)
 
-**Contact:** kpk.kipry@icloud.com
+**Contact:** keep.dailymoments@gmail.com
 
 ## What is keep.?
 keep. is a daily video journal. One tap on the lock screen widget starts a short recording — the clip saves itself and lands in your project. Everything stays local on your device.
@@ -63,8 +66,11 @@ Yes. When importing, you can pick photos; they're added as a still-image clip wi
 **What happens when I delete/uninstall?**
 Deleted clips go to a trash first. Uninstalling the app removes all local data from the device.
 
+**What is the places map?**
+If you want it, keep. remembers where each clip was captured and shows it as a map with a travel route. You control this in Settings under "Location": off, approximate (rounded to about 1.1 km, the default) or precise. Places stay on your device — only the displayed place name is resolved via Apple's location services.
+
 **Which iOS version is required?**
 iOS 18 or later.
 
 ## Contact & feedback
-Questions, bugs or requests: **kpk.kipry@icloud.com**
+Questions, bugs or requests: **keep.dailymoments@gmail.com**
