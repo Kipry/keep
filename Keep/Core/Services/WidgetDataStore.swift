@@ -18,8 +18,6 @@ enum WidgetDataStore {
         let clipCount: Int
         let totalDuration: Double
         let thumbnailData: Data?
-        /// Days since the project was created — drives "FOR n DAYS".
-        let runningDays: Int
         /// Consecutive recording days ending today or yesterday; 0 once broken.
         let streak: Int
         /// Seven flags, oldest first, last entry is today.
@@ -56,8 +54,6 @@ enum WidgetDataStore {
             clipCount: clips.count,
             totalDuration: clips.reduce(0) { $0 + $1.effectiveDuration },
             thumbnailData: project.coverThumbnailData ?? clips.first?.thumbnailData,
-            runningDays: max(0, calendar.dateComponents(
-                [.day], from: calendar.startOfDay(for: project.createdAt), to: today).day ?? 0),
             streak: streak(in: recordedDays, today: today, calendar: calendar),
             week: week(in: recordedDays, today: today, calendar: calendar),
             hasMultipleClips: clips.count > 1,

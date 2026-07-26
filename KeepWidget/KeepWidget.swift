@@ -12,7 +12,6 @@ private struct ProjectSnapshot: Codable {
     let clipCount: Int
     let totalDuration: Double
     let thumbnailData: Data?
-    let runningDays: Int
     let streak: Int
     let week: [Bool]
     let hasMultipleClips: Bool
@@ -42,7 +41,7 @@ struct KeepProvider: TimelineProvider {
         KeepEntry(date: .now, snapshot: ProjectSnapshot(
             id: "preview", name: "Summer 2026",
             clipCount: 46, totalDuration: 68, thumbnailData: nil,
-            runningDays: 25, streak: 12,
+            streak: 12,
             week: [true, true, false, true, true, true, false],
             hasMultipleClips: true, lastClipDate: .now))
     }
@@ -62,8 +61,6 @@ struct KeepProvider: TimelineProvider {
 // MARK: - Palette (hardcoded — no dependency on the main app module)
 
 private let amber   = Color(red: 0.941, green: 0.529, blue: 0.227)   // #F0873A
-private let amberHi = Color(red: 0.984, green: 0.702, blue: 0.416)   // #FBB36A
-private let amberLo = Color(red: 0.788, green: 0.408, blue: 0.122)   // #C9681F
 private let ink     = Color(red: 0.102, green: 0.102, blue: 0.102)   // #1A1A1A
 private let paper   = Color(red: 0.961, green: 0.902, blue: 0.784)   // #F5E6C8
 private let cream   = Color(red: 0.929, green: 0.851, blue: 0.639)   // #EDD9A3
@@ -153,10 +150,9 @@ struct HomeWidgetView: View {
     // rather than "did I record today?" — and needs a single image to do it.
 
     private var medium: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            eyebrow
+        Group {
             if let snap = entry.snapshot {
-                HStack(spacing: 13) {
+                HStack(spacing: 16) {
                     Link(destination: openURL(for: snap.id)) {
                         polaroidStack(snap)
                     }
@@ -165,33 +161,16 @@ struct HomeWidgetView: View {
                         shutter
                     }
                 }
-                .padding(.top, 9)
-                .frame(maxHeight: .infinity)
             } else {
                 emptyBody
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 14)
-        .padding(.bottom, 13)
-    }
-
-    private var eyebrow: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(entry.snapshot == nil ? Color.white.opacity(0.25) : amber)
-                .frame(width: 5, height: 5)
-                .widgetAccentable()
-            Text("ACTIVE")
-            Spacer(minLength: 8)
-            if let snap = entry.snapshot {
-                Text(snap.runningDays <= 0 ? "SINCE TODAY" : "FOR \(snap.runningDays) DAYS")
-            }
-        }
-        .font(.system(size: 9, weight: .semibold, design: .monospaced))
-        .tracking(1.5)
-        .foregroundStyle(.white.opacity(0.32))
-        .lineLimit(1)
+        // Asymmetric on purpose: the polaroid sits closer to the edge so it
+        // reads as a physical card lying on the widget, and the extra gap goes
+        // between the card and the text instead.
+        .padding(.leading, 12)
+        .padding(.trailing, 16)
+        .padding(.vertical, 13)
     }
 
     // MARK: Polaroid
@@ -300,18 +279,18 @@ struct HomeWidgetView: View {
     /// state differs in fill and wording, not only hue, so it survives the
     /// tinted home screen.
     private func streakRow(_ snap: ProjectSnapshot) -> some View {
-        HStack(spacing: 5) {
+        HStack(alignment: .firstTextBaseline, spacing: 7) {
             Image(systemName: "flame.fill")
-                .font(.system(size: 11))
+                .font(.system(size: 19))
             if snap.streakAlive {
                 Text("\(snap.streak)")
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .font(.system(size: 24, weight: .semibold, design: .monospaced))
                 Text("DAYS")
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
                     .tracking(1)
             } else {
                 Text("ENDED")
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
                     .tracking(1)
             }
         }
@@ -340,17 +319,17 @@ struct HomeWidgetView: View {
 
     // MARK: Shutter
 
+    /// Ring plus dot — the same shutter language as the lock-screen widget,
+    /// without the gradient and shadow that made it read as a glossy button.
     private var shutter: some View {
         ZStack {
             Circle()
-                .fill(RadialGradient(colors: [amberHi, amber, amberLo],
-                                     center: UnitPoint(x: 0.5, y: 0.26),
-                                     startRadius: 1, endRadius: 42))
+                .strokeBorder(amber.opacity(0.5), lineWidth: 2)
             Circle()
-                .fill(ink)
-                .frame(width: 15, height: 15)
+                .fill(amber)
+                .frame(width: 22, height: 22)
         }
-        .frame(width: 58, height: 58)
+        .frame(width: 46, height: 46)
         .widgetAccentable()
     }
 
@@ -360,7 +339,7 @@ struct HomeWidgetView: View {
     // rather than broken. No Link — tapping anywhere opens the app.
 
     private var emptyBody: some View {
-        HStack(spacing: 13) {
+        HStack(spacing: 16) {
             polaroidCard(image: nil, caption: nil, fill: paper, showsPlaceholder: true)
             VStack(alignment: .leading, spacing: 5) {
                 Text("New project")
@@ -374,8 +353,6 @@ struct HomeWidgetView: View {
             Spacer(minLength: 0)
             shutter
         }
-        .padding(.top, 9)
-        .frame(maxHeight: .infinity)
     }
 }
 
