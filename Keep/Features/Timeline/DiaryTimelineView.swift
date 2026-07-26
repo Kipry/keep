@@ -7,8 +7,8 @@ import ImageIO
 // MARK: - Geometry / data model
 //
 // Internal coordinate is a *day index* ("tag"): day 0 == startDate, growing to
-// `todayTag`. Everything (month scale, project bands, heatmap, film ruler) is
-// laid out in this space and slid under a fixed centre playhead.
+// `todayTag`. Everything (month scale, project bands, film ruler) is laid out
+// in this space and slid under a fixed centre playhead.
 
 enum TimelineZoom: Int, CaseIterable {
     case day, week, month, year
@@ -49,8 +49,6 @@ struct TimelineData {
     let total: Int
     let todayTag: Int
     let bands: [TimelineBand]
-    let density: [Double]
-    let maxDensity: Double
     let lanes: Int
 
     func date(at day: Int) -> Date {
@@ -107,17 +105,8 @@ struct TimelineData {
         }
         let lanes = (bands.map(\.lane).max() ?? 0) + 1
 
-        // per-day clip density (clips spread evenly across each project's days)
-        var density = [Double](repeating: 0, count: max(total, 1))
-        for b in bands {
-            let len = max(b.endTag - b.startTag + 1, 1)
-            let per = Double(b.clipCount) / Double(len)
-            for d in b.startTag...b.endTag where d >= 0 && d < total { density[d] += per }
-        }
-        let maxD = max(density.max() ?? 1, 1)
-
         return TimelineData(startDate: startDate, total: total, todayTag: tag(today),
-                            bands: bands, density: density, maxDensity: maxD, lanes: lanes)
+                            bands: bands, lanes: lanes)
     }
 }
 
@@ -542,9 +531,6 @@ struct DiaryTimelineView: View {
             VStack(spacing: 6) {
                 monthScale(cx: cx, data: data).frame(height: 22).clipped()
                 projectBands(cx: cx, data: data).frame(height: projH)
-                heatmap(cx: cx, data: data)
-                    .frame(height: 12)
-                    .mask(edgeFadeMask)
                 filmRuler(cx: cx, data: data)
                     .frame(height: 30)
                     .mask(edgeFadeMask)
@@ -571,7 +557,7 @@ struct DiaryTimelineView: View {
 
     // playhead line + triangle, fixed at centre
     private func playhead(projH: CGFloat) -> some View {
-        let h = projH + 82   // monthScale(22)+bands+heat(12)+ruler(30) + 6pt gaps*3
+        let h = projH + 64   // monthScale(22)+bands+ruler(30) + 6pt gaps*2
         return ZStack(alignment: .top) {
             LinearGradient(
                 stops: [
@@ -677,30 +663,6 @@ struct DiaryTimelineView: View {
         }
         .frame(maxWidth: .infinity)
         .clipped()
-    }
-
-    // MARK: Heatmap
-
-    @ViewBuilder
-    private func heatmap(cx: CGFloat, data: TimelineData) -> some View {
-        let range = visibleRange(width: cx * 2, data: data)
-        ZStack(alignment: .bottomLeading) {
-            Color.clear
-            Rectangle().fill(.white.opacity(0.06)).frame(height: 1)
-                .frame(maxHeight: .infinity, alignment: .bottom)
-            ForEach(range, id: \.self) { d in
-                let v = data.density[d]
-                if v > 0 {
-                    let ratio = v / data.maxDensity
-                    let barH = 2 + ratio * 10
-                    Capsule()
-                        .fill(Theme.amber.opacity(0.22 + 0.78 * ratio))
-                        .frame(width: max(2, px - 1), height: barH)
-                        .position(x: cx + CGFloat(Double(d) - centerDay) * px, y: 12 - barH / 2)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity)
     }
 
     // MARK: Film ruler
