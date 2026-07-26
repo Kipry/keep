@@ -49,7 +49,10 @@ struct ContentView: View {
             AppTabBar(selectedTab: selectedTab, onSelect: switchTab)
         }
         .onboardingGate()
-        .task { ClipFileRepair.run(in: modelContext) }
+        .task {
+            ClipFileRepair.run(in: modelContext)
+            VideoComposer.purgeExports()
+        }
         // Widget deep link (keep://diary). Handled here rather than in a page,
         // because switching tabs is this view's responsibility.
         .onAppear { consumePendingTab() }

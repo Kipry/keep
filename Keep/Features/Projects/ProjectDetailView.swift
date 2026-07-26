@@ -782,6 +782,12 @@ struct ProjectDetailView: View {
     // Presents UIActivityViewController directly from the key window, bypassing SwiftUI sheet
     private func presentShareSheet(for url: URL) {
         let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        // Whatever the user picked has taken its own copy by now (Photos, Files,
+        // Messages…), so our render is dead weight — drop it rather than let
+        // every export pile up in the container forever.
+        activityVC.completionWithItemsHandler = { _, _, _, _ in
+            try? FileManager.default.removeItem(at: url)
+        }
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let rootVC = windowScene.keyWindow?.rootViewController else { return }
         var topVC = rootVC

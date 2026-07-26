@@ -638,10 +638,31 @@ actor VideoComposer {
         }
     }
 
+    /// Exports are transient: they exist to be handed to the share sheet, and
+    /// nothing in the app ever refers to one again. tmp keeps them out of
+    /// iCloud Backup and lets iOS reclaim the space if we don't get to it.
     private func makeExportURL() -> URL {
-        let docs   = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let folder = docs.appendingPathComponent("Exports", isDirectory: true)
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Exports", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder.appendingPathComponent(UUID().uuidString).appendingPathExtension("mp4")
+    }
+
+    /// Deletes finished exports. Until now they were written to
+    /// Documents/Exports and never removed, so every export a user ever made
+    /// stayed in the app — and in their iCloud Backup. Sweeps that legacy
+    /// folder as well as anything left in tmp by an interrupted share.
+    static func purgeExports() {
+        let fm = FileManager.default
+        let docs = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let folders = [
+            docs.appendingPathComponent("Exports", isDirectory: true),
+            fm.temporaryDirectory.appendingPathComponent("Exports", isDirectory: true)
+        ]
+        for folder in folders {
+            guard let items = try? fm.contentsOfDirectory(
+                at: folder, includingPropertiesForKeys: nil) else { continue }
+            for url in items { try? fm.removeItem(at: url) }
+        }
     }
 }
