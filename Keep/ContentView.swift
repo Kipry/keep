@@ -10,6 +10,7 @@ enum AppTab {
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppDeepLink.self) private var deepLink
     @State private var selectedTab: AppTab = .projects
     @State private var dragOffset: CGFloat = 0
 
@@ -49,6 +50,16 @@ struct ContentView: View {
         }
         .onboardingGate()
         .task { ClipFileRepair.run(in: modelContext) }
+        // Widget deep link (keep://diary). Handled here rather than in a page,
+        // because switching tabs is this view's responsibility.
+        .onAppear { consumePendingTab() }
+        .onChange(of: deepLink.pendingTab) { _, _ in consumePendingTab() }
+    }
+
+    private func consumePendingTab() {
+        guard let tab = deepLink.pendingTab else { return }
+        deepLink.pendingTab = nil
+        switchTab(to: tab)
     }
 
     private func edgeSwipe(width: CGFloat) -> some Gesture {

@@ -109,12 +109,19 @@ struct ProjectListView: View {
                 .onDisappear { recordOnNextOpen = false }
         }
         // ── Widget snapshot: keep it fresh whenever projects change ──
-        .onChange(of: projects) { _, updated in
-            if let first = updated.first { WidgetDataStore.save(project: first) }
+        .onChange(of: projects) { _, _ in
+            WidgetDataStore.refresh(context: modelContext)
             handlePendingDeepLink()
         }
         // ── Deep link: fired on cold launch and when already running ──
-        .onAppear { handlePendingDeepLink(); handlePendingOpen() }
+        // The refresh also runs here: onChange doesn't fire for the initial
+        // query result, so a launch with unchanged projects would otherwise
+        // never rewrite the snapshot (streak and week go stale overnight).
+        .onAppear {
+            WidgetDataStore.refresh(context: modelContext)
+            handlePendingDeepLink()
+            handlePendingOpen()
+        }
         .onChange(of: deepLink.pendingRecordProjectID) { _, _ in handlePendingDeepLink() }
         .onChange(of: deepLink.pendingOpenProjectID)   { _, _ in handlePendingOpen() }
         .alert("New Project", isPresented: $isCreatingProject) {

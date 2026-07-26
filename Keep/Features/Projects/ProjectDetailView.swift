@@ -598,7 +598,7 @@ struct ProjectDetailView: View {
                 clip.thumbnailData = data
                 if project.activeClips.count == 1 { project.coverThumbnailData = data }
             }
-            WidgetDataStore.save(project: project)
+            WidgetDataStore.refresh(context: modelContext)
         }
     }
 
@@ -661,7 +661,7 @@ struct ProjectDetailView: View {
             clip.thumbnailData = thumb
             if project.activeClips.count == 1 { project.coverThumbnailData = thumb }
         }
-        WidgetDataStore.save(project: project)
+        WidgetDataStore.refresh(context: modelContext)
     }
 
     // Reads the original capture date from a still image's EXIF metadata.
@@ -687,7 +687,7 @@ struct ProjectDetailView: View {
                let data = img.jpegData(compressionQuality: 0.75) {
                 project.coverThumbnailData = data
                 try? modelContext.save()
-                WidgetDataStore.save(project: project)
+                WidgetDataStore.refresh(context: modelContext)
             }
         }
     }

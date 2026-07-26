@@ -11,6 +11,8 @@ import CoreText
 final class AppDeepLink {
     var pendingRecordProjectID: UUID?
     var pendingOpenProjectID: UUID?
+    /// Tab the app should switch to (widget's week strip opens the diary).
+    var pendingTab: AppTab?
 }
 
 // MARK: - App entry point
@@ -33,14 +35,19 @@ struct KeepApp: App {
 
     // keep://record/<UUID>  →  open project + start recording
     // keep://open/<UUID>    →  just open project detail
+    // keep://diary          →  switch to the diary tab
     private func handleDeepLink(_ url: URL) {
-        guard url.scheme == "keep",
-              let idString = url.pathComponents.dropFirst().first,
-              let id = UUID(uuidString: idString) else { return }
+        guard url.scheme == "keep" else { return }
         switch url.host {
-        case "record": deepLink.pendingRecordProjectID = id
-        case "open":   deepLink.pendingOpenProjectID   = id
-        default: break
+        case "diary":
+            deepLink.pendingTab = .timeline
+        case "record", "open":
+            guard let idString = url.pathComponents.dropFirst().first,
+                  let id = UUID(uuidString: idString) else { return }
+            if url.host == "record" { deepLink.pendingRecordProjectID = id }
+            else                    { deepLink.pendingOpenProjectID   = id }
+        default:
+            break
         }
     }
 
