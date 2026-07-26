@@ -6,6 +6,7 @@ struct ProjectPlayerView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var player: AVPlayer?
+    @State private var buildFailed = false
     @State private var isPlaying = true
     @State private var currentTime: Double = 0
     @State private var duration: Double = 1
@@ -23,6 +24,23 @@ struct ProjectPlayerView: View {
                 VideoLayerView(player: player)
                     .ignoresSafeArea()
                     .onTapGesture { togglePlayback() }
+            } else if buildFailed {
+                // The composition can end up with nothing to play — every file
+                // missing after a restore, say. That used to leave the spinner
+                // turning forever with no explanation.
+                VStack(spacing: 14) {
+                    Image(systemName: "film.stack")
+                        .font(.system(size: 44))
+                        .foregroundStyle(.white.opacity(0.2))
+                    Text("Nothing to play")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text("These clips are missing from your device.")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 40)
             } else {
                 ProgressView().tint(.white).scaleEffect(1.5)
             }
@@ -217,7 +235,7 @@ struct ProjectPlayerView: View {
 
     private func buildCompositionAndPlay() async {
         let clips = project.activeClips.filter { $0.isAvailable }
-        guard !clips.isEmpty else { return }
+        guard !clips.isEmpty else { buildFailed = true; return }
 
         let composition = AVMutableComposition()
         guard
@@ -225,7 +243,7 @@ struct ProjectPlayerView: View {
                 withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid),
             let audioTrack = composition.addMutableTrack(
                 withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
-        else { return }
+        else { buildFailed = true; return }
 
         var cursor = CMTime.zero
         var firstAsset: AVURLAsset?

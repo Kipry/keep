@@ -3,6 +3,10 @@ import SwiftUI
 struct ExportProgressOverlay: View {
     let clips: [Clip]
     let progress: Double   // 0.0 – 1.0
+    /// Nil hides the cancel control. Without one this overlay was a dead end:
+    /// an opaque, hit-testing backdrop with no way out, so a long 4K export
+    /// locked the screen for minutes.
+    var onCancel: (() -> Void)?
 
     var body: some View {
         ZStack {
@@ -36,6 +40,19 @@ struct ExportProgressOverlay: View {
                         .contentTransition(.numericText())
                         .animation(.linear(duration: 0.08), value: Int(progress * 100))
                         .monospacedDigit()
+
+                    if let onCancel {
+                        Button(action: onCancel) {
+                            Text("Cancel")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.75))
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 11)
+                                .background(.white.opacity(0.12), in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 6)
+                    }
                 }
                 .padding(.horizontal, 40)
             }

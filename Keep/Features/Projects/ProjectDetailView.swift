@@ -33,6 +33,9 @@ struct ProjectDetailView: View {
     @State private var selectedQuality: ExportQuality = .p1080
     @State private var missingClipCount = 0
     @State private var showMissingClipsAlert = false
+    /// Held so the overlay's Cancel can actually reach the running export.
+    @State private var exportTask: Task<Void, Never>?
+    @State private var importFailureCount = 0
 
     // Drag-and-drop reorder
     @State private var dragClips: [Clip] = []
@@ -116,7 +119,7 @@ struct ProjectDetailView: View {
                 transition: $selectedTransition,
                 quality: $selectedQuality,
                 clipCount: project.activeClips.count
-            ) { Task { await exportVideo() } }
+            ) { exportTask = Task { await exportVideo() } }
         }
         .confirmationDialog(
             "Delete this clip?",
@@ -160,6 +163,14 @@ struct ProjectDetailView: View {
                isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
             Button("OK", role: .cancel) {}
         } message: { Text(exportError ?? "") }
+        .alert(
+            importFailureCount == 1 ? "1 Item Not Imported" : "\(importFailureCount) Items Not Imported",
+            isPresented: Binding(get: { importFailureCount > 0 }, set: { if !$0 { importFailureCount = 0 } })
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("They couldn't be read from your library. Anything else you picked was added.")
+        }
         .alert(
             missingClipCount == 1
                 ? "1 Clip Not Found"
@@ -266,7 +277,16 @@ struct ProjectDetailView: View {
             }
 
             if isExporting {
-                ExportProgressOverlay(clips: project.activeClips, progress: exportProgress)
+                ExportProgressOverlay(
+                    clips: project.activeClips,
+                    progress: exportProgress,
+                    onCancel: {
+                        exportTask?.cancel()
+                        exportTask = nil
+                        isExporting = false
+                        exportProgress = 0
+                    }
+                )
                     .transition(.opacity)
                     .animation(.easeInOut(duration: 0.3), value: isExporting)
             }
@@ -656,21 +676,33 @@ struct ProjectDetailView: View {
 
     // Imports a still photo: stores the source image, renders it to a short
     // still-video so it composes like any other clip, and tags it as a photo.
+    /// Returns false when the photo couldn't be imported, so the caller can
+    /// report it — all three failure paths below used to return silently and
+    /// the user simply got fewer clips than they picked.
+    @discardableResult
     private func addPhotoClip(imageData: Data, phDate: Date? = nil,
-                              location: CLLocationCoordinate2D? = nil) async {
-        guard let ui = UIImage(data: imageData)?.normalizedUp() else { return }
+                              location: CLLocationCoordinate2D? = nil) async -> Bool {
+        guard let ui = UIImage(data: imageData)?.normalizedUp() else { return false }
         let imports = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Imports", isDirectory: true)
         try? FileManager.default.createDirectory(at: imports, withIntermediateDirectories: true)
         let imageURL = imports.appendingPathComponent(UUID().uuidString).appendingPathExtension("jpg")
-        guard let jpeg = ui.jpegData(compressionQuality: 0.92) else { return }
-        try? jpeg.write(to: imageURL)
+        guard let jpeg = ui.jpegData(compressionQuality: 0.92) else { return false }
+        do {
+            try jpeg.write(to: imageURL)
+        } catch {
+            return false
+        }
 
         // Priority: PHAsset date (most reliable) → EXIF in the raw image data → now.
         let created = phDate ?? Self.exifCreationDate(from: imageData) ?? Date()
         let duration = 3.0
-        guard let movURL = try? await composer.renderStillVideo(from: imageURL, duration: duration) else { return }
+        guard let movURL = try? await composer.renderStillVideo(from: imageURL, duration: duration) else {
+            // Don't leave the JPEG behind when no clip will reference it.
+            try? FileManager.default.removeItem(at: imageURL)
+            return false
+        }
 
         if !dragClips.isEmpty { commitDragOrder() }
         let order = (project.activeClips.map(\.order).max() ?? -1) + 1
@@ -739,6 +771,7 @@ struct ProjectDetailView: View {
     private func importMedia(from items: [PhotosPickerItem]) async {
         isImporting = true
         defer { isImporting = false; importSelections = [] }
+        var failed = 0
 
         // PhotosPicker itself needs no permission, but PHAsset.fetchAssets does.
         // Without it the fetch just returns empty, so every import silently fell
@@ -763,13 +796,26 @@ struct ProjectDetailView: View {
                 if let video = try? await item.loadTransferable(type: VideoTransferable.self) {
                     addClip(fileURL: video.url, duration: video.duration,
                             createdAt: phDate ?? video.creationDate, location: phLocation)
+                } else {
+                    failed += 1
                 }
             } else if types.contains(where: { $0.conforms(to: .image) }) {
                 if let data = try? await item.loadTransferable(type: Data.self) {
-                    await addPhotoClip(imageData: data, phDate: phDate, location: phLocation)
+                    if await addPhotoClip(imageData: data, phDate: phDate, location: phLocation) == false {
+                        failed += 1
+                    }
+                } else {
+                    failed += 1
                 }
+            } else {
+                // Neither a movie nor an image — previously dropped with no branch.
+                failed += 1
             }
         }
+
+        // Selecting 20 items where 12 fail used to produce 8 clips and no
+        // indication whatsoever that anything had gone wrong.
+        if failed > 0 { importFailureCount = failed }
     }
 
     // Builds the intro bumper — the project's title and recording date range
@@ -821,6 +867,15 @@ struct ProjectDetailView: View {
             isExporting = false
             exportProgress = 0
             presentShareSheet(for: out)
+        } catch is CancellationError {
+            // The user pressed Cancel — not a failure worth an alert.
+            pollTask.cancel()
+            isExporting = false
+            exportProgress = 0
+        } catch CompositionError.exportCancelled {
+            pollTask.cancel()
+            isExporting = false
+            exportProgress = 0
         } catch {
             pollTask.cancel()
             isExporting = false

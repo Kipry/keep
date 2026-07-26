@@ -644,15 +644,29 @@ struct CameraView: View {
 
     private func stopTimer() { timer?.invalidate(); timer = nil }
 
+    /// Dismissible. `setupError` was write-only, so once any camera error fired
+    /// the banner covered the top of the viewfinder for the rest of the session
+    /// with no way to clear it.
     private func errorBanner(_ message: String) -> some View {
         VStack {
-            Text(message)
-                .font(.caption)
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-                .padding(12)
-                .background(.red.opacity(0.85), in: RoundedRectangle(cornerRadius: 10))
-                .padding()
+            HStack(alignment: .top, spacing: 10) {
+                Text(verbatim: message)
+                    .font(.caption)
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button { setupError = nil } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
+            }
+            .padding(12)
+            .background(.red.opacity(0.85), in: RoundedRectangle(cornerRadius: 10))
+            .padding()
             Spacer()
         }
     }
