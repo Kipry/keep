@@ -66,7 +66,6 @@ private let amberDeep = Color(red: 0.788, green: 0.408, blue: 0.122) // #C9681F
 private let ink     = Color(red: 0.102, green: 0.102, blue: 0.102)   // #1A1A1A
 private let paper   = Color(red: 0.961, green: 0.902, blue: 0.784)   // #F5E6C8
 private let cream   = Color(red: 0.929, green: 0.851, blue: 0.639)   // #EDD9A3
-private let dimGap  = Color(red: 0.161, green: 0.161, blue: 0.161)   // #292929
 
 private func recordURL(for id: String) -> URL {
     URL(string: "keep://record/\(id)")!
@@ -194,12 +193,16 @@ struct HomeWidgetView: View {
     private func polaroidStack(_ snap: ProjectSnapshot) -> some View {
         ZStack(alignment: .topLeading) {
             if snap.hasMultipleClips {
-                polaroidCard(image: nil, fill: cream,
+                // Held back in opacity and pushed further out than before:
+                // opacity is the one property that survives every rendering
+                // mode, so it — not the cream/paper colour difference — is
+                // what makes this read as a card lying underneath.
+                polaroidCard(image: nil, fill: cream.opacity(0.5),
                              showsPlaceholder: false, photoWidth: 54) {
                     dateCaption(nil)
                 }
-                .rotationEffect(.degrees(4))
-                .offset(x: 5, y: 4)
+                .rotationEffect(.degrees(5))
+                .offset(x: 7, y: 5)
             }
             polaroidCard(
                 image: snap.thumbnailData.flatMap(UIImage.init(data:)),
@@ -266,6 +269,13 @@ struct HomeWidgetView: View {
         .padding(.horizontal, 5)
         .padding(.top, 5)
         .background(fill, in: RoundedRectangle(cornerRadius: 9))
+        // Outlines the paper so one card's edge stays readable against the
+        // next — without it the stack merges into a single blob wherever the
+        // two cards are rendered in the same colour.
+        .overlay(
+            RoundedRectangle(cornerRadius: 9)
+                .strokeBorder(ink.opacity(0.22), lineWidth: 1)
+        )
     }
 
     private func dateCaption(_ text: String?) -> some View {
@@ -341,17 +351,22 @@ struct HomeWidgetView: View {
         .widgetAccentable(snap.streakAlive)
     }
 
+    /// Recorded days are solid, missed days are hollow. The distinction has to
+    /// be fill-vs-outline rather than two colours: the tinted and clear home
+    /// screen styles discard hue but keep opacity, so the old opaque grey box
+    /// for a missed day rendered as a solid tinted box — identical to a day
+    /// that was actually recorded.
     private func weekStrip(_ snap: ProjectSnapshot) -> some View {
         HStack(spacing: 4) {
             ForEach(Array(snap.week.enumerated()), id: \.offset) { index, recorded in
                 let isToday = index == snap.week.count - 1
                 RoundedRectangle(cornerRadius: 3)
-                    .fill(recorded ? amber : (isToday ? .clear : dimGap))
+                    .fill(recorded ? amber : Color.clear)
                     .overlay {
                         if !recorded {
                             RoundedRectangle(cornerRadius: 3)
-                                .strokeBorder(isToday ? amber : .white.opacity(0.07),
-                                              lineWidth: isToday ? 2 : 1)
+                                .strokeBorder(isToday ? amber : Color.white.opacity(0.28),
+                                              lineWidth: isToday ? 2 : 1.5)
                         }
                     }
                     .frame(height: 16)
