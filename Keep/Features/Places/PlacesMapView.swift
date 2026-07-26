@@ -395,20 +395,10 @@ struct PlacesMapView: View {
             Spacer()
 
             // TODAY — jumps the scrubber (and re-engages follow)
-            Button {
+            AmberChip(label: "TODAY") {
                 stopFlyover()
                 withAnimation(.easeOut(duration: 0.35)) { centerDay = Double(data.todayTag) }
-            } label: {
-                Text("TODAY")
-                    .font(.mono(11))
-                    .tracking(1)
-                    .foregroundStyle(Theme.amber)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Theme.amber.opacity(0.12), in: Capsule())
-                    .overlay(Capsule().stroke(Theme.amber.opacity(0.4), lineWidth: 1))
             }
-            .buttonStyle(.plain)
 
             // Play — chronological flyover
             Button { isPlaying ? stopFlyover() : startFlyover() } label: {

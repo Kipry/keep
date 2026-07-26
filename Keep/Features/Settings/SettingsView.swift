@@ -49,7 +49,7 @@ struct SettingsView: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(width: 32, height: 32)
-                    .background(Color(white: 0.18), in: Circle())
+                    .background(Theme.control, in: Circle())
             }
             .accessibilityLabel("Close")
         }
@@ -85,8 +85,8 @@ struct SettingsView: View {
                     }
                 }
             }
-            .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+            .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
             .padding(.horizontal, 20)
         }
     }
@@ -117,8 +117,8 @@ struct SettingsView: View {
                         .padding(.vertical, 10)
                 }
             }
-            .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+            .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
             .padding(.horizontal, 20)
         }
     }
@@ -186,8 +186,8 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+            .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
             .padding(.horizontal, 20)
         }
     }
@@ -220,8 +220,8 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+            .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
             .padding(.horizontal, 20)
         }
     }
@@ -261,8 +261,8 @@ struct SettingsView: View {
                         .foregroundStyle(.white.opacity(0.35))
                 }
             }
-            .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+            .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
             .padding(.horizontal, 20)
         }
     }

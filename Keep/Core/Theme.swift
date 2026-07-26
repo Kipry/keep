@@ -6,20 +6,27 @@ enum Theme {
     // Backgrounds
     static let background  = Color(red: 0.051, green: 0.051, blue: 0.051) // #0D0D0D
     static let filmCard    = Color(red: 0.122, green: 0.122, blue: 0.122) // #1F1F1F
-    static let cardSurface = Color(red: 0.133, green: 0.133, blue: 0.133) // #222
+    /// Settings rows, stat cards, streak card — the raised surface on top of
+    /// `background`. Previously spelled `Color(white: 0.1)` at a dozen sites
+    /// while two other card greys (0.122, 0.133) shipped alongside it.
+    static let cardSurface = Color(white: 0.1)
 
     // Warm paper tones
-    static let paper    = Color(red: 0.961, green: 0.902, blue: 0.784) // #F5E6C8
-    static let cream    = Color(red: 0.929, green: 0.851, blue: 0.639) // #EDD9A3
-    static let paperDim = Color(red: 0.878, green: 0.816, blue: 0.682)
+    static let paper = Color(red: 0.961, green: 0.902, blue: 0.784) // #F5E6C8
+    static let cream = Color(red: 0.929, green: 0.851, blue: 0.639) // #EDD9A3
 
     // Accent
     static let amber = Color(red: 0.941, green: 0.529, blue: 0.227) // #F0873A
 
     // Ink
-    static let ink      = Color(red: 0.102, green: 0.102, blue: 0.102) // #1A1A1A
-    static let inkSoft  = Color(red: 0.102, green: 0.102, blue: 0.102).opacity(0.45)
-    static let inkFaint = Color(red: 0.102, green: 0.102, blue: 0.102).opacity(0.18)
+    static let ink = Color(red: 0.102, green: 0.102, blue: 0.102) // #1A1A1A
+
+    // Chrome
+    /// Circular icon-button background. Was five different greys for the same
+    /// affordance (0.12 / 0.14 / 0.16 / 0.18 / white at 10%).
+    static let control = Color(white: 0.14)
+    /// Hairline around cards and controls.
+    static let hairline = Color.white.opacity(0.07)
 }
 
 // MARK: - Typography
@@ -77,11 +84,9 @@ extension Font {
 extension Font {
     static var pageTitle:    Font { .hand(32) }   // tab-level screen title
     static var appWordmark:  Font { .hand(36) }   // "keep."
-    static var screenTitle:  Font { .hand(26) }   // project name hero
     static var navTitle:     Font { .hand(22) }   // compact nav header
     static var cardTitle:    Font { .hand(15) }   // name on grid card
     static var handBody:     Font { .hand(18) }   // CTA / button labels
-    static var handCaption:  Font { .hand(14) }   // secondary labels
 
     static var eyebrow:      Font { .mono(10) }   // "YOUR LIBRARY", section labels
     static var monoCaption:  Font { .mono(9)  }   // dates, subtitles
@@ -133,6 +138,81 @@ struct ScreenHeader<Trailing: View>: View {
 extension ScreenHeader where Trailing == EmptyView {
     init(eyebrow: Text, title: Text) {
         self.init(eyebrow: eyebrow, title: title) { EmptyView() }
+    }
+}
+
+// MARK: - Shared controls
+//
+// These existed two to four times each with small divergences. The diary's
+// zoom picker and its Time/Places switch were character-for-character
+// identical apart from the binding, and the TODAY chip was duplicated verbatim
+// between the timeline and the map.
+
+/// One segment of a pill selector. Wrap a row of them in `.segmentedTrack()`.
+struct SegmentButton: View {
+    let label: LocalizedStringKey
+    let isOn: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.mono(11, weight: isOn ? .medium : .regular))
+                .tracking(0.3)
+                .foregroundStyle(isOn ? Theme.ink : .white.opacity(0.55))
+                .padding(.horizontal, 11).padding(.vertical, 6)
+                .background(isOn ? Theme.amber : .clear, in: RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+extension View {
+    /// The recessed track a row of `SegmentButton`s sits in.
+    func segmentedTrack() -> some View {
+        padding(3)
+            .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 11))
+    }
+}
+
+/// Amber outline chip — "TODAY", "EMPTY" and friends.
+struct AmberChip: View {
+    let label: LocalizedStringKey
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.mono(11))
+                .tracking(1)
+                .foregroundStyle(Theme.amber)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Theme.amber.opacity(0.12), in: Capsule())
+                .overlay(Capsule().stroke(Theme.amber.opacity(0.4), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Circular icon button — the app's close/action affordance.
+struct CircleIconButton: View {
+    let systemName: String
+    let label: LocalizedStringKey
+    var size: CGFloat = 32
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: size * 0.4, weight: .bold))
+                .foregroundStyle(.white.opacity(0.6))
+                .frame(width: size, height: size)
+                .background(Theme.control, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 }
 

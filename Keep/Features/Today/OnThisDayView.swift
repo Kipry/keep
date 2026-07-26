@@ -131,7 +131,7 @@ struct OnThisDayView: View {
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(.white.opacity(0.5))
                     .frame(width: 36, height: 36)
-                    .background(Color(white: 0.12), in: Circle())
+                    .background(Theme.control, in: Circle())
             }
             .accessibilityLabel("Settings")
         }
@@ -173,8 +173,8 @@ struct OnThisDayView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+        .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
     }
 
     // MARK: - Streak card
@@ -237,8 +237,8 @@ struct OnThisDayView: View {
             }
         }
         .padding(18)
-        .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+        .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
         .contentShape(RoundedRectangle(cornerRadius: 14))
         .onTapGesture { showStreakDetail = true }
     }
@@ -466,7 +466,7 @@ private struct StreakDetailView: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(.white.opacity(0.6))
                     .frame(width: 32, height: 32)
-                    .background(Color(white: 0.14), in: Circle())
+                    .background(Theme.control, in: Circle())
             }
         }
         .padding(.horizontal, 20)
@@ -512,8 +512,8 @@ private struct StreakDetailView: View {
             }
         }
         .padding(18)
-        .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+        .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
     }
 
     private func legendItem(color: Color, label: String) -> some View {
@@ -546,7 +546,7 @@ private struct StreakDetailView: View {
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.white.opacity(0.55))
                         .frame(width: 28, height: 28)
-                        .background(Color(white: 0.16), in: Circle())
+                        .background(Theme.control, in: Circle())
                 }
             }
 
@@ -562,7 +562,7 @@ private struct StreakDetailView: View {
             }
         }
         .padding(16)
-        .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 18))
+        .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 18))
         .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.08), lineWidth: 1))
         .shadow(color: .black.opacity(0.55), radius: 20, y: 8)
         .padding(.horizontal, 14)
@@ -629,8 +629,8 @@ private struct StreakMonthGrid: View {
             }
         }
         .padding(16)
-        .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.07), lineWidth: 1))
+        .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
     }
 
     // Streak band: pre-blended amber-over-card colour. An opaque fill lets the

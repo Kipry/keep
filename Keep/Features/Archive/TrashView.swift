@@ -118,18 +118,8 @@ struct TrashView: View {
         HStack(alignment: .bottom) {
             ScreenHeader(eyebrow: Text("DELETED"), title: Text("Trash")) {
                 if !isEmpty {
-                    Button { showEmptyConfirm = true } label: {
-                        Text("EMPTY")
-                            .font(.mono(11))
-                            .tracking(1)
-                            .foregroundStyle(Theme.amber)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Theme.amber.opacity(0.12), in: Capsule())
-                            .overlay(Capsule().stroke(Theme.amber.opacity(0.4), lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Empty trash")
+                    AmberChip(label: "EMPTY") { showEmptyConfirm = true }
+                        .accessibilityLabel("Empty trash")
                 }
             }
             Button { dismiss() } label: {
@@ -137,7 +127,7 @@ struct TrashView: View {
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.white.opacity(0.6))
                     .frame(width: 32, height: 32)
-                    .background(Color(white: 0.14), in: Circle())
+                    .background(Theme.control, in: Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Close")

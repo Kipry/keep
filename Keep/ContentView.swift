@@ -129,7 +129,7 @@ private struct AppTabBar: View {
         .padding(.vertical, 10)
         .background(
             Capsule()
-                .fill(Color(white: 0.1).opacity(0.95))
+                .fill(Theme.cardSurface.opacity(0.95))
                 .overlay(Capsule().stroke(.white.opacity(0.08), lineWidth: 1))
         )
         .padding(.horizontal, 40)

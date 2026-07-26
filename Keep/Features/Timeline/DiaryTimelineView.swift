@@ -329,24 +329,13 @@ struct DiaryTimelineView: View {
             modePillButton("Time", mode: .time)
             modePillButton("Places", mode: .places)
         }
-        .padding(3)
-        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 11))
+        .segmentedTrack()
     }
 
     private func modePillButton(_ label: LocalizedStringKey, mode: DiaryMode) -> some View {
-        let on = diaryMode == mode
-        return Button {
+        SegmentButton(label: label, isOn: diaryMode == mode) {
             withAnimation(.easeInOut(duration: 0.2)) { diaryMode = mode }
-        } label: {
-            Text(label)
-                .font(.mono(11, weight: on ? .medium : .regular))
-                .tracking(0.3)
-                .foregroundStyle(on ? Theme.ink : .white.opacity(0.55))
-                .padding(.horizontal, 11).padding(.vertical, 6)
-                .background(on ? Theme.amber : .clear, in: RoundedRectangle(cornerRadius: 8))
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
     }
 
     // MARK: Preview window
@@ -475,38 +464,17 @@ struct DiaryTimelineView: View {
         HStack {
             HStack(spacing: 2) {
                 ForEach(TimelineZoom.allCases, id: \.self) { z in
-                    let on = z == zoom
-                    Button {
+                    SegmentButton(label: z.label, isOn: z == zoom) {
                         withAnimation(.easeInOut(duration: 0.2)) { zoom = z }  // centreDay preserved
-                    } label: {
-                        Text(z.label)
-                            .font(.mono(11, weight: on ? .medium : .regular))
-                            .tracking(0.3)
-                            .foregroundStyle(on ? Theme.ink : .white.opacity(0.55))
-                            .padding(.horizontal, 11).padding(.vertical, 6)
-                            .background(on ? Theme.amber : .clear, in: RoundedRectangle(cornerRadius: 8))
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
                 }
             }
-            .padding(3)
-            .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 11))
+            .segmentedTrack()
 
-            Button {
+            AmberChip(label: "TODAY") {
                 stopAutoplay()
                 animateTo(Double(data.todayTag))
-            } label: {
-                Text("TODAY")
-                    .font(.mono(11))
-                    .tracking(1)
-                    .foregroundStyle(Theme.amber)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Theme.amber.opacity(0.12), in: Capsule())
-                    .overlay(Capsule().stroke(Theme.amber.opacity(0.4), lineWidth: 1))
             }
-            .buttonStyle(.plain)
             .padding(.leading, 8)
 
             Spacer()

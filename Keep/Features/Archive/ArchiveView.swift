@@ -32,7 +32,7 @@ struct ArchiveView: View {
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundStyle(.white.opacity(0.6))
                                 .frame(width: 32, height: 32)
-                                .background(Color(white: 0.14), in: Circle())
+                                .background(Theme.control, in: Circle())
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Close")

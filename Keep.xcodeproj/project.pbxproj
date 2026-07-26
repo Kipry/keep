@@ -15,7 +15,6 @@
 		A1000000000000000000006B /* VideoComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000006A /* VideoComposer.swift */; };
 		A1000000000000000000007B /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000007A /* CameraView.swift */; };
 		A1000000000000000000008B /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000008A /* CameraPreviewView.swift */; };
-		A1000000000000000000009B /* ClipCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000009A /* ClipCell.swift */; };
 		A100000000000000000000AB /* ProjectListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000AA /* ProjectListView.swift */; };
 		A100000000000000000000BB /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000BA /* ProjectDetailView.swift */; };
 		A100000000000000000002AB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100000000000000000002AA /* Assets.xcassets */; };
@@ -90,7 +89,6 @@
 		A1000000000000000000006A /* VideoComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoComposer.swift; sourceTree = "<group>"; };
 		A1000000000000000000007A /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		A1000000000000000000008A /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
-		A1000000000000000000009A /* ClipCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipCell.swift; sourceTree = "<group>"; };
 		A100000000000000000000AA /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
 		A100000000000000000000BA /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
 		A100000000000000000000CA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -295,7 +293,6 @@
 		A1000000000000000000014A /* Clips */ = {
 			isa = PBXGroup;
 			children = (
-				A1000000000000000000009A /* ClipCell.swift */,
 				9F1C91A588EE9E83B3832F68 /* ClipViewer.swift */,
 			);
 			path = Clips;
@@ -527,7 +524,6 @@
 				AE435650A6DD218729E32302 /* MemoriesStats.swift in Sources */,
 				E099F9B396BEACE6D2995BD5 /* TrashView.swift in Sources */,
 				A1000000000000000000008B /* CameraPreviewView.swift in Sources */,
-				A1000000000000000000009B /* ClipCell.swift in Sources */,
 				A100000000000000000000AB /* ProjectListView.swift in Sources */,
 				A100000000000000000000BB /* ProjectDetailView.swift in Sources */,
 				A100000000000000000003AB /* VideoTransferable.swift in Sources */,
