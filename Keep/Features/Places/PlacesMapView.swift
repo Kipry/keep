@@ -30,6 +30,13 @@ struct PlacesMapView: View {
     // One-shot: seed an explicit camera so the map is never .automatic while
     // pins exist (see seedCameraIfNeeded — prevents a re-fit feedback loop).
     @State private var didSeedCamera = false
+    /// Camera flight in progress (see `fly(to:)`).
+    @State private var flightTask: Task<Void, Never>?
+    @State private var isFlying = false
+    /// Altitude a flight lands at. Seeded with a street-level value and then
+    /// tracked from whatever zoom the user settles on, so following the
+    /// scrubber never quietly overrides the zoom they chose.
+    @State private var followDistance: CLLocationDistance = 1400
 
     private let calendar = Calendar.current
     /// The route shows only travel within this many days before the focused
@@ -156,12 +163,14 @@ struct PlacesMapView: View {
         }
         .onChange(of: camera.positionedByUser) { _, byUser in
             // Manual pan/zoom/rotate: stop following and cancel the flyover.
-            if byUser { follow = false; stopFlyover() }
+            // The flight goes too — otherwise the second half of an arc fires
+            // after the user has taken the map and yanks it back.
+            if byUser { follow = false; stopFlyover(); cancelFlight() }
         }
         .onChange(of: isActive) { _, active in
-            if !active { stopFlyover() }
+            if !active { stopFlyover(); cancelFlight() }
         }
-        .onDisappear { stopFlyover() }
+        .onDisappear { stopFlyover(); cancelFlight() }
         .sheet(item: $detailPlace) { place in
             PlaceDetailSheet(
                 place: place,
@@ -198,6 +207,20 @@ struct PlacesMapView: View {
                 .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
                 .onMapCameraChange(frequency: .onEnd) { ctx in
                     visibleRect = ctx.rect   // clustering input only
+                    // Remember the altitude the user settles on. Only while
+                    // they're driving: during a flight `follow` is on, so a
+                    // flight can never move the goalposts for the next one.
+                    if !follow {
+                        followDistance = min(max(ctx.camera.distance, 250), 60_000)
+                    }
+                    // Don't re-cluster at the top of a flight arc. The camera
+                    // is deliberately far out up there, so every pin would
+                    // collapse into one blob and spring apart again on
+                    // landing. Clustering depends on the zoom bucket and the
+                    // revealed set, not on where the map is panned to, and a
+                    // flight lands at the altitude it left from — so nothing
+                    // can have changed by the end anyway.
+                    guard !isFlying else { return }
                     rebuildClusters()
                 }
 
@@ -474,30 +497,126 @@ struct PlacesMapView: View {
         return MKCoordinateRegion(center: center, span: span)
     }
 
+    /// Where the map is looking right now. `visibleRect.origin` is the rect's
+    /// *corner*, which put every distance estimate half a screen out.
+    private var visibleCenter: CLLocationCoordinate2D {
+        MKMapPoint(x: visibleRect.midX, y: visibleRect.midY).coordinate
+    }
+
+    /// Wall-clock length of a flight, exposed so the flyover can time its
+    /// dwell against it.
+    ///
+    /// Square root of the distance rather than a linear ramp: a place ten
+    /// times further away should not take ten times as long to reach. The
+    /// arc's altitude is what conveys the distance; the duration only has to
+    /// stay believable.
+    private func flightDuration(to place: Place) -> Double {
+        let meters = MKMapPoint(visibleCenter).distance(to: MKMapPoint(place.coordinate))
+        return min(1.6, max(0.45, (meters / 1_000).squareRoot() * 0.16))
+    }
+
+    /// Flies the camera to `place` along an arc: climb away from where we are,
+    /// cross at altitude, descend onto the target.
+    ///
+    /// Interpolating centre and distance straight from A to B — which is what
+    /// a single `withAnimation` does — reads as a jump at map scale: the pins
+    /// slide sideways and nothing conveys how far you actually travelled. The
+    /// established answer is van Wijk & Nuij's "Smooth and Efficient Zooming
+    /// and Panning" (2003), the algorithm behind Mapbox's `flyTo`, Google
+    /// Earth's transitions and d3's `interpolateZoom`: it solves for the path
+    /// through (x, y, log-zoom) space that a viewer perceives as shortest, and
+    /// its defining property is that it pulls back automatically as the
+    /// distance grows.
+    ///
+    /// We take the two-keyframe approximation of that curve rather than the
+    /// closed form, because the full version has to be driven frame by frame —
+    /// and every camera change we push settles `onMapCameraChange`, which is
+    /// what feeds the clustering. Sixty re-clusters a second would cost far
+    /// more than the remaining fidelity is worth. Two halves of one arc, with
+    /// the apex placed so both ends fit in frame, gets the same read.
     private func fly(to place: Place) {
-        let cam = MapCamera(centerCoordinate: place.coordinate, distance: 1400)
-        if reduceMotion {
-            camera = .camera(cam)
-        } else {
-            withAnimation(.easeInOut(duration: flyDuration(to: place))) { camera = .camera(cam) }
+        cancelFlight()
+        let target  = place.coordinate
+        let landing = followDistance
+
+        guard !reduceMotion else {
+            camera = .camera(MapCamera(centerCoordinate: target, distance: landing))
+            return
+        }
+
+        let origin = visibleCenter
+        let meters = MKMapPoint(origin).distance(to: MKMapPoint(target))
+        let total  = flightDuration(to: place)
+
+        // Below roughly one screen of travel there is nothing to arc over —
+        // climbing for a two-hundred-metre hop reads as a nervous twitch.
+        guard meters > landing else {
+            withAnimation(.easeInOut(duration: total)) {
+                camera = .camera(MapCamera(centerCoordinate: target, distance: landing))
+            }
+            return
+        }
+
+        // Apex altitude. `MapCamera.distance` is roughly the span the camera
+        // takes in at zero pitch, so the travelled distance is the natural
+        // unit: a little more than that puts origin and target both in frame
+        // at the top of the arc, which is the moment that makes the journey
+        // legible.
+        let apex = min(max(meters * 1.35, landing * 2), 12_000_000)
+        let a = MKMapPoint(origin), b = MKMapPoint(target)
+        let apexCenter = MKMapPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2).coordinate
+        let half = total / 2
+
+        isFlying = true
+        flightTask = Task { @MainActor in
+            // Climb away from the origin, accelerating…
+            withAnimation(.easeIn(duration: half)) {
+                camera = .camera(MapCamera(centerCoordinate: apexCenter, distance: apex))
+            }
+            try? await Task.sleep(nanoseconds: UInt64(half * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+
+            // …then descend onto the target, decelerating. `easeIn` finishes
+            // at full speed and `easeOut` starts at full speed, so the halves
+            // join without a visible stall at the apex.
+            withAnimation(.easeOut(duration: half)) {
+                camera = .camera(MapCamera(centerCoordinate: target, distance: landing))
+            }
+            // Outlast the landing, so the camera-settled callback it triggers
+            // is still suppressed and the single rebuild below is the one that
+            // counts.
+            try? await Task.sleep(nanoseconds: UInt64((half + 0.25) * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            isFlying = false
+            flightTask = nil
+            rebuildClusters()
         }
     }
 
-    private func flyDuration(to place: Place) -> Double {
-        let from = visibleRect.origin.coordinate
-        let meters = MKMapPoint(from).distance(to: MKMapPoint(place.coordinate))
-        return min(1.2, max(0.4, meters / 80_000))
+    /// Aborts a flight in the air. No rebuild here on purpose: `visibleRect`
+    /// may currently hold the arc's apex, and re-clustering from that would
+    /// briefly collapse every pin. Whatever moves the camera next — the user's
+    /// gesture, the next flight — settles and rebuilds properly.
+    private func cancelFlight() {
+        flightTask?.cancel()
+        flightTask = nil
+        isFlying = false
     }
 
     /// Zooms so the cluster's own members fill the viewport, which is what
     /// actually separates them. A fixed "zoom one step in" could leave a tight
     /// cluster still clustered, so a tap appeared to do nothing.
     private func expand(_ members: [Place], around fallbackCenter: CLLocationCoordinate2D) {
+        // Breaking a cluster open is the user framing the map themselves, so
+        // hand the camera over: the settled altitude becomes the one the next
+        // flight lands at, and scrubbing takes following back.
+        cancelFlight()
+        follow = false
         let position: MapCameraPosition
         if let region = Self.fittingRegion(for: members) {
             position = .region(region)
         } else {
-            let metersPerMapPoint = MKMetersPerMapPointAtLatitude(visibleRect.origin.coordinate.latitude)
+            let metersPerMapPoint = MKMetersPerMapPointAtLatitude(visibleCenter.latitude)
             let currentMeters = visibleRect.size.height * metersPerMapPoint
             position = .camera(MapCamera(centerCoordinate: fallbackCenter,
                                          distance: max(600, currentMeters * 0.35)))
@@ -522,7 +641,7 @@ struct PlacesMapView: View {
                 withAnimation(.easeInOut(duration: 0.25)) {
                     centerDay = Double(place.firstDayTag)   // reveals + follow flies
                 }
-                let travel = reduceMotion ? 0.1 : flyDuration(to: place)
+                let travel = reduceMotion ? 0.1 : flightDuration(to: place)
                 try? await Task.sleep(nanoseconds: UInt64((travel + 0.15) * 1_000_000_000))
                 guard !Task.isCancelled, isPlaying else { break }
 

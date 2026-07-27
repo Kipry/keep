@@ -150,6 +150,14 @@ struct PlacesData {
 
     // MARK: Clustering
 
+    /// Straight-line distance in map points. Deliberately *not*
+    /// `MKMapPoint.distance(to:)`, which converts to metres — see the note in
+    /// `clusters(for:visibleRect:viewWidth:)`.
+    private static func mapPointDistance(_ a: MKMapPoint, _ b: MKMapPoint) -> Double {
+        let dx = a.x - b.x, dy = a.y - b.y
+        return (dx * dx + dy * dy).squareRoot()
+    }
+
     /// Groups the given (already revealed) places into renderable map items for
     /// the current zoom. Works in absolute MKMapPoint space with a quantized
     /// zoom bucket, so panning never re-clusters — only zoom steps and reveal
@@ -176,10 +184,18 @@ struct PlacesData {
         // collapsed distinct spots into one as soon as you zoomed out.
         let cell = 34.0 * pow(2.0, zoomBucket)
 
+        // `cell` is in MAP POINTS, so the comparison has to be Euclidean in
+        // map-point space too. This used to call MKMapPoint.distance(to:),
+        // which returns METRES — and one map point is only ~0.15 m at the
+        // equator, less as you move away from it. The threshold therefore
+        // behaved like ~230 screen points at the equator and ~350 at European
+        // latitudes, against a map barely 366pt wide: at every zoom level,
+        // anything on screen collapsed into a single cluster and the travel
+        // route had nothing left to connect.
         var drafts: [(seed: MKMapPoint, members: [Place])] = []
         for place in places {
             let mp = MKMapPoint(place.coordinate)
-            if let i = drafts.firstIndex(where: { $0.seed.distance(to: mp) < cell }) {
+            if let i = drafts.firstIndex(where: { mapPointDistance($0.seed, mp) < cell }) {
                 drafts[i].members.append(place)
             } else {
                 drafts.append((mp, [place]))
