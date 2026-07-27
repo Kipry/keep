@@ -1233,28 +1233,6 @@
         }
       }
     },
-    "Search projects…": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Projekte suchen …"
-          }
-        }
-      }
-    },
-    "No results for \"%@\"": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Ergebnisse für \"%@\""
-          }
-        }
-      }
-    },
     "WELCOME": {
       "extractionState": "manual",
       "localizations": {
@@ -2201,17 +2179,6 @@
         }
       }
     },
-    "Close search": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suche schließen"
-          }
-        }
-      }
-    },
     "Close camera": {
       "extractionState": "manual",
       "localizations": {
@@ -2399,17 +2366,6 @@
         }
       }
     },
-    "Search": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suchen"
-          }
-        }
-      }
-    },
     "Audio": {
       "extractionState": "manual",
       "localizations": {
@@ -2439,6 +2395,138 @@
           "stringUnit": {
             "state": "translated",
             "value": "Clips, die Wochen auseinanderliegen, klingen selten gleich laut. Das gleicht sie bei Wiedergabe und Export an — leise Clips werden angehoben, laute zurückgenommen. Deine Aufnahmen selbst bleiben unverändert."
+          }
+        }
+      }
+    },
+    "No project": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ohne Projekt"
+          }
+        }
+      }
+    },
+    "RESTORE ALL": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ALLE ZURÜCK"
+          }
+        }
+      }
+    },
+    "Restore all clips": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Clips wiederherstellen"
+          }
+        }
+      }
+    },
+    "Deleted %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gelöscht %@"
+          }
+        }
+      }
+    },
+    "1 clip": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Clip"
+          }
+        }
+      }
+    },
+    "%lld clips": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Clips"
+          }
+        }
+      }
+    },
+    "Feedback": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feedback"
+          }
+        }
+      }
+    },
+    "Send Feedback": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feedback senden"
+          }
+        }
+      }
+    },
+    "Opens your mail app with a message addressed to us. Your app and device version are filled in — they're what makes a bug report actionable.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet deine Mail-App mit einer an uns adressierten Nachricht. App- und Geräteversion sind bereits eingetragen — sie machen einen Fehlerbericht erst verwertbar."
+          }
+        }
+      }
+    },
+    "No mail account": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Mail-Konto"
+          }
+        }
+      }
+    },
+    "Copy Address": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresse kopieren"
+          }
+        }
+      }
+    },
+    "This device has no mail account set up. Write to %@ from wherever you like.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auf diesem Gerät ist kein Mail-Konto eingerichtet. Schreib uns gern von wo du magst an %@."
           }
         }
       }

@@ -388,14 +388,16 @@ struct CameraView: View {
 
     private var durationPicker: some View {
         HStack(spacing: 6) {
-            ForEach([1.0, 3.0, 5.0], id: \.self) { d in
+            // Must offer everything Settings does, or a 2s default would open
+            // the camera with no segment selected.
+            ForEach([1.0, 2.0, 3.0, 5.0], id: \.self) { d in
                 Button {
                     durationLimit = d
                 } label: {
-                    Text("\(Int(d))s")
+                    Text(verbatim: "\(Int(d))s")
                         .font(.mono(13, weight: .medium))
                         .foregroundStyle(durationLimit == d ? Theme.ink : .white)
-                        .padding(.horizontal, 18)
+                        .padding(.horizontal, 15)
                         .padding(.vertical, 8)
                         .background(
                             durationLimit == d ? .white : Color.black.opacity(0.35),

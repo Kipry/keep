@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @AppStorage("defaultRecordingDuration") private var defaultDuration: Double = 1.0
@@ -8,9 +9,11 @@ struct SettingsView: View {
     @AppStorage("levelAudio") private var levelAudio = true
     @AppStorage("didOnboard") private var didOnboard = true
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     @State private var showArchive = false
     @State private var showTrash = false
+    @State private var showMailFallback = false
 
     private var appVersion: String {
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "—"
@@ -28,6 +31,7 @@ struct SettingsView: View {
                     librarySection
                     tutorialSection
                     aboutSection
+                    feedbackSection
                 }
                 .padding(.top, 60)
                 .padding(.bottom, 60)
@@ -67,25 +71,20 @@ struct SettingsView: View {
             sectionLabel("Recording")
 
             VStack(spacing: 0) {
-                row {
-                    Text("Default Duration")
-                        .foregroundStyle(.white)
-                    Spacer()
-                    HStack(spacing: 6) {
-                        ForEach([1.0, 3.0, 5.0], id: \.self) { d in
-                            Button { defaultDuration = d } label: {
-                                Text("\(Int(d))s")
-                                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                                    .foregroundStyle(defaultDuration == d ? Theme.ink : .white.opacity(0.6))
-                                    .frame(width: 40, height: 30)
-                                    .background(
-                                        defaultDuration == d ? Theme.amber : Color(white: 0.22),
-                                        in: RoundedRectangle(cornerRadius: 8)
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityAddTraits(defaultDuration == d ? [.isButton, .isSelected] : .isButton)
+                stackedRow("Default Duration") {
+                    ForEach([1.0, 2.0, 3.0, 5.0], id: \.self) { d in
+                        Button { defaultDuration = d } label: {
+                            Text(verbatim: "\(Int(d))s")
+                                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(defaultDuration == d ? Theme.ink : .white.opacity(0.6))
+                                .frame(width: 44, height: 32)
+                                .background(
+                                    defaultDuration == d ? Theme.amber : Color(white: 0.22),
+                                    in: RoundedRectangle(cornerRadius: 8)
+                                )
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(defaultDuration == d ? [.isButton, .isSelected] : .isButton)
                     }
                 }
             }
@@ -102,14 +101,9 @@ struct SettingsView: View {
             sectionLabel("Audio")
 
             VStack(spacing: 0) {
-                row {
-                    Text("Match Volume")
-                        .foregroundStyle(.white)
-                    Spacer()
-                    HStack(spacing: 6) {
-                        levellingButton("On",  value: true)
-                        levellingButton("Off", value: false)
-                    }
+                stackedRow("Match Volume") {
+                    levellingButton("On",  value: true)
+                    levellingButton("Off", value: false)
                 }
                 rowDivider
                 row {
@@ -130,9 +124,11 @@ struct SettingsView: View {
         Button { levelAudio = value } label: {
             Text(label)
                 .font(.system(size: 12, weight: .semibold))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
                 .foregroundStyle(levelAudio == value ? Theme.ink : .white.opacity(0.6))
-                .padding(.horizontal, 12)
-                .frame(height: 30)
+                .padding(.horizontal, 14)
+                .frame(height: 32)
                 .background(
                     levelAudio == value ? Theme.amber : Color(white: 0.22),
                     in: RoundedRectangle(cornerRadius: 8)
@@ -149,15 +145,10 @@ struct SettingsView: View {
             sectionLabel("Location")
 
             VStack(spacing: 0) {
-                row {
-                    Text("Save Location")
-                        .foregroundStyle(.white)
-                    Spacer()
-                    HStack(spacing: 6) {
-                        granularityButton("Precise", value: "precise")
-                        granularityButton("Nearby",  value: "place")
-                        granularityButton("Off",     value: "off")
-                    }
+                stackedRow("Save Location") {
+                    granularityButton("Precise", value: "precise")
+                    granularityButton("Nearby",  value: "place")
+                    granularityButton("Off",     value: "off")
                 }
                 rowDivider
                 row {
@@ -184,9 +175,11 @@ struct SettingsView: View {
         } label: {
             Text(label)
                 .font(.system(size: 12, weight: .semibold))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
                 .foregroundStyle(locationGranularity == value ? Theme.ink : .white.opacity(0.6))
-                .padding(.horizontal, 10)
-                .frame(height: 30)
+                .padding(.horizontal, 12)
+                .frame(height: 32)
                 .background(
                     locationGranularity == value ? Theme.amber : Color(white: 0.22),
                     in: RoundedRectangle(cornerRadius: 8)
@@ -318,6 +311,87 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Feedback section
+
+    private var feedbackSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("Feedback")
+
+            VStack(spacing: 0) {
+                row {
+                    Button { sendFeedback() } label: {
+                        HStack {
+                            Text("Send Feedback")
+                                .foregroundStyle(.white)
+                            Spacer()
+                            Image(systemName: "envelope")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Theme.amber)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                rowDivider
+                row {
+                    Text("Opens your mail app with a message addressed to us. Your app and device version are filled in — they're what makes a bug report actionable.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .lineSpacing(2)
+                        .padding(.vertical, 10)
+                }
+            }
+            .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
+            .padding(.horizontal, 20)
+        }
+        .alert("No mail account", isPresented: $showMailFallback) {
+            Button("Copy Address") { UIPasteboard.general.string = Self.feedbackAddress }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("This device has no mail account set up. Write to \(Self.feedbackAddress) from wherever you like.")
+        }
+    }
+
+    private static let feedbackAddress = "keep.dailymoments@gmail.com"
+
+    /// Hands the whole message off to the mail app pre-addressed. `mailto:`
+    /// rather than `MFMailComposeViewController` on purpose: the composer needs
+    /// a configured Mail account specifically, while `mailto:` reaches whatever
+    /// mail client the user actually uses.
+    private func sendFeedback() {
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = Self.feedbackAddress
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: "keep. Feedback"),
+            URLQueryItem(name: "body", value: "\n\n—\n\(deviceSummary)")
+        ]
+        guard let url = components.url else { showMailFallback = true; return }
+        openURL(url) { accepted in
+            if !accepted { showMailFallback = true }
+        }
+    }
+
+    /// Version and hardware, appended so a report arrives with the context that
+    /// otherwise takes three emails to establish.
+    private var deviceSummary: String {
+        let build = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "—"
+        return "keep. \(appVersion) (\(build)) · iOS \(UIDevice.current.systemVersion) · \(Self.deviceModel)"
+    }
+
+    /// Marketing names aren't available to apps, so this is the hardware
+    /// identifier ("iPhone17,1") — still enough to tell the devices apart.
+    private static var deviceModel: String {
+        var info = utsname()
+        uname(&info)
+        let machine = withUnsafeBytes(of: &info.machine) { raw in
+            raw.prefix { $0 != 0 }.map { Character(UnicodeScalar($0)) }
+        }
+        let name = String(machine)
+        return name.isEmpty ? "unknown" : name
+    }
+
     // MARK: - Helpers
 
     private func sectionLabel(_ text: LocalizedStringKey) -> some View {
@@ -335,6 +409,28 @@ struct SettingsView: View {
         }
         .padding(.horizontal, 16)
         .frame(minHeight: 52)
+    }
+
+    /// Label above, segmented control below.
+    ///
+    /// Side by side, the German labels plus three or four segments overflow the
+    /// card on a standard phone: "Genau" wrapped to "Gena / u" and the whole
+    /// row looked broken. Stacking gives the segments the full card width, so
+    /// the layout holds for any translation — and for the fourth duration
+    /// segment this screen just gained.
+    private func stackedRow<Content: View>(_ title: LocalizedStringKey,
+                                           @ViewBuilder segments: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 6) {
+                segments()
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 
     private var rowDivider: some View {

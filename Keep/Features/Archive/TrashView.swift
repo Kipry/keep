@@ -31,6 +31,32 @@ struct TrashView: View {
 
     private var isEmpty: Bool { deletedProjects.isEmpty && looseClips.isEmpty }
 
+    /// Deleted clips gathered under the project they came from.
+    ///
+    /// They used to be listed flat, each row labelled with its *project's*
+    /// name — so deleting three clips from one project produced three
+    /// identical-looking rows and no way to tell which clip was which. Grouping
+    /// puts the project name where it belongs (once, as a heading) and gives
+    /// every clip a row of its own with its thumbnail and recording date.
+    private struct ClipGroup: Identifiable {
+        let id: String
+        let projectName: String
+        let clips: [Clip]
+    }
+
+    private var clipGroups: [ClipGroup] {
+        let grouped = Dictionary(grouping: looseClips) { $0.project?.id.uuidString ?? "" }
+        return grouped.map { key, clips in
+            let sorted = clips.sorted { ($0.deletedAt ?? .distantPast) > ($1.deletedAt ?? .distantPast) }
+            return ClipGroup(
+                id: key,
+                projectName: sorted.first?.project?.name ?? String(localized: "No project"),
+                clips: sorted
+            )
+        }
+        .sorted { ($0.clips.first?.deletedAt ?? .distantPast) > ($1.clips.first?.deletedAt ?? .distantPast) }
+    }
+
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
@@ -55,13 +81,10 @@ struct TrashView: View {
                             }
                         }
 
-                        if !looseClips.isEmpty {
+                        if !clipGroups.isEmpty {
                             section("Clips") {
-                                ForEach(looseClips) { clip in
-                                    row(title: clip.project?.name ?? String(localized: "Clip"),
-                                        subtitle: subtitle(for: clip.deletedAt, count: nil, isProject: false),
-                                        restore: { clip.restore(); save() },
-                                        purge: { clipToPurge = clip })
+                                ForEach(clipGroups) { group in
+                                    clipGroupCard(group)
                                 }
                             }
                         }
@@ -197,6 +220,110 @@ struct TrashView: View {
         .padding(.leading, 12)
         .padding(.trailing, 2)
         .background(Color(white: 0.11), in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    // MARK: Deleted clips
+
+    private func clipGroupCard(_ group: ClipGroup) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(group.projectName)
+                        .font(.hand(18))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text(group.clips.count == 1
+                         ? String(localized: "1 clip")
+                         : String(localized: "\(group.clips.count) clips"))
+                        .font(.monoCaption)
+                        .foregroundStyle(.white.opacity(0.4))
+                }
+                Spacer(minLength: 8)
+                if group.clips.count > 1 {
+                    AmberChip(label: "RESTORE ALL") {
+                        for clip in group.clips { clip.restore() }
+                        save()
+                    }
+                    .accessibilityLabel("Restore all clips")
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
+
+            ForEach(Array(group.clips.enumerated()), id: \.element.id) { index, clip in
+                if index > 0 {
+                    Rectangle()
+                        .fill(.white.opacity(0.06))
+                        .frame(height: 1)
+                        .padding(.leading, 64)
+                }
+                clipRow(clip)
+            }
+        }
+        .background(Color(white: 0.11), in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func clipRow(_ clip: Clip) -> some View {
+        HStack(spacing: 10) {
+            Group {
+                if let data = clip.thumbnailData, let image = UIImage(data: data) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Rectangle()
+                        .fill(.white.opacity(0.06))
+                        .overlay {
+                            Image(systemName: clip.isPhoto ? "photo" : "film")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.white.opacity(0.3))
+                        }
+                }
+            }
+            .frame(width: 40, height: 52)
+            .clipShape(RoundedRectangle(cornerRadius: 7))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: clip.createdAt.formatted(date: .abbreviated, time: .shortened))
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                // Labelled, because the line above is also a date — the clip's
+                // recording date, which is what identifies it.
+                Text(verbatim: deletedLabel(clip.deletedAt))
+                    .font(.monoCaption)
+                    .foregroundStyle(.white.opacity(0.4))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 4)
+
+            Button { clip.restore(); save() } label: {
+                Image(systemName: "arrow.uturn.up")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.amber)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Restore")
+
+            Button { clipToPurge = clip } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Delete permanently")
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 2)
+        .padding(.vertical, 6)
+    }
+
+    private func deletedLabel(_ date: Date?) -> String {
+        guard let date else { return "" }
+        return String(localized: "Deleted \(date.formatted(date: .abbreviated, time: .omitted))")
     }
 
     private var emptyState: some View {

@@ -20,13 +20,6 @@ struct ProjectListView: View {
     @State private var selectedProject: Project?
     @State private var deepLinkMissing = false
     @State private var recordOnNextOpen = false
-    @State private var searchText = ""
-    @State private var isSearching = false
-
-    private var displayedProjects: [Project] {
-        guard !searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return projects }
-        return projects.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-    }
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -40,11 +33,11 @@ struct ProjectListView: View {
                     .padding(.top, Layout.headerTop)
                     .padding(.bottom, 12)
 
-                if displayedProjects.isEmpty {
+                if projects.isEmpty {
                     // Outside the ScrollView on purpose: a Spacer inside one has
                     // no free height to claim, which left the empty state stuck
                     // under the header instead of centred.
-                    (isSearching ? AnyView(noResultsState) : AnyView(emptyState))
+                    emptyState
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView(showsIndicators: false) {
@@ -56,7 +49,7 @@ struct ProjectListView: View {
                                 ],
                                 spacing: 14
                             ) {
-                                ForEach(displayedProjects) { project in
+                                ForEach(projects) { project in
                                     Button { selectedProject = project } label: {
                                         ProjectCard(project: project)
                                     }
@@ -168,61 +161,10 @@ struct ProjectListView: View {
     // MARK: - Pinned header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ScreenHeader(eyebrow: Text("YOUR LIBRARY"), title: Text("keep.")) {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { isSearching.toggle() }
-                    if !isSearching { searchText = "" }
-                } label: {
-                    Image(systemName: isSearching ? "xmark" : "magnifyingglass")
-                        .font(.body.bold())
-                        .foregroundStyle(isSearching ? Theme.amber : .white)
-                        .frame(width: 36, height: 36)
-                        .background(.white.opacity(0.1), in: Circle())
-                }
-                .accessibilityLabel(isSearching ? "Close search" : "Search")
-            }
-
-            if isSearching {
-                HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.white.opacity(0.4))
-                    TextField("Search projects…", text: $searchText)
-                        .foregroundStyle(.white)
-                        .tint(Theme.amber)
-                        .autocorrectionDisabled()
-                    if !searchText.isEmpty {
-                        Button { searchText = "" } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.white.opacity(0.3))
-                        }
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(Color(white: 0.12), in: RoundedRectangle(cornerRadius: 12))
-                .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
+        ScreenHeader(eyebrow: Text("YOUR LIBRARY"), title: Text("keep."))
     }
 
-    // MARK: - Empty / no-results states
-
-    private var noResultsState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 40))
-                .foregroundStyle(.white.opacity(0.12))
-            Text("No results for \"\(searchText)\"")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.38))
-                .multilineTextAlignment(.center)
-        }
-        .padding(.horizontal, Layout.gutter)
-        // Nudged up so the block reads as centred above the tab bar rather
-        // than sitting optically low.
-        .padding(.bottom, 60)
-    }
+    // MARK: - Empty state
 
     private var emptyState: some View {
         VStack(spacing: 20) {
