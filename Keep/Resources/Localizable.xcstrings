@@ -1321,17 +1321,6 @@
         }
       }
     },
-    "One tap — record directly": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tippen — direkt aufnehmen"
-          }
-        }
-      }
-    },
     "Done.": {
       "extractionState": "manual",
       "localizations": {
@@ -1372,17 +1361,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sperrbildschirm lange drücken"
-          }
-        }
-      }
-    },
-    "Tap 'Customise'": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„Anpassen“ antippen"
           }
         }
       }
@@ -2410,17 +2388,6 @@
         }
       }
     },
-    "Three seconds from the lock screen — then the phone is away and you're back in the moment.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drei Sekunden vom Sperrbildschirm — dann ist das Handy weg und du wieder im Moment."
-          }
-        }
-      }
-    },
     "STRAIGHT FROM THE LOCK SCREEN": {
       "extractionState": "manual",
       "localizations": {
@@ -2439,17 +2406,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Deine Story."
-          }
-        }
-      }
-    },
-    "Holiday, workout, everyday life — every day adds one clip.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Urlaub, Workout, Alltag — jeder Tag legt einen Clip dazu."
           }
         }
       }
@@ -2498,17 +2454,6 @@
         }
       }
     },
-    "One tap — and every clip becomes one film.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ein Tipp — und aus allen Clips wird ein Film."
-          }
-        }
-      }
-    },
     "COMPILING YOUR VIDEO": {
       "extractionState": "manual",
       "localizations": {
@@ -2520,13 +2465,79 @@
         }
       }
     },
-    "Add it once — from then on every recording is a single tap away.": {
+    "Three seconds from the lock screen — then you're back in the moment instead of behind a phone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drei Sekunden vom Sperrbildschirm — dann ist das Handy weg und du wieder im Moment."
+          }
+        }
+      }
+    },
+    "One tap, and you're recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippen — direkt aufnehmen"
+          }
+        }
+      }
+    },
+    "Holidays, workouts, ordinary days — each one adds a clip.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urlaub, Workout, Alltag — jeder Tag legt einen Clip dazu."
+          }
+        }
+      }
+    },
+    "One tap, and all your clips become a single film.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Tipp — und aus allen Clips wird ein Film."
+          }
+        }
+      }
+    },
+    "Add it once — after that, every recording is one tap away.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Einmal einrichten — danach ist jede Aufnahme nur einen Tipp entfernt."
+          }
+        }
+      }
+    },
+    "Tap “Customize”": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Anpassen“ antippen"
+          }
+        }
+      }
+    },
+    "SUNDAY · JUNE 7": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SONNTAG · 7. JUNI"
           }
         }
       }

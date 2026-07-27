@@ -322,7 +322,7 @@ private struct StepLockScreen: View {
         StepShell(
             eyebrow:  "ONE TAP",
             headline: "Tap. Record.\nDone.",
-            subtext:  "Three seconds from the lock screen — then the phone is away and you're back in the moment."
+            subtext:  "Three seconds from the lock screen — then you're back in the moment instead of behind a phone."
         ) {
             PhoneFrame { LockPhaseAnimation() }
         }
@@ -388,7 +388,7 @@ private struct LockBackground: View {
 private struct LockClock: View {
     var body: some View {
         VStack(spacing: 4) {
-            Text("SONNTAG · 7. JUNI")
+            Text("SUNDAY · JUNE 7")
                 .font(.mono(13))
                 .tracking(2)
                 .foregroundStyle(.white.opacity(0.55))
@@ -499,7 +499,7 @@ private struct LockScreenMock: View {
                     Image(systemName: "arrow.up")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Theme.amber)
-                    Text("One tap — record directly")
+                    Text("One tap, and you're recording")
                         .font(.hand(19))
                         .foregroundStyle(.white)
                     Text("STRAIGHT FROM THE LOCK SCREEN")
@@ -660,7 +660,7 @@ private struct StepLibrary: View {
         StepShell(
             eyebrow:  "LIBRARY",
             headline: "Your story.",
-            subtext:  "Holiday, workout, everyday life — every day adds one clip."
+            subtext:  "Holidays, workouts, ordinary days — each one adds a clip."
         ) {
             PhoneFrame { ProjectGridMock() }
         }
@@ -786,10 +786,14 @@ private struct ProjectGridMock: View {
 private struct MockTabBar: View {
     let activeTab: Int
 
-    private let items: [(String, String, String)] = [
-        ("square.grid.2x2", "square.grid.2x2.fill", "Projects"),
-        ("archivebox",       "archivebox.fill",       "Archive"),
-        ("sparkles",         "sparkles",              "Today")
+    // Icons and labels must track ContentView's real tab bar — this mock
+    // used to promise an "Archive" and a "Today" tab that don't exist. The
+    // label is a LocalizedStringKey, not a String: Text(String) is the
+    // verbatim initialiser, so these never localised.
+    private let items: [(String, String, LocalizedStringKey)] = [
+        ("square.grid.2x2",             "square.grid.2x2.fill",         "Projects"),
+        ("calendar.day.timeline.left",  "calendar.day.timeline.left",   "Diary"),
+        ("sparkles",                    "sparkles",                     "Memories")
     ]
 
     var body: some View {
@@ -1014,7 +1018,7 @@ private struct StepExport: View {
         StepShell(
             eyebrow:  "EXPORT",
             headline: "Clips in.\nVideo out.",
-            subtext:  "One tap — and every clip becomes one film."
+            subtext:  "One tap, and all your clips become a single film."
         ) {
             PhoneFrame { ExportMock() }
         }
@@ -1137,7 +1141,7 @@ private struct StepWidget: View {
         StepShell(
             eyebrow:  "YOUR TRIGGER",
             headline: "Put the REC button\non your lock screen.",
-            subtext:  "Add it once — from then on every recording is a single tap away."
+            subtext:  "Add it once — after that, every recording is one tap away."
         ) {
             PhoneFrame { WidgetSetupMock() }
         }
@@ -1227,7 +1231,7 @@ private struct WidgetSetupMock: View {
     }
 
     private let steps: [(LocalizedStringKey, LocalizedStringKey)] = [
-        ("Long-press the lock screen", "Tap 'Customise'"),
+        ("Long-press the lock screen", "Tap “Customize”"),
         ("Add a widget",               "Choose keep. from the list"),
         ("Place the REC circle",        "Done — 1 tap to record")
     ]
