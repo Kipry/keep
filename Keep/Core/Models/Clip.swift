@@ -33,6 +33,16 @@ final class Clip {
     var longitude: Double? = nil
     var placeName: String? = nil
 
+    // MARK: Audio level
+    // Cached measurement of the clip's own audio in dBFS, used to level every
+    // clip to the same perceived volume during playback and export. Measured
+    // once (decoding is cheap for a three-second clip, but not free for a
+    // hundred of them) and nil when the clip has no audio to measure.
+    // `audioAnalyzed` distinguishes "no audio" from "not looked at yet".
+    var audioRMS: Double? = nil
+    var audioPeak: Double? = nil
+    var audioAnalyzed: Bool = false
+
     /// Capture location, when the clip has one.
     var coordinate: CLLocationCoordinate2D? {
         guard let latitude, let longitude else { return nil }
@@ -70,6 +80,10 @@ final class Clip {
     func setFile(_ url: URL) {
         fileURLString = url.absoluteString
         fileBookmark  = try? url.bookmarkData(options: .minimalBookmark)
+        // The cached loudness belongs to the old file, not this one.
+        audioRMS = nil
+        audioPeak = nil
+        audioAnalyzed = false
     }
 
     /// Resolves the stored URL, preferring the security-scoped bookmark when available.
@@ -146,6 +160,11 @@ final class Clip {
         newClip.latitude = latitude
         newClip.longitude = longitude
         newClip.placeName = placeName
+        // Same bytes, same loudness — carry the measurement over rather than
+        // paying to decode the copy again.
+        newClip.audioRMS = audioRMS
+        newClip.audioPeak = audioPeak
+        newClip.audioAnalyzed = audioAnalyzed
         newClip.project = targetProject
         targetProject.updatedAt = Date()
         context.insert(newClip)

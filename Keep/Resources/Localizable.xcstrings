@@ -2409,6 +2409,39 @@
           }
         }
       }
+    },
+    "Audio": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ton"
+          }
+        }
+      }
+    },
+    "Match Volume": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lautstärke angleichen"
+          }
+        }
+      }
+    },
+    "Clips recorded weeks apart rarely sound equally loud. This evens them out during playback and export — quiet clips are lifted, loud ones held back. Your recordings themselves stay untouched.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clips, die Wochen auseinanderliegen, klingen selten gleich laut. Das gleicht sie bei Wiedergabe und Export an — leise Clips werden angehoben, laute zurückgenommen. Deine Aufnahmen selbst bleiben unverändert."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

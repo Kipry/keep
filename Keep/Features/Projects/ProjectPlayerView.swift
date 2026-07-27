@@ -246,10 +246,16 @@ struct ProjectPlayerView: View {
                 withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
         else { buildFailed = true; return }
 
+        // Same levelling the export applies, so the preview is an honest
+        // rehearsal of the finished film rather than a differently-mixed one.
+        let gains = await ClipAudioLevels.gains(for: clips)
+        let audioParams = AVMutableAudioMixInputParameters(track: audioTrack)
+        var isLevelled = false
+
         var cursor = CMTime.zero
         var firstAsset: AVURLAsset?
 
-        for clip in clips {
+        for (index, clip) in clips.enumerated() {
             let asset = AVURLAsset(url: clip.fileURL)
             guard
                 let dur = try? await asset.load(.duration),
@@ -269,6 +275,9 @@ struct ProjectPlayerView: View {
             try? videoTrack.insertTimeRange(range, of: srcVideo, at: cursor)
             if let srcAudio = try? await asset.loadTracks(withMediaType: .audio).first {
                 try? audioTrack.insertTimeRange(range, of: srcAudio, at: cursor)
+                let gain = gains[index]
+                audioParams.setVolume(gain, at: cursor)
+                if gain != 1 { isLevelled = true }
             }
             if firstAsset == nil { firstAsset = asset }
             cursor = CMTimeAdd(cursor, span)
@@ -282,6 +291,11 @@ struct ProjectPlayerView: View {
 
         let totalDuration = cursor.seconds
         let item = AVPlayerItem(asset: composition)
+        if isLevelled {
+            let mix = AVMutableAudioMix()
+            mix.inputParameters = [audioParams]
+            item.audioMix = mix
+        }
         let newPlayer = AVPlayer(playerItem: item)
         duration = totalDuration
 

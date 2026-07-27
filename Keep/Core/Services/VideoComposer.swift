@@ -66,6 +66,10 @@ actor VideoComposer {
         let url: URL
         let trimStart: Double
         let trimEnd: Double?
+        /// Linear volume factor applied to this clip's audio in the mix, so a
+        /// run of clips recorded at wildly different levels plays back evenly.
+        /// 1 leaves the recording exactly as captured.
+        var gain: Float = 1
     }
 
     func compose(
@@ -75,15 +79,21 @@ actor VideoComposer {
         progressBox: ProgressBox? = nil
     ) async throws -> URL {
         guard !clips.isEmpty else { throw CompositionError.noClips }
+        // loadAssets either returns one entry per clip or throws, so the gains
+        // stay index-aligned with the assets.
         let pairs = try await loadAssets(clips: clips)
+        let gains = clips.map(\.gain)
         switch transition {
         case .cut:
-            return try await composeCut(pairs: pairs, quality: quality, progressBox: progressBox)
+            return try await composeCut(pairs: pairs, gains: gains,
+                                        quality: quality, progressBox: progressBox)
         case .crossFade:
             guard pairs.count >= 2 else {
-                return try await composeCut(pairs: pairs, quality: quality, progressBox: progressBox)
+                return try await composeCut(pairs: pairs, gains: gains,
+                                            quality: quality, progressBox: progressBox)
             }
-            return try await composeCrossFade(pairs: pairs, quality: quality, progressBox: progressBox)
+            return try await composeCrossFade(pairs: pairs, gains: gains,
+                                              quality: quality, progressBox: progressBox)
         }
     }
 
@@ -389,6 +399,7 @@ actor VideoComposer {
 
     private func composeCut(
         pairs: [(AVURLAsset, CMTimeRange)],
+        gains: [Float],
         quality: ExportQuality,
         progressBox: ProgressBox?
     ) async throws -> URL {
@@ -399,14 +410,33 @@ actor VideoComposer {
                                                             preferredTrackID: kCMPersistentTrackID_Invalid)
         else { throw CompositionError.trackInsertionFailed }
 
+        // All clips share one audio track, so the per-clip volume is a step
+        // change on that track's mix parameters at each clip's start time.
+        let audioParams = AVMutableAudioMixInputParameters(track: audioTrack)
+        var isLevelled = false
+
         var cursor = CMTime.zero
-        for (asset, range) in pairs {
+        for (i, (asset, range)) in pairs.enumerated() {
             let srcVideos = try await asset.loadTracks(withMediaType: .video)
             let srcAudios = try await asset.loadTracks(withMediaType: .audio)
             guard let srcVideo = srcVideos.first else { throw CompositionError.assetUnreadable(asset.url) }
             try videoTrack.insertTimeRange(range, of: srcVideo, at: cursor)
-            if let a = srcAudios.first { try? audioTrack.insertTimeRange(range, of: a, at: cursor) }
+            if let a = srcAudios.first {
+                try? audioTrack.insertTimeRange(range, of: a, at: cursor)
+                let gain = gains[i]
+                audioParams.setVolume(gain, at: cursor)
+                if gain != 1 { isLevelled = true }
+            }
             cursor = CMTimeAdd(cursor, range.duration)
+        }
+
+        // Skip the mix entirely when every clip sits at unity — an audio mix
+        // that changes nothing is pure overhead for the export session.
+        var audioMix: AVMutableAudioMix?
+        if isLevelled {
+            let mix = AVMutableAudioMix()
+            mix.inputParameters = [audioParams]
+            audioMix = mix
         }
 
         // Using an explicit AVMutableVideoComposition forces re-encoding, which fixes the
@@ -431,6 +461,7 @@ actor VideoComposer {
         vc.instructions = [instr]
 
         return try await export(composition: composition, videoComposition: vc,
+                                audioMix: audioMix,
                                 quality: quality, progressBox: progressBox)
     }
 
@@ -438,6 +469,7 @@ actor VideoComposer {
 
     private func composeCrossFade(
         pairs: [(AVURLAsset, CMTimeRange)],
+        gains: [Float],
         quality: ExportQuality,
         progressBox: ProgressBox?
     ) async throws -> URL {
@@ -473,6 +505,35 @@ actor VideoComposer {
                 cursor = CMTimeAdd(cursor, CMTimeSubtract(range.duration, fade))
             }
         }
+
+        // Audio mix, one set of parameters per alternating track. Two jobs:
+        // the per-clip gain that levels the volumes, and a genuine audio
+        // cross-fade. Without the latter both clips ran at full volume through
+        // the overlap — the picture dissolved while the sound doubled up, which
+        // is exactly where a level jump is most audible.
+        let audioParams = [AVMutableAudioMixInputParameters(track: audioTrackA),
+                           AVMutableAudioMixInputParameters(track: audioTrackB)]
+        for i in 0..<pairs.count {
+            let params    = audioParams[i % 2]
+            let gain      = gains[i]
+            let clipStart = clipStarts[i]
+            let clipEnd   = CMTimeAdd(clipStart, pairs[i].1.duration)
+            // The fade window is capped at 30% of the shortest clip, so a
+            // clip's fade-in and fade-out can never overlap each other.
+            if i == 0 {
+                params.setVolume(gain, at: clipStart)
+            } else {
+                params.setVolumeRamp(fromStartVolume: 0, toEndVolume: gain,
+                                     timeRange: CMTimeRange(start: clipStart, duration: fade))
+            }
+            if i < pairs.count - 1 {
+                params.setVolumeRamp(fromStartVolume: gain, toEndVolume: 0,
+                                     timeRange: CMTimeRange(start: CMTimeSubtract(clipEnd, fade),
+                                                            duration: fade))
+            }
+        }
+        let audioMix = AVMutableAudioMix()
+        audioMix.inputParameters = audioParams
 
         let renderSize = await self.renderSize(for: pairs[0].0)
         var instructions = [AVMutableVideoCompositionInstruction]()
@@ -526,6 +587,7 @@ actor VideoComposer {
         vc.instructions  = instructions
 
         return try await export(composition: composition, videoComposition: vc,
+                                audioMix: audioMix,
                                 quality: quality, progressBox: progressBox)
     }
 
@@ -607,6 +669,7 @@ actor VideoComposer {
     private func export(
         composition: AVAsset,
         videoComposition: AVMutableVideoComposition?,
+        audioMix: AVMutableAudioMix? = nil,
         quality: ExportQuality,
         progressBox: ProgressBox?
     ) async throws -> URL {
@@ -617,6 +680,7 @@ actor VideoComposer {
         let outputURL = makeExportURL()
         session.shouldOptimizeForNetworkUse = true
         if let vc = videoComposition { session.videoComposition = vc }
+        if let audioMix { session.audioMix = audioMix }
 
         // iOS 18 replaced exportAsynchronously + polled `status`/`progress`
         // with an async throwing call and a progress sequence. The sequence

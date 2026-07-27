@@ -648,6 +648,9 @@ struct ProjectDetailView: View {
                 clip.thumbnailData = data
                 if project.activeClips.count == 1 { project.coverThumbnailData = data }
             }
+            // Measure the audio now, while there's exactly one clip to look at,
+            // rather than making the first export wait on the whole project.
+            await ClipAudioLevels.analyzeIfNeeded(clip)
             WidgetDataStore.refresh(context: modelContext)
         }
     }
@@ -850,9 +853,15 @@ struct ProjectDetailView: View {
             } while !Task.isCancelled
         }
 
-        var clipInfos = project.activeClips
-            .filter { $0.isAvailable }
-            .map { VideoComposer.ClipInfo(url: $0.fileURL, trimStart: $0.trimStart, trimEnd: $0.trimEnd) }
+        // Measure anything not measured yet, so clips recorded across weeks at
+        // very different levels come out even. Cached on the clip afterwards,
+        // so this only costs anything on the first export of older material.
+        let clips = project.activeClips.filter { $0.isAvailable }
+        let gains = await ClipAudioLevels.gains(for: clips)
+        var clipInfos = zip(clips, gains).map { clip, gain in
+            VideoComposer.ClipInfo(url: clip.fileURL, trimStart: clip.trimStart,
+                                   trimEnd: clip.trimEnd, gain: gain)
+        }
         if let bumperClip { clipInfos.insert(bumperClip, at: 0) }
         do {
             let out = try await composer.compose(
