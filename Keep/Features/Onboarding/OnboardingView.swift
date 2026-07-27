@@ -226,8 +226,8 @@ private struct StepWelcome: View {
     var body: some View {
         StepShell(
             eyebrow:  "WELCOME",
-            headline: "Hold the moment.\nBefore it's gone.",
-            subtext:  "keep. — your life, one clip at a time."
+            headline: "Hold the moment.",
+            subtext:  "keep. — your life, memory by memory."
         ) {
             VStack(spacing: 46) {
                 AmberLens()
@@ -321,8 +321,8 @@ private struct StepLockScreen: View {
     var body: some View {
         StepShell(
             eyebrow:  "ONE TAP",
-            headline: "Tap. Record.\nSaved.",
-            subtext:  "Tap REC on the lock screen — the clip saves itself. The app stays closed."
+            headline: "Tap. Record.\nDone.",
+            subtext:  "Three seconds from the lock screen — then the phone is away and you're back in the moment."
         ) {
             PhoneFrame { LockPhaseAnimation() }
         }
@@ -502,7 +502,7 @@ private struct LockScreenMock: View {
                     Text("One tap — record directly")
                         .font(.hand(19))
                         .foregroundStyle(.white)
-                    Text("WITHOUT OPENING THE APP")
+                    Text("STRAIGHT FROM THE LOCK SCREEN")
                         .font(.mono(10))
                         .tracking(1)
                         .foregroundStyle(.white.opacity(0.45))
@@ -659,8 +659,8 @@ private struct StepLibrary: View {
     var body: some View {
         StepShell(
             eyebrow:  "LIBRARY",
-            headline: "One story.\nOne project.",
-            subtext:  "Holiday, workout, daily life — every clip lands in its project, day after day."
+            headline: "Your story.",
+            subtext:  "Holiday, workout, everyday life — every day adds one clip."
         ) {
             PhoneFrame { ProjectGridMock() }
         }
@@ -832,8 +832,8 @@ private struct StepFilmstrip: View {
     var body: some View {
         StepShell(
             eyebrow:  "FILMSTRIP",
-            headline: "Your story.\nFrame by frame.",
-            subtext:  "Trim, sort, rearrange — just like a real film strip."
+            headline: "Your cut.\nFrame by frame.",
+            subtext:  "Trim, sort, rearrange your clips.\nJust like a real film strip."
         ) {
             PhoneFrame { FilmstripMock() }
         }
@@ -894,7 +894,7 @@ private struct FilmstripMock: View {
                         MockFilmstripRow(images: rowImages[i])
                     }
 
-                    Text("+ add to the reel")
+                    Text("+ add to the film")
                         .font(.scrawl(22))
                         .foregroundStyle(.white.opacity(0.25))
                         .frame(maxWidth: .infinity, minHeight: 72)
@@ -929,7 +929,7 @@ private struct FilmstripMock: View {
             VStack(spacing: 6) {
                 HStack(spacing: 10) {
                     Image(systemName: "film.stack")
-                    Text("Wind the reel · Export")
+                    Text("Make the film · Export")
                         .font(.hand(18))
                     Spacer()
                     Image(systemName: "arrow.right")
@@ -1014,7 +1014,7 @@ private struct StepExport: View {
         StepShell(
             eyebrow:  "EXPORT",
             headline: "Clips in.\nVideo out.",
-            subtext:  "Wind the reel — a finished video in seconds."
+            subtext:  "One tap — and every clip becomes one film."
         ) {
             PhoneFrame { ExportMock() }
         }
@@ -1043,7 +1043,7 @@ private struct ExportMock: View {
                 MockExportFilmStrip()
 
                 VStack(spacing: 22) {
-                    Text("COMPILING YOUR REEL")
+                    Text("COMPILING YOUR VIDEO")
                         .font(.mono(10))
                         .tracking(3)
                         .foregroundStyle(.white.opacity(0.38))
@@ -1137,7 +1137,7 @@ private struct StepWidget: View {
         StepShell(
             eyebrow:  "YOUR TRIGGER",
             headline: "Put the REC button\non your lock screen.",
-            subtext:  "Add it once — from then on every recording is a single tap away. No unlocking, no opening."
+            subtext:  "Add it once — from then on every recording is a single tap away."
         ) {
             PhoneFrame { WidgetSetupMock() }
         }

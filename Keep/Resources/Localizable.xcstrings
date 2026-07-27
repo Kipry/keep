@@ -650,28 +650,6 @@
         }
       }
     },
-    "+ add to the reel": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+ zum Film hinzufügen"
-          }
-        }
-      }
-    },
-    "Wind the reel · Export": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Film zusammenstellen · Export"
-          }
-        }
-      }
-    },
     "The project will be moved to trash and can be restored at any time.": {
       "extractionState": "manual",
       "localizations": {
@@ -855,17 +833,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gedrückt halten zum Exportieren"
-          }
-        }
-      }
-    },
-    "COMPILING YOUR REEL": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DEIN VIDEO WIRD ERSTELLT"
           }
         }
       }
@@ -1244,28 +1211,6 @@
         }
       }
     },
-    "Hold the moment.\nBefore it's gone.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Halt den Moment.\nBevor er weg ist."
-          }
-        }
-      }
-    },
-    "keep. — your life, one clip at a time.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "keep. — dein Leben, ein Clip nach dem anderen."
-          }
-        }
-      }
-    },
     "ONE TAP": {
       "extractionState": "manual",
       "localizations": {
@@ -1273,28 +1218,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "EIN TIPP"
-          }
-        }
-      }
-    },
-    "Tap. Record.\nSaved.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tippen. Aufnehmen.\nGespeichert."
-          }
-        }
-      }
-    },
-    "Tap REC on the lock screen — the clip saves itself. The app stays closed.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "REC auf dem Sperrbildschirm antippen — der Clip speichert sich von selbst. Die App bleibt zu."
           }
         }
       }
@@ -1310,28 +1233,6 @@
         }
       }
     },
-    "One story.\nOne project.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine Story.\nEin Projekt."
-          }
-        }
-      }
-    },
-    "Holiday, workout, daily life — every clip lands in its project, day after day.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Urlaub, Workout, Alltag — jeder Clip landet in seinem Projekt, Tag für Tag."
-          }
-        }
-      }
-    },
     "FILMSTRIP": {
       "extractionState": "manual",
       "localizations": {
@@ -1339,28 +1240,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "FILMSTREIFEN"
-          }
-        }
-      }
-    },
-    "Your story.\nFrame by frame.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine Story.\nFrame für Frame."
-          }
-        }
-      }
-    },
-    "Trim, sort, rearrange — just like a real film strip.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clips trimmen, sortieren, neu anordnen — wie an einem echten Filmstreifen."
           }
         }
       }
@@ -1387,17 +1266,6 @@
         }
       }
     },
-    "Wind the reel — a finished video in seconds.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Einmal kurbeln — ein fertiges Video in Sekunden."
-          }
-        }
-      }
-    },
     "YOUR TRIGGER": {
       "extractionState": "manual",
       "localizations": {
@@ -1416,17 +1284,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Leg den REC-Knopf\nauf den Sperrbildschirm."
-          }
-        }
-      }
-    },
-    "Add it once — from then on every recording is a single tap away. No unlocking, no opening.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Einmal einrichten — danach ist jede Aufnahme nur einen Tipp entfernt. Ohne Entsperren, ohne Öffnen."
           }
         }
       }
@@ -1471,17 +1328,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tippen — direkt aufnehmen"
-          }
-        }
-      }
-    },
-    "WITHOUT OPENING THE APP": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "OHNE DIE APP ZU ÖFFNEN"
           }
         }
       }
@@ -2527,6 +2373,160 @@
           "stringUnit": {
             "state": "translated",
             "value": "Auf diesem Gerät ist kein Mail-Konto eingerichtet. Schreib uns gern von wo du magst an %@."
+          }
+        }
+      }
+    },
+    "Hold the moment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halte den Moment fest."
+          }
+        }
+      }
+    },
+    "keep. — your life, memory by memory.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "keep. — deine Erlebnisse, Erinnerung nach Erinnerung."
+          }
+        }
+      }
+    },
+    "Tap. Record.\nDone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippen. Aufnehmen.\nFertig."
+          }
+        }
+      }
+    },
+    "Three seconds from the lock screen — then the phone is away and you're back in the moment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drei Sekunden vom Sperrbildschirm — dann ist das Handy weg und du wieder im Moment."
+          }
+        }
+      }
+    },
+    "STRAIGHT FROM THE LOCK SCREEN": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DIREKT VOM SPERRBILDSCHIRM"
+          }
+        }
+      }
+    },
+    "Your story.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Story."
+          }
+        }
+      }
+    },
+    "Holiday, workout, everyday life — every day adds one clip.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urlaub, Workout, Alltag — jeder Tag legt einen Clip dazu."
+          }
+        }
+      }
+    },
+    "Your cut.\nFrame by frame.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Schnitt.\nBild für Bild."
+          }
+        }
+      }
+    },
+    "Trim, sort, rearrange your clips.\nJust like a real film strip.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clips trimmen, sortieren, neu anordnen.\nWie an einem echten Filmstreifen."
+          }
+        }
+      }
+    },
+    "+ add to the film": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ zum Film hinzufügen"
+          }
+        }
+      }
+    },
+    "Make the film · Export": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Film erstellen · Export"
+          }
+        }
+      }
+    },
+    "One tap — and every clip becomes one film.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Tipp — und aus allen Clips wird ein Film."
+          }
+        }
+      }
+    },
+    "COMPILING YOUR VIDEO": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DEIN VIDEO WIRD ERSTELLT"
+          }
+        }
+      }
+    },
+    "Add it once — from then on every recording is a single tap away.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einmal einrichten — danach ist jede Aufnahme nur einen Tipp entfernt."
           }
         }
       }
