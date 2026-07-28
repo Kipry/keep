@@ -31,13 +31,12 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 Die fertigen Seiten liegen in `docs/` — genau dort, wo GitHub Pages sie veröffentlichen kann
 (Pages kann nur aus dem Repo-Wurzelverzeichnis oder aus `/docs` liefern, nicht aus `store/`).
 
-- [ ] GitHub → Repo `Kipry/keep` → **Settings** → linke Spalte **Pages**.
-- [ ] Unter „Build and deployment": Source = **Deploy from a branch**,
-      Branch = `main`, Ordner = **`/docs`** → **Save**.
-- [ ] 1–2 Minuten warten, dann prüfen:
-      - Datenschutz: `https://kipry.github.io/keep/privacy.html`
-      - Support: `https://kipry.github.io/keep/support.html`
-- [ ] Beide URLs notieren — sie kommen in Schritt 4.
+- [x] GitHub → Repo `Kipry/keep` → **Settings** → **Pages**, Source = `main` / `/docs`. **Erledigt, Seiten sind online.**
+- Datenschutz: `https://kipry.github.io/keep/privacy.html`
+- Support: `https://kipry.github.io/keep/support.html`
+> **Wichtig:** Bei jeder Änderung an `docs/` neu prüfen — die Datenschutz-URL muss zum
+> Zeitpunkt der Review erreichbar sein *und* zum tatsächlichen Verhalten der App passen.
+> Ein 404 oder eine veraltete Policy ist ein häufiger Ablehnungsgrund.
 
 > Die Seiten sind zweisprachig (Deutsch oben, Englisch unten) — eine URL genügt Apple pro Sprache.
 > `docs/.nojekyll` verhindert, dass GitHub die Dateien durch seinen Jekyll-Renderer schickt.
@@ -82,19 +81,50 @@ Die fertigen Seiten liegen in `docs/` — genau dort, wo GitHub Pages sie veröf
 ---
 
 ## Vor dem Einreichen unbedingt auf echtem Gerät testen
-Der Simulator kann Kamera/Widget/Haptik nicht abbilden. Auf einem echten iPhone prüfen:
-- [ ] Aufnahme per Tap, per Halten, per **Lock** (nach links ziehen) und per **Lautstärketaste** — jeweils mit **Haptik** bei Start/Stopp.
-- [ ] Berechtigungs-Ablehnung → „Open Settings"-Screen erscheint statt schwarzem Bild.
-- [ ] Foto-Import (Hochkant bleibt korrekt orientiert).
-- [ ] Export inkl. vorangestelltem **Bumper** mit Projekttitel + Zeitraum.
-- [ ] **Sperrbildschirm-Widget** hinzufügen → Tap öffnet direkt die Aufnahme (Deep-Link `keep://record/<id>`).
+Der Simulator kann Kamera/Widget/Haptik nicht abbilden. **Der gesamte Stand ist ungebaut** —
+viele Änderungen entstanden ohne Compiler, also zuerst `Product → Build`, dann diese Liste.
+
+**Aufnahme & Kamera**
+- [ ] Aufnahme per Tap, per Halten, per **Lock** (nach links ziehen) und per **Lautstärketaste** — jeweils mit **Haptik**.
+- [ ] Dauer-Picker zeigt **1 / 2 / 3 / 5 s** und die Auswahl aus den Einstellungen ist vorbelegt.
+- [ ] Einstellungen → Aufnahme → Auflösung auf **4K**, aufnehmen, exportieren, in Fotos die Auflösung prüfen.
+- [ ] Einmal mit der **Frontkamera** aufnehmen (Fallback-Pfad, falls sie kein 4K kann).
+- [ ] Berechtigungs-Ablehnung → „Open Settings"-Screen statt schwarzem Bild.
+
+**Export**
+- [ ] Export mit **Cut** und mit **Kreuzblende**, jeweils mit Bumper (Projekttitel + Zeitraum).
+- [ ] Während des Exports **Abbrechen** → App bleibt bedienbar.
+- [ ] Bei Aufnahme-Einstellung 1080p: Qualitätskarte ist weg, Hinweiszeile steht da, Seite wirkt nicht leer.
+- [ ] **Lautstärke-Angleich**: Projekt mit hörbar unterschiedlich lauten Clips abspielen und exportieren;
+      Vorschau und Export müssen gleich klingen. Dann in den Einstellungen auf „Aus" → wieder wie aufgenommen.
+
+**Ansicht & Navigation**
+- [ ] Vollbild-Clip: zoomen, in **alle Richtungen schieben**, doppeltippen; bei 1× weiterwischen; einfacher Tipp pausiert weiterhin.
+- [ ] **Orte:** weit rauszoomen — einzelne Pins und Reiseroute bleiben sichtbar; Scrubben zeigt den Flugbogen.
+- [ ] Standort auf **„Aus"** → keine Abfrage, kein Ort gespeichert.
+
+**Bibliothek**
+- [ ] **Papierkorb:** einzelne Clips eines Projekts löschen → wiederherstellen → sitzen an der richtigen Stelle im Filmstreifen.
+      Projekt löschen → wiederherstellen. Endgültig löschen → Speicherbelegung in den iOS-Einstellungen prüfen.
+- [ ] **Archiv:** Projekt archivieren → in Einstellungen sichtbar → wiederherstellen.
 - [ ] Erststart mit 0 Projekten (Empty-States auf allen drei Tabs).
-- [ ] **Orte:** Standortabfrage erscheint, Pins und Reiseroute stimmen, Tap auf einen Ort zeigt dessen Clips.
-- [ ] **Standort auf „Aus"** stellen → es wird keine Berechtigung mehr angefragt und kein Ort gespeichert.
-- [ ] Pinch-Zoom in der Clip-Vollbildansicht (und Wischen zum nächsten Clip funktioniert weiterhin).
+
+**Widget**
+- [ ] In allen drei Homescreen-Stilen prüfen (normal, eingefärbt, transparent).
+- [ ] **Über Nacht stehen lassen** und morgens vor der ersten Aufnahme prüfen: das heutige Kästchen der
+      Wochenleiste darf **nicht** gefüllt sein. (Der Snapshot-Schlüssel ist auf `V3` gewandert — direkt
+      nach dem Update ist das Widget kurz leer, bis die App einmal geöffnet wurde. Das ist erwartet.)
+
+**Sprache & Bedienbarkeit**
+- [ ] Gerätesprache auf **Englisch** → Tab-Leiste zeigt „Projects / Diary / Memories", Onboarding ist durchgängig englisch (inkl. Datum im Sperrbildschirm-Mock).
+- [ ] **Textgröße auf Maximum** → Titel skalieren, Einstellungen brechen nicht um.
+- [ ] **VoiceOver** → Aufnahme-Knopf und Tab-Leiste sind ansagbar.
+- [ ] **Feedback-Knopf** in den Einstellungen öffnet die Mail-App mit vorbelegter Adresse und Geräteinfos.
 
 ## Mögliche Review-Nachfragen (vorbereitet)
 - **Sperrbildschirm-Widget/Deep-Link:** legitim über WidgetKit + Custom-URL-Scheme; kein Missbrauch.
 - **Lautstärketaste als Auslöser:** nutzt die offizielle `AVCaptureEventInteraction`-API (kein privater Hack).
 - **Helligkeits-Override** beim Front-Blitz: nur temporär während der Aufnahme, danach zurückgesetzt.
+- **Feedback-Funktion:** öffnet nur einen `mailto:`-Entwurf; die App überträgt selbst nichts. In der
+  Datenschutzerklärung unter „Feedback per E-Mail" beschrieben.
 - **Standortnutzung:** dient allein dazu, einem Clip seinen Aufnahmeort zuzuordnen (Karten-Ansicht „Orte"). Dreistufig einstellbar, standardmäßig auf ~1,1 km gerundet, komplett abschaltbar, keine Übertragung an uns. Der Zwecktext steht in `NSLocationWhenInUseUsageDescription`.

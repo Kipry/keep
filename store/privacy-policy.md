@@ -1,6 +1,6 @@
 # Datenschutzerklärung — keep.
 
-**Letzte Aktualisierung:** 26. Juli 2026
+**Letzte Aktualisierung:** 28. Juli 2026
 **Kontakt:** keep.dailymoments@gmail.com
 
 > Diese Erklärung ist als hostbares HTML unter `docs/privacy.html` verfügbar.
@@ -38,6 +38,9 @@ Die App fragt diese Berechtigungen nur an, wenn du die jeweilige Funktion nutzt.
 ## Datenübertragung
 Es findet **keine** Übertragung an uns statt. Die App enthält keine Analyse-, Werbe- oder Tracking-SDKs, hat keine eigenen Server und baut zu solchen auch keine Verbindung auf. Die einzige Netzwerkanfrage der App ist die im Abschnitt „Standort" beschriebene Rückwärts-Geokodierung über Apple – und die entfällt, wenn du die Standort-Funktion ausschaltest.
 
+## Feedback per E-Mail
+In den Einstellungen gibt es einen Feedback-Knopf. Er **sendet nichts**, sondern öffnet deine Mail-App mit einem vorbereiteten Entwurf: unsere Adresse als Empfänger und – am Ende der Nachricht – App-Version, iOS-Version und Gerätemodell (z.B. „iPhone17,1"). Du siehst den vollständigen Text vor dem Absenden, kannst ihn ändern oder löschen, und der Entwurf wird nur verschickt, wenn du das tust. Schreibst du uns, erhalten wir deine Absenderadresse und den Inhalt deiner Nachricht – wie bei jeder E-Mail. Wir nutzen das ausschließlich zur Beantwortung deiner Anfrage.
+
 ## Weitergabe an Dritte
 Keine. Wenn du ein exportiertes Video selbst über das Teilen-Menü deines Geräts weitergibst (z.B. an andere Apps), unterliegt das den Bestimmungen des jeweiligen Dienstes – das liegt außerhalb von keep.
 
@@ -57,7 +60,7 @@ Fragen zum Datenschutz: **keep.dailymoments@gmail.com**
 
 # Privacy Policy — keep. (English)
 
-**Last updated:** 26 July 2026
+**Last updated:** 28 July 2026
 **Contact:** keep.dailymoments@gmail.com
 
 ## Summary
@@ -91,6 +94,9 @@ Permissions are requested only when you use the relevant feature.
 
 ## Data transmission
 There is **no** transmission to us. The app contains no analytics, advertising or tracking SDKs, has no servers of its own and makes no connection to any. Its only network request is the reverse geocoding described under "Location" — and that stops entirely if you turn the location feature off.
+
+## Feedback by email
+Settings has a feedback button. It **sends nothing** — it opens your mail app with a prepared draft: our address as the recipient and, at the end of the message, your app version, iOS version and device model (e.g. "iPhone17,1"). You see the full text before sending, can edit or delete any of it, and the draft goes out only if you send it. If you do write to us, we receive your sender address and the content of your message, as with any email. We use it solely to answer you.
 
 ## Third-party sharing
 None. If you choose to share an exported video via your device's share sheet, that is governed by the receiving service and is outside of keep.
