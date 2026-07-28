@@ -19,6 +19,19 @@ enum ExportQuality: String, CaseIterable, Identifiable {
         case .p4K:   return AVAssetExportPreset3840x2160
         }
     }
+
+    /// Long edge of the exported frame, in pixels.
+    ///
+    /// The preset alone doesn't decide the output size once an explicit
+    /// `AVMutableVideoComposition` is in play — the composition's `renderSize`
+    /// does. Building that canvas from this value is what actually makes the
+    /// picker mean something.
+    var longEdge: CGFloat {
+        switch self {
+        case .p1080: return 1920
+        case .p4K:   return 3840
+        }
+    }
 }
 
 // MARK: - Transition Style
@@ -70,6 +83,9 @@ actor VideoComposer {
         /// run of clips recorded at wildly different levels plays back evenly.
         /// 1 leaves the recording exactly as captured.
         var gain: Float = 1
+        /// The generated intro bumper. It's a bundled asset with a fixed shape,
+        /// so it must never be the clip the export canvas takes its shape from.
+        var isIntro: Bool = false
     }
 
     func compose(
@@ -83,16 +99,23 @@ actor VideoComposer {
         // stay index-aligned with the assets.
         let pairs = try await loadAssets(clips: clips)
         let gains = clips.map(\.gain)
+        // The canvas takes its shape from the first real clip and its size from
+        // the chosen quality. It used to be the first clip's *native* size —
+        // which, once the intro bumper was prepended, meant the bundled
+        // bumper's size decided the resolution of every export and the quality
+        // picker changed nothing.
+        let shapeIndex = clips.firstIndex { !$0.isIntro } ?? 0
+        let canvas = await canvasSize(for: pairs[shapeIndex].0, quality: quality)
         switch transition {
         case .cut:
-            return try await composeCut(pairs: pairs, gains: gains,
+            return try await composeCut(pairs: pairs, gains: gains, renderSize: canvas,
                                         quality: quality, progressBox: progressBox)
         case .crossFade:
             guard pairs.count >= 2 else {
-                return try await composeCut(pairs: pairs, gains: gains,
+                return try await composeCut(pairs: pairs, gains: gains, renderSize: canvas,
                                             quality: quality, progressBox: progressBox)
             }
-            return try await composeCrossFade(pairs: pairs, gains: gains,
+            return try await composeCrossFade(pairs: pairs, gains: gains, renderSize: canvas,
                                               quality: quality, progressBox: progressBox)
         }
     }
@@ -253,7 +276,8 @@ actor VideoComposer {
     /// recording date range burned in near the bottom, ready to be prepended as
     /// the first clip of the final export. Returns nil if the bundled asset is
     /// missing so the caller can fall back to exporting without it.
-    func renderBumper(projectName: String, startDate: Date, endDate: Date) async -> URL? {
+    func renderBumper(projectName: String, startDate: Date, endDate: Date,
+                      quality: ExportQuality) async -> URL? {
         guard let bumperURL = Bundle.main.url(forResource: "BumperIntro", withExtension: "mp4") else { return nil }
         let asset = AVURLAsset(url: bumperURL)
         guard let videoTrack = try? await asset.loadTracks(withMediaType: .video).first,
@@ -262,12 +286,22 @@ actor VideoComposer {
               let duration = try? await asset.load(.duration)
         else { return nil }
 
-        let display = naturalSize.applying(preferredTransform)
-        let renderSize = CGSize(width: abs(display.width), height: abs(display.height))
+        // At the export's own quality, not a hardcoded 1080p: the bumper is
+        // scaled into the final canvas afterwards, and rendering it smaller
+        // than that canvas would soften the title card on a 4K export.
+        let renderSize = await canvasSize(for: asset, quality: quality)
         guard renderSize.width > 0, renderSize.height > 0 else { return nil }
 
+        // Scale into the canvas rather than using preferredTransform alone: the
+        // canvas is now the quality's size, not the bumper's own, so a bare
+        // preferredTransform would leave the frame overflowing its bounds.
         let layerInstr = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
-        layerInstr.setTransform(preferredTransform, at: .zero)
+        layerInstr.setTransform(
+            transformFilling(naturalSize: naturalSize,
+                             preferredTransform: preferredTransform,
+                             into: renderSize),
+            at: .zero
+        )
 
         let instr = AVMutableVideoCompositionInstruction()
         instr.timeRange = CMTimeRange(start: .zero, duration: duration)
@@ -297,7 +331,7 @@ actor VideoComposer {
         vc.instructions = [instr]
 
         return try? await export(composition: asset, videoComposition: vc,
-                                 quality: .p1080, progressBox: nil)
+                                 quality: quality, progressBox: nil)
     }
 
     private static func dateRangeLabel(from start: Date, to end: Date) -> String {
@@ -400,6 +434,7 @@ actor VideoComposer {
     private func composeCut(
         pairs: [(AVURLAsset, CMTimeRange)],
         gains: [Float],
+        renderSize: CGSize,
         quality: ExportQuality,
         progressBox: ProgressBox?
     ) async throws -> URL {
@@ -443,7 +478,6 @@ actor VideoComposer {
         // FIGSANDBOX error for mixed-codec (HEVC + H.264) compositions. Critically,
         // track.preferredTransform is IGNORED when an explicit video composition is used,
         // so we must bake the rotation+scale into each layer instruction explicitly.
-        let renderSize = await self.renderSize(for: pairs[0].0)
         let layerInstr = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
         var cur = CMTime.zero
         for (asset, range) in pairs {
@@ -470,6 +504,7 @@ actor VideoComposer {
     private func composeCrossFade(
         pairs: [(AVURLAsset, CMTimeRange)],
         gains: [Float],
+        renderSize: CGSize,
         quality: ExportQuality,
         progressBox: ProgressBox?
     ) async throws -> URL {
@@ -535,7 +570,6 @@ actor VideoComposer {
         let audioMix = AVMutableAudioMix()
         audioMix.inputParameters = audioParams
 
-        let renderSize = await self.renderSize(for: pairs[0].0)
         var instructions = [AVMutableVideoCompositionInstruction]()
 
         for i in 0..<pairs.count {
@@ -653,10 +687,10 @@ actor VideoComposer {
             .concatenating(CGAffineTransform(translationX: ox, y: oy))
     }
 
-    // Returns the display-oriented render size for the given asset's first video track.
-    // Accounts for the preferredTransform so portrait iPhone videos return (1080, 1920)
-    // rather than the raw sensor size (1920, 1080).
-    private func renderSize(for asset: AVURLAsset) async -> CGSize {
+    // Returns the display-oriented native size of an asset's first video track.
+    // Accounts for the preferredTransform so portrait iPhone videos return
+    // (1080, 1920) rather than the raw sensor size (1920, 1080).
+    private func nativeSize(for asset: AVURLAsset) async -> CGSize {
         guard let track = try? await asset.loadTracks(withMediaType: .video).first,
               let size  = try? await track.load(.naturalSize),
               let xform = try? await track.load(.preferredTransform) else {
@@ -664,6 +698,22 @@ actor VideoComposer {
         }
         let display = size.applying(xform)
         return CGSize(width: abs(display.width), height: abs(display.height))
+    }
+
+    /// The export canvas: the asset's aspect ratio at the size the user asked
+    /// for. Portrait footage at 4K therefore renders 2160×3840, not 3840×2160.
+    private func canvasSize(for asset: AVURLAsset, quality: ExportQuality) async -> CGSize {
+        let native = await nativeSize(for: asset)
+        guard native.width > 0, native.height > 0 else {
+            return CGSize(width: 1080, height: 1920)
+        }
+        let long = quality.longEdge
+        let raw: CGSize = native.width >= native.height
+            ? CGSize(width: long, height: long * native.height / native.width)
+            : CGSize(width: long * native.width / native.height, height: long)
+        // H.264 and HEVC both require even dimensions.
+        return CGSize(width:  max(2, (raw.width  / 2).rounded() * 2),
+                      height: max(2, (raw.height / 2).rounded() * 2))
     }
 
     private func export(

@@ -826,13 +826,16 @@ struct ProjectDetailView: View {
     // (first clip's date to last clip's date) burned into the bundled "keep."
     // bumper clip — as the first ClipInfo of the export. Returns nil if the
     // bumper couldn't be rendered so the export can proceed without it.
-    private func makeBumperClipInfo() async -> VideoComposer.ClipInfo? {
+    private func makeBumperClipInfo(quality: ExportQuality) async -> VideoComposer.ClipInfo? {
         let dates = project.activeClips.map(\.createdAt)
         guard let first = dates.min(), let last = dates.max() else { return nil }
-        guard let url = await composer.renderBumper(projectName: project.name, startDate: first, endDate: last) else {
+        guard let url = await composer.renderBumper(projectName: project.name,
+                                                    startDate: first, endDate: last,
+                                                    quality: quality) else {
             return nil
         }
-        return VideoComposer.ClipInfo(url: url, trimStart: 0, trimEnd: nil)
+        // isIntro so the bumper's own shape can't decide the export canvas.
+        return VideoComposer.ClipInfo(url: url, trimStart: 0, trimEnd: nil, isIntro: true)
     }
 
     private func exportVideo() async {
@@ -843,7 +846,7 @@ struct ProjectDetailView: View {
         // Render the intro bumper (title card + recording date range) up front,
         // before the progress ring starts moving. A rendering failure silently
         // falls back to exporting without it rather than blocking the export.
-        let bumperClip = await makeBumperClipInfo()
+        let bumperClip = await makeBumperClipInfo(quality: selectedQuality)
 
         // Poll the shared box ~12 fps and reflect into UI state
         let pollTask = Task {
