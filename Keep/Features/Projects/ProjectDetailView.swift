@@ -846,7 +846,13 @@ struct ProjectDetailView: View {
         // Render the intro bumper (title card + recording date range) up front,
         // before the progress ring starts moving. A rendering failure silently
         // falls back to exporting without it rather than blocking the export.
-        let bumperClip = await makeBumperClipInfo(quality: selectedQuality)
+        // The recording setting is the ceiling. Belt and braces: the export
+        // sheet already hides choices the footage can't carry, but the
+        // selection is @State and outlives a settings change made in between.
+        let choices = RecordingQuality.current.exportChoices
+        let quality = choices.contains(selectedQuality) ? selectedQuality : (choices.first ?? .p1080)
+
+        let bumperClip = await makeBumperClipInfo(quality: quality)
 
         // Poll the shared box ~12 fps and reflect into UI state
         let pollTask = Task {
@@ -870,7 +876,7 @@ struct ProjectDetailView: View {
             let out = try await composer.compose(
                 clips: clipInfos,
                 transition: selectedTransition,
-                quality: selectedQuality,
+                quality: quality,
                 progressBox: box
             )
             pollTask.cancel()

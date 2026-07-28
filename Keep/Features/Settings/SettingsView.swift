@@ -3,6 +3,8 @@ import UIKit
 
 struct SettingsView: View {
     @AppStorage("defaultRecordingDuration") private var defaultDuration: Double = 1.0
+    // Key must match RecordingQuality.defaultsKey.
+    @AppStorage("recordingQuality") private var recordingQuality = RecordingQuality.p1080.rawValue
     @AppStorage("locationGranularity") private var locationGranularity = "place"
     // Key must match ClipAudioLevels.defaultsKey — spelled out here because a
     // property initialiser can't reach a main-actor-isolated static.
@@ -87,11 +89,44 @@ struct SettingsView: View {
                         .accessibilityAddTraits(defaultDuration == d ? [.isButton, .isSelected] : .isButton)
                     }
                 }
+                rowDivider
+                stackedRow("Resolution") {
+                    ForEach(RecordingQuality.allCases) { q in
+                        resolutionButton(q)
+                    }
+                }
+                rowDivider
+                row {
+                    Text("4K holds far more detail, at roughly four times the storage per clip. Clips you've already recorded keep the resolution they were captured at — and exports can never be sharper than that.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .lineSpacing(2)
+                        .padding(.vertical, 10)
+                }
             }
             .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
             .padding(.horizontal, 20)
         }
+    }
+
+    private func resolutionButton(_ q: RecordingQuality) -> some View {
+        let isSelected = recordingQuality == q.rawValue
+        return Button { recordingQuality = q.rawValue } label: {
+            Text(verbatim: q.rawValue)
+                .font(.system(size: 12, weight: .semibold))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .foregroundStyle(isSelected ? Theme.ink : .white.opacity(0.6))
+                .padding(.horizontal, 14)
+                .frame(height: 32)
+                .background(
+                    isSelected ? Theme.amber : Color(white: 0.22),
+                    in: RoundedRectangle(cornerRadius: 8)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
     // MARK: - Audio section

@@ -2541,6 +2541,39 @@
           }
         }
       }
+    },
+    "Resolution": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auflösung"
+          }
+        }
+      }
+    },
+    "4K holds far more detail, at roughly four times the storage per clip. Clips you've already recorded keep the resolution they were captured at — and exports can never be sharper than that.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4K hält deutlich mehr Details fest, braucht pro Clip aber rund viermal so viel Speicher. Bereits aufgenommene Clips behalten ihre Auflösung — und ein Export kann nie schärfer sein als das Material."
+          }
+        }
+      }
+    },
+    "Exporting in 1080p — the resolution your clips are recorded at. Switch to 4K under Settings › Recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export in 1080p — der Auflösung, in der deine Clips aufgenommen werden. Unter Einstellungen › Aufnahme auf 4K umstellen."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

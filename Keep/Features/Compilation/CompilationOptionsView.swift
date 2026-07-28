@@ -8,9 +8,21 @@ struct CompilationOptionsView: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    // Key must match RecordingQuality.defaultsKey.
+    @AppStorage("recordingQuality") private var recordingQualityRaw = RecordingQuality.p1080.rawValue
+
     @State private var holdProgress: CGFloat = 0
     @State private var isHolding = false
     @State private var holdTask: Task<Void, Never>?
+
+    private var recordingQuality: RecordingQuality {
+        RecordingQuality(rawValue: recordingQualityRaw) ?? .p1080
+    }
+
+    /// Only worth asking when the footage can actually carry the difference.
+    /// Recording at 1080p leaves 4K as an upscale — four times the file for
+    /// nothing — so the card goes away rather than offering a false choice.
+    private var offersQualityChoice: Bool { recordingQuality.exportChoices.count > 1 }
 
     var body: some View {
         ZStack {
@@ -22,9 +34,16 @@ struct CompilationOptionsView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         transitionCard
-                        qualityCard
+                        if offersQualityChoice {
+                            qualityCard
+                        } else {
+                            fixedQualityNote
+                        }
                         summaryRow
                     }
+                    // With the quality card gone the page sits top-heavy, so
+                    // the remaining card drops towards the middle.
+                    .padding(.top, offersQualityChoice ? 0 : 64)
                     .padding(.bottom, 140)
                 }
             }
@@ -126,7 +145,7 @@ struct CompilationOptionsView: View {
             sectionLabel("QUALITY")
 
             HStack(spacing: 12) {
-                ForEach(ExportQuality.allCases) { q in
+                ForEach(recordingQuality.exportChoices) { q in
                     qualityCell(q)
                 }
             }
@@ -163,6 +182,24 @@ struct CompilationOptionsView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    /// Stands in for the quality card, so the absent choice reads as a decision
+    /// already made rather than a missing control.
+    private var fixedQualityNote: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "gearshape")
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.3))
+            Text("Exporting in 1080p — the resolution your clips are recorded at. Switch to 4K under Settings › Recording.")
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.35))
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 4)
     }
 
     // MARK: - Summary

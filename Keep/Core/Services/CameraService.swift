@@ -6,6 +6,43 @@
 import Combine
 import UIKit
 
+// MARK: - Recording quality
+
+/// What the camera captures — and, because of that, the ceiling on what an
+/// export can meaningfully be. Exporting 1080p footage at 4K quadruples the
+/// file without adding a single pixel of detail, so the export screen only
+/// offers the choice when there is one.
+enum RecordingQuality: String, CaseIterable, Identifiable {
+    case p1080 = "1080p"
+    case p4K   = "4K"
+
+    static let defaultsKey = "recordingQuality"
+
+    /// 1080p by default. `@AppStorage` doesn't write its default into
+    /// `UserDefaults` until the user touches the control, so an absent value
+    /// has to mean the default here too.
+    static var current: RecordingQuality {
+        RecordingQuality(rawValue: UserDefaults.standard.string(forKey: defaultsKey) ?? "") ?? .p1080
+    }
+
+    var id: String { rawValue }
+
+    var sessionPreset: AVCaptureSession.Preset {
+        switch self {
+        case .p1080: return .hd1920x1080
+        case .p4K:   return .hd4K3840x2160
+        }
+    }
+
+    /// Export resolutions worth offering for footage recorded this way.
+    var exportChoices: [ExportQuality] {
+        switch self {
+        case .p1080: return [.p1080]
+        case .p4K:   return ExportQuality.allCases
+        }
+    }
+}
+
 // MARK: - Errors
 
 enum CameraError: LocalizedError {
@@ -104,12 +141,19 @@ final class CameraService: NSObject, ObservableObject {
         // (it strips .mixWithOthers by default, which pauses background music).
         s.automaticallyConfiguresApplicationAudioSession = false
         s.beginConfiguration()
-        s.sessionPreset = .high
 
         let videoInput = try makeVideoInput(position: position)
         guard s.canAddInput(videoInput) else { throw CameraError.sessionSetupFailed }
         s.addInput(videoInput)
         videoDeviceInput = videoInput
+
+        // After the input, not before: canSetSessionPreset answers against the
+        // camera actually in use, and the front camera doesn't do 4K on every
+        // device. `.high` is the fallback the session used unconditionally
+        // before this setting existed — on iPhone that's 1080p, which is why
+        // choosing 4K in the export sheet never produced a 4K frame.
+        let preset = RecordingQuality.current.sessionPreset
+        s.sessionPreset = s.canSetSessionPreset(preset) ? preset : .high
 
         let audioInput = try makeAudioInput()
         guard s.canAddInput(audioInput) else { throw CameraError.audioDeviceNotFound }
