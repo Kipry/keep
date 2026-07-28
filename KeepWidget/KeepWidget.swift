@@ -12,20 +12,55 @@ private struct ProjectSnapshot: Codable {
     let clipCount: Int
     let totalDuration: Double
     let thumbnailData: Data?
-    let streak: Int
-    let week: [Bool]
+    let recentDays: [Date]
+    let lastRecordingDay: Date?
+    let streakLength: Int
     let hasMultipleClips: Bool
     let featuredClipDate: Date?
 
-    /// The streak is alive as long as it has any length — the app only counts
-    /// days up to yesterday, so a morning without a recording doesn't kill it.
+    /// The day being drawn. Deliberately not stored: the provider stamps it per
+    /// timeline entry, which is what lets one saved blob render correctly on
+    /// any day. Previously the streak and the week strip were baked into the
+    /// blob by the app, so a phone left alone overnight kept showing the
+    /// previous day's answer — flame lit, today's box filled — until the app
+    /// was next opened.
+    var renderDay: Date = .now
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, clipCount, totalDuration, thumbnailData
+        case recentDays, lastRecordingDay, streakLength, hasMultipleClips, featuredClipDate
+    }
+
+    /// Consecutive recording days, or 0 once the run has lapsed. A run survives
+    /// one day without a recording — the same grace the app grants, so a
+    /// morning before you've filmed doesn't read as failure.
+    var streak: Int {
+        guard let last = lastRecordingDay, streakLength > 0 else { return 0 }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: renderDay)
+        guard let gap = calendar.dateComponents([.day], from: last, to: today).day else { return 0 }
+        return gap <= 1 ? streakLength : 0
+    }
+
     var streakAlive: Bool { streak > 0 }
+
+    /// Seven flags, oldest first, last entry is the day being drawn.
+    var week: [Bool] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: renderDay)
+        let days = Set(recentDays.map { calendar.startOfDay(for: $0) })
+        return (0..<7).reversed().map { offset in
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { return false }
+            return days.contains(day)
+        }
+    }
 }
 
-private func loadSnapshot() -> ProjectSnapshot? {
+private func loadSnapshot(for day: Date) -> ProjectSnapshot? {
     guard let defaults = UserDefaults(suiteName: "group.com.kipry.keep.app"),
-          let data = defaults.data(forKey: "projectSnapshotV2"),
-          let snap = try? JSONDecoder().decode(ProjectSnapshot.self, from: data) else { return nil }
+          let data = defaults.data(forKey: "projectSnapshotV3"),
+          var snap = try? JSONDecoder().decode(ProjectSnapshot.self, from: data) else { return nil }
+    snap.renderDay = day
     return snap
 }
 
@@ -38,23 +73,43 @@ struct KeepEntry: TimelineEntry {
 
 struct KeepProvider: TimelineProvider {
     func placeholder(in context: Context) -> KeepEntry {
-        KeepEntry(date: .now, snapshot: ProjectSnapshot(
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        // Recording days at offsets 6, 5, 3, 2 and 1 — a run of three ending
+        // yesterday, with today still open.
+        let days = [6, 5, 3, 2, 1].compactMap { calendar.date(byAdding: .day, value: -$0, to: today) }
+        return KeepEntry(date: .now, snapshot: ProjectSnapshot(
             id: "preview", name: "Summer 2026",
             clipCount: 46, totalDuration: 68, thumbnailData: nil,
-            streak: 12,
-            week: [true, true, false, true, true, true, false],
+            recentDays: days,
+            lastRecordingDay: calendar.date(byAdding: .day, value: -1, to: today),
+            streakLength: 3,
             hasMultipleClips: true, featuredClipDate: .now))
     }
+
     func getSnapshot(in context: Context, completion: @escaping (KeepEntry) -> Void) {
-        completion(KeepEntry(date: .now, snapshot: loadSnapshot()))
+        completion(KeepEntry(date: .now, snapshot: loadSnapshot(for: .now)))
     }
+
     func getTimeline(in context: Context, completion: @escaping (Timeline<KeepEntry>) -> Void) {
-        let entry = KeepEntry(date: .now, snapshot: loadSnapshot())
-        // Refresh at the next midnight so "today" in the week strip moves on
-        // even if the app isn't opened.
-        let midnight = Calendar.current.nextDate(
-            after: .now, matching: DateComponents(hour: 0, minute: 1), matchingPolicy: .nextTime)
-        completion(Timeline(entries: [entry], policy: midnight.map { .after($0) } ?? .never))
+        // One entry for now plus one just after each of the next few midnights.
+        // Asking to be reloaded at midnight isn't enough on its own: WidgetKit
+        // budgets reloads and can defer them, and a snapshot only ever describes
+        // the day it was written. Pre-rendering the following days means the
+        // strip and the flame move on at midnight regardless.
+        let calendar = Calendar.current
+        var dates: [Date] = [.now]
+        var cursor = Date.now
+        for _ in 0..<4 {
+            guard let midnight = calendar.nextDate(
+                after: cursor,
+                matching: DateComponents(hour: 0, minute: 0, second: 5),
+                matchingPolicy: .nextTime) else { break }
+            dates.append(midnight)
+            cursor = midnight
+        }
+        let entries = dates.map { KeepEntry(date: $0, snapshot: loadSnapshot(for: $0)) }
+        completion(Timeline(entries: entries, policy: .atEnd))
     }
 }
 

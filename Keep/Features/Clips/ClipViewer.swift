@@ -172,15 +172,13 @@ struct ClipViewer: View {
                 }
             }
         } else {
-            Zoomable(isActive: i == index) {
+            // Play/pause is handed to Zoomable rather than attached here, so it
+            // can be made to wait on the double-tap-to-zoom recogniser.
+            Zoomable(isActive: i == index, onSingleTap: { togglePlayback(clip) }) {
                 ZStack {
                     Color.black
                     if let player = players[clip.id] {
                         VideoLayerView(player: player)
-                            .onTapGesture {
-                                if player.timeControlStatus == .playing { player.pause() }
-                                else { player.play() }
-                            }
                     }
                 }
             }
@@ -197,6 +195,11 @@ struct ClipViewer: View {
             }
             .onDisappear { players[clip.id]?.pause() }
         }
+    }
+
+    private func togglePlayback(_ clip: Clip) {
+        guard let player = players[clip.id] else { return }
+        if player.timeControlStatus == .playing { player.pause() } else { player.play() }
     }
 
     private func play(_ clip: Clip) {

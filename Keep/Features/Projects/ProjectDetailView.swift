@@ -1321,6 +1321,11 @@ private struct ClipPreviewCarousel: View {
         player.play()
     }
 
+    private func togglePlayback(_ clip: Clip) {
+        guard let player = players[clip.id] else { return }
+        if player.timeControlStatus == .playing { player.pause() } else { player.play() }
+    }
+
     @ViewBuilder
     private func playerPage(for clip: Clip, index: Int) -> some View {
         if clip.isPhoto {
@@ -1337,15 +1342,13 @@ private struct ClipPreviewCarousel: View {
                 }
             }
         } else {
-            Zoomable(isActive: index == currentIndex) {
+            // Play/pause is handed to Zoomable rather than attached here, so it
+            // can be made to wait on the double-tap-to-zoom recogniser.
+            Zoomable(isActive: index == currentIndex, onSingleTap: { togglePlayback(clip) }) {
                 ZStack {
                     Color.black
                     if let player = players[clip.id] {
                         VideoLayerView(player: player)
-                            .onTapGesture {
-                                if player.timeControlStatus == .playing { player.pause() }
-                                else { player.play() }
-                            }
                     }
                 }
             }
