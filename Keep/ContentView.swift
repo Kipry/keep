@@ -30,7 +30,7 @@ struct ContentView: View {
                 HStack(spacing: 0) {
                     ProjectListView().frame(width: w)
                     DiaryTimelineView(isActive: selectedTab == .timeline).frame(width: w)
-                    OnThisDayView().frame(width: w)
+                    OnThisDayView(isActive: selectedTab == .today).frame(width: w)
                 }
                 .offset(x: -CGFloat(tabIndex) * w + dragOffset)
                 // Pin the 3-page strip's leading edge at x = 0 — a bare 3w-wide

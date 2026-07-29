@@ -43,6 +43,13 @@ final class Clip {
     var audioPeak: Double? = nil
     var audioAnalyzed: Bool = false
 
+    // MARK: Palette tone
+    // The clip's thumbnail reduced to one of sixteen film tones, for the year
+    // spiral on the Memories tab. Derived once when the thumbnail exists and
+    // stored here: the spiral must never decode 365 images while drawing.
+    var toneHex: Int? = nil
+    var toneAnalyzed: Bool = false
+
     /// Capture location, when the clip has one.
     var coordinate: CLLocationCoordinate2D? {
         guard let latitude, let longitude else { return nil }
@@ -165,6 +172,8 @@ final class Clip {
         newClip.audioRMS = audioRMS
         newClip.audioPeak = audioPeak
         newClip.audioAnalyzed = audioAnalyzed
+        newClip.toneHex = toneHex
+        newClip.toneAnalyzed = toneAnalyzed
         newClip.project = targetProject
         targetProject.updatedAt = Date()
         context.insert(newClip)

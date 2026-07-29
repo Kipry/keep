@@ -2574,6 +2574,105 @@
           }
         }
       }
+    },
+    "Your Year": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Jahr"
+          }
+        }
+      }
+    },
+    "%lld DAYS": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld TAGE"
+          }
+        }
+      }
+    },
+    "TAP TO CLOSE": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ZUM SCHLIESSEN TIPPEN"
+          }
+        }
+      }
+    },
+    "CENTRE: START": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MITTE: START"
+          }
+        }
+      }
+    },
+    "OUTSIDE: TODAY": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AUSSEN: HEUTE"
+          }
+        }
+      }
+    },
+    "NO RECORDING": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KEINE AUFNAHME"
+          }
+        }
+      }
+    },
+    "%lld CLIPS · %lld S": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld CLIPS · %lld S"
+          }
+        }
+      }
+    },
+    "Year spiral, %lld of %lld days recorded": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jahresspirale, %lld von %lld Tagen aufgenommen"
+          }
+        }
+      }
+    },
+    "Open day": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tag öffnen"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

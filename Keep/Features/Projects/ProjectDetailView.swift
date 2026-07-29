@@ -651,6 +651,7 @@ struct ProjectDetailView: View {
             // Measure the audio now, while there's exactly one clip to look at,
             // rather than making the first export wait on the whole project.
             await ClipAudioLevels.analyzeIfNeeded(clip)
+            ClipTone.analyzeIfNeeded(clip)      // palette tone for the year spiral
             WidgetDataStore.refresh(context: modelContext)
         }
     }
@@ -725,6 +726,7 @@ struct ProjectDetailView: View {
         if let thumb = ui.downscaled(maxEdge: 320).jpegData(compressionQuality: 0.7) {
             clip.thumbnailData = thumb
             if project.activeClips.count == 1 { project.coverThumbnailData = thumb }
+            ClipTone.analyzeIfNeeded(clip)
         }
         WidgetDataStore.refresh(context: modelContext)
         return true

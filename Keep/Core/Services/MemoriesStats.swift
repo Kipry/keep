@@ -24,8 +24,9 @@ struct MemoriesStats {
     var clipsByDay: [Date: [Clip]] = [:]
     var currentStreak = 0
     var bestStreak = 0
-    var lastWeek: [(Date, [Clip])] = []
-    var lastMonth: [(Date, [Clip])] = []
+    /// A fortnight centred on this date last year. The week and month windows
+    /// that used to live here went with the lookback strips they fed — the year
+    /// spiral covers that ground now, and better.
     var lastYear: [(Date, [Clip])] = []
 
     static let empty = MemoriesStats()
@@ -65,13 +66,6 @@ struct MemoriesStats {
                 .map { ($0, byDay[$0] ?? []) }
         }
 
-        stats.lastWeek = window(calendar.date(byAdding: .day, value: -7, to: today), today)
-
-        let firstThisMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: today))
-        let firstLastMonth = firstThisMonth.flatMap { calendar.date(byAdding: .month, value: -1, to: $0) }
-        stats.lastMonth = window(firstLastMonth, firstThisMonth)
-
-        // A fortnight centred on this date last year.
         let anchor = calendar.date(byAdding: .year, value: -1, to: today)
         stats.lastYear = window(
             anchor.flatMap { calendar.date(byAdding: .day, value: -7, to: $0) },

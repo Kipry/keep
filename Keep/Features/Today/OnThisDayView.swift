@@ -3,6 +3,11 @@ import SwiftData
 import AVFoundation
 
 struct OnThisDayView: View {
+    /// True while Memories is the visible page. `ContentView` keeps all three
+    /// pages mounted, so `onAppear` fires at launch — the spiral's intro has to
+    /// hang off this instead, or it plays to an empty room.
+    let isActive: Bool
+
     @Query(filter: #Predicate<Clip> { !$0.isDeleted })
     private var storedClips: [Clip]
 
@@ -28,6 +33,8 @@ struct OnThisDayView: View {
     /// `ContentView` keeps permanently mounted and therefore re-evaluates on
     /// any data change anywhere in the app.
     @State private var stats = MemoriesStats.empty
+    /// Gapless day list backing the year spiral, rebuilt alongside the stats.
+    @State private var spiralDays: [SpiralDay] = []
 
     @State private var showSettings = false
     @State private var showStreakDetail = false
@@ -44,8 +51,6 @@ struct OnThisDayView: View {
     private var clipsByDay: [Date: [Clip]] { stats.clipsByDay }
     private var currentStreak: Int { stats.currentStreak }
     private var bestStreak: Int { stats.bestStreak }
-    private var lastWeekGroups: [(Date, [Clip])] { stats.lastWeek }
-    private var lastMonthGroups: [(Date, [Clip])] { stats.lastMonth }
     private var lastYearGroups: [(Date, [Clip])] { stats.lastYear }
 
     private func hasClip(on day: Date) -> Bool { stats.daySet.contains(day) }
@@ -68,18 +73,19 @@ struct OnThisDayView: View {
                             .padding(.horizontal, Layout.gutter)
                         streakCard
                             .padding(.horizontal, Layout.gutter)
-                        if !lastWeekGroups.isEmpty {
-                            lookbackSection("Last Week", groups: lastWeekGroups)
-                        }
-                        if !lastMonthGroups.isEmpty {
-                            lookbackSection("Last Month", groups: lastMonthGroups)
+                        // Replaces the week/month lookback strips. Those showed
+                        // the same days the Diary already shows, only smaller —
+                        // and something from six days ago isn't a memory yet.
+                        if !spiralDays.isEmpty {
+                            YearSpiralCard(days: spiralDays,
+                                           hasRecordedToday: hasClip(on: today),
+                                           isActive: isActive) { day in
+                                openDay(day)
+                            }
+                            .padding(.horizontal, Layout.gutter)
                         }
                         if !lastYearGroups.isEmpty {
                             lookbackSection("Last Year", groups: lastYearGroups)
-                        }
-                        if lastWeekGroups.isEmpty && lastMonthGroups.isEmpty && lastYearGroups.isEmpty {
-                            noLookbackHint
-                                .padding(.horizontal, Layout.gutter)
                         }
                     }
                     .padding(.top, Layout.headerTop)
@@ -109,10 +115,40 @@ struct OnThisDayView: View {
         // Recomputed only when the clip set actually changes, not per frame.
         .onAppear { rebuildStats() }
         .onChange(of: storedClips) { _, _ in rebuildStats() }
+
     }
 
     private func rebuildStats() {
         stats = MemoriesStats.build(clips: allClips, calendar: cal)
+        spiralDays = buildSpiralDays()
+    }
+
+    /// One entry per calendar day from the first recording to today — gaps
+    /// included, because a gap holds its place on the disc.
+    private func buildSpiralDays() -> [SpiralDay] {
+        guard let first = stats.uniqueDays.last else { return [] }
+        var result: [SpiralDay] = []
+        var cursor = first
+        // Guard against a clip dated in the future dragging the loop forever.
+        while cursor <= today, result.count < 4000 {
+            let clips = stats.clipsByDay[cursor] ?? []
+            let components = cal.dateComponents([.year, .month], from: cursor)
+            result.append(SpiralDay(
+                id: cursor,
+                tone: ClipTone.dayTone(clips),
+                clipCount: clips.count,
+                seconds: Int(clips.reduce(0) { $0 + $1.effectiveDuration }.rounded()),
+                monthKey: (components.year ?? 0) * 12 + (components.month ?? 0)
+            ))
+            guard let next = cal.date(byAdding: .day, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+        return result
+    }
+
+    private func openDay(_ day: SpiralDay) {
+        guard let clips = stats.clipsByDay[day.id], !clips.isEmpty else { return }
+        openViewer(clips, at: 0)
     }
 
     private func openViewer(_ clips: [Clip], at index: Int) {
@@ -304,22 +340,6 @@ struct OnThisDayView: View {
         if cal.isDateInYesterday(date) { return String(localized: "Yesterday") }
         f.dateFormat = "EEE, d. MMM"
         return f.string(from: date)
-    }
-
-    // MARK: - No lookback hint
-
-    private var noLookbackHint: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Memories Appear Here")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.4))
-            Text("Record a few more days — your first memories will appear here after a week.")
-                .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.25))
-                .lineSpacing(2)
-        }
-        .padding(16)
-        .background(Color(white: 0.07), in: RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Empty state
