@@ -133,12 +133,21 @@ struct OnThisDayView: View {
         while cursor <= today, result.count < 4000 {
             let clips = stats.clipsByDay[cursor] ?? []
             let components = cal.dateComponents([.year, .month], from: cursor)
+            let seconds = Int(clips.reduce(0) { $0 + $1.effectiveDuration }.rounded())
+            // Band share: recorded days run 0.72…1 with the seconds captured,
+            // against a fixed twelve-second reference rather than the busiest
+            // day — otherwise one unusual day would reshape the whole disc.
+            // Empty days recess to a notch.
+            let weight: CGFloat = clips.isEmpty
+                ? 0.42
+                : 0.72 + 0.28 * min(1, CGFloat(seconds) / 12)
             result.append(SpiralDay(
                 id: cursor,
                 tone: ClipTone.dayTone(clips),
                 clipCount: clips.count,
-                seconds: Int(clips.reduce(0) { $0 + $1.effectiveDuration }.rounded()),
-                monthKey: (components.year ?? 0) * 12 + (components.month ?? 0)
+                seconds: seconds,
+                monthKey: (components.year ?? 0) * 12 + (components.month ?? 0),
+                weight: weight
             ))
             guard let next = cal.date(byAdding: .day, value: 1, to: cursor) else { break }
             cursor = next

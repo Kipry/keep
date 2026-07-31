@@ -37,38 +37,61 @@ struct Arc {
 
 // MARK: - Geometry
 
-/// The spiral grows **outward**: day one sits in the core, today is the
-/// outermost and therefore widest segment.
+/// The spiral is anchored on **today, at twelve o'clock**. The past winds
+/// anticlockwise and inward from there; tomorrow's slot is the one clockwise of
+/// noon. Every day the whole disc turns one notch and today takes the top again.
 ///
-/// That direction is the whole reason this works as a tappable control. Grown
-/// inward, the most recent day — the one people reach for — would be the
-/// smallest target and the past would own the area.
+/// Anchoring on today rather than on day one buys three things at once. Today
+/// is always in the same place, so there is something to aim at. Today is
+/// always the outermost and therefore widest segment, which is what makes this
+/// tappable at all. And there is no longer a part-finished turn to indicate —
+/// the turn boundary *is* today — which is what the old dashed remainder was
+/// trying and failing to draw.
+///
+/// Note the arithmetic in the middle of the range: with `turns = count / 72`,
+/// `dTheta` works out to exactly `2π / 72` regardless of `count` — five degrees
+/// a day, seventy-two days a turn. Between roughly forty days and thirteen
+/// months, adding a day is therefore a pure rotation.
 struct SpiralGeometry {
     /// May be fractional while the "new day" growth animation runs.
     var count: CGFloat
-    var outerRadius: CGFloat = 150
-    var maxTravel: CGFloat = 100
+    /// Leaves room outside the rim for the month labels and the today marker.
+    var outerRadius: CGFloat = 130
+    /// The disc never closes over completely; the centre carries the year.
+    var coreRadius: CGFloat = 40
+    /// Ceiling on the band, so a short history reads as a fat arc rather than
+    /// a hoop with a hole in it.
+    var maxRingGap: CGFloat = 58
 
-    /// Both clamps are the actual design decision. 0.55 at the bottom keeps
-    /// twelve days a fat arc rather than a wisp of thread; 5.5 at the top holds
-    /// the innermost band near 14 pt, below which the drawing turns to moiré.
+    /// 0.55 at the bottom keeps twelve days a solid arc rather than a wisp;
+    /// 5.5 at the top holds the innermost band near 14 pt, below which the
+    /// drawing turns to moiré.
     var turns: CGFloat { min(5.5, max(0.55, count / 72)) }
-    var ringGap: CGFloat { min(28, maxTravel / turns) }
+
+    /// Spans core to rim whenever the history is long enough to need it. The
+    /// old `min(28, …)` meant twelve days occupied 15 pt of a 150 pt radius —
+    /// a sliver on the edge around an empty disc.
+    var ringGap: CGFloat { min(maxRingGap, (outerRadius - coreRadius) / turns) }
     var band: CGFloat { ringGap * 0.78 }
+    /// Twelve o'clock. In screen coordinates y runs down, so increasing angle
+    /// is clockwise — later.
     var start: CGFloat { -.pi / 2 }
     var dTheta: CGFloat { count > 0 ? turns * 2 * .pi / count : 0 }
     var innerRadius: CGFloat { outerRadius - turns * ringGap }
 
-    func angle(_ i: Int) -> CGFloat { start + CGFloat(i) * dTheta }
+    /// Clockwise (newer) edge of day `x`'s slot. Today's lands exactly on noon.
+    func slotEnd(_ x: CGFloat) -> CGFloat { start - (count - 1 - x) * dTheta }
+    func slotStart(_ x: CGFloat) -> CGFloat { slotEnd(x) - dTheta }
 
-    /// Radius grows with the swept angle, so later days land further out.
+    /// Radius falls as the angle winds back from noon, so the past sits inside.
     func radius(at angle: CGFloat) -> CGFloat {
-        innerRadius + (angle - start) / (2 * .pi) * ringGap
+        outerRadius + (angle - start) / (2 * .pi) * ringGap
     }
 
-    func arc(_ i: Int) -> Arc {
-        let a = angle(i)
-        return Arc(start: a, width: dTheta * 0.94, radius: radius(at: a), band: band)
+    func arc(_ i: Int, weight: CGFloat = 1) -> Arc {
+        let a = slotStart(CGFloat(i))
+        return Arc(start: a, width: dTheta * 0.94,
+                   radius: radius(at: a), band: band * weight)
     }
 
     /// Tapping a single day only makes sense while a segment is wide enough to
@@ -79,16 +102,19 @@ struct SpiralGeometry {
     func index(at p: CGPoint, tolerance: CGFloat = 6) -> Int? {
         guard count > 0, dTheta > 0 else { return nil }
         let r = hypot(p.x, p.y)
-        var phi = atan2(p.y, p.x)
-        while phi < start { phi += 2 * .pi }
-        for wrap in 0...Int(ceil(turns)) {
-            let a = phi + CGFloat(wrap) * 2 * .pi
-            let swept = a - start
-            guard swept >= 0, swept <= turns * 2 * .pi else { continue }
-            let rr = radius(at: a)
-            if r <= rr + tolerance, r >= rr - band - tolerance {
-                return min(Int(count) - 1, max(0, Int(swept / dTheta)))
+        var a = atan2(p.y, p.x)
+        while a > start { a -= 2 * .pi }         // bring it at or behind noon
+        for _ in 0...(Int(ceil(turns)) + 1) {
+            let swept = start - a                // radians back from today
+            if swept >= 0, swept <= turns * 2 * .pi {
+                let rr = radius(at: a)
+                if r <= rr + tolerance, r >= rr - band - tolerance {
+                    let daysAgo = Int(swept / dTheta)
+                    let i = Int(count) - 1 - daysAgo
+                    if i >= 0 { return min(i, Int(count) - 1) }
+                }
             }
+            a -= 2 * .pi
         }
         return nil
     }
@@ -97,7 +123,7 @@ struct SpiralGeometry {
 /// Stage two: one month unrolled out of the spiral into a near-closed ring.
 struct MonthDial {
     let dayCount: Int
-    var radius: CGFloat = 150
+    var radius: CGFloat = 130
     var band: CGFloat = 34
     var start: CGFloat { -.pi / 2 }
     /// Capped at 340° so the ring never closes into an ambiguous circle.
@@ -122,18 +148,28 @@ struct MonthDial {
 
 // MARK: - Day model
 
-/// One day on the disc. Gapless: days without a clip keep their place and are
-/// drawn as bare paper, because a gap is part of the year too.
+/// One day on the disc. Gapless: days without a clip keep their place, because
+/// a gap is part of the year too.
 struct SpiralDay: Identifiable, Equatable {
     let id: Date            // start of day
     let tone: Color?        // nil = nothing recorded
     let clipCount: Int
     let seconds: Int
     let monthKey: Int       // year * 12 + month
+    /// Share of the full band this day's segment occupies. Recorded days run
+    /// 0.72…1 with the seconds captured; empty days are recessed to a notch, so
+    /// the rhythm of a habit shows as texture instead of near-invisible paper.
+    let weight: CGFloat
 
     static func == (a: SpiralDay, b: SpiralDay) -> Bool {
         a.id == b.id && a.clipCount == b.clipCount && a.seconds == b.seconds
     }
+}
+
+/// A month boundary on the disc, pre-resolved so the draw loop never formats a date.
+struct MonthMark: Equatable {
+    let index: Int
+    let label: String
 }
 
 // MARK: - Canvas
@@ -142,8 +178,12 @@ struct SpiralDay: Identifiable, Equatable {
 /// 365 ring segments draw in well under a frame, 365 views do not.
 struct SpiralCanvas: View, Animatable {
     let days: [SpiralDay]
+    let monthMarks: [MonthMark]
+    /// Length of the run of recording days ending at today, 0 if it has lapsed.
+    let streak: Int
     /// Global indices of the unrolled month, and their position within it.
     let monthOrder: [Int: Int]
+    let todayLabel: String
     var reveal: CGFloat     // 0…1 intro
     var unroll: CGFloat     // 0…1 month dial
     var growth: CGFloat     // 0…1 "new day"
@@ -173,18 +213,21 @@ struct SpiralCanvas: View, Animatable {
             let g = geometry
             let d = dial
             let head = reveal * CGFloat(days.count)
+            let settled = reveal > 0.9 && unroll < 1
 
-            // 1 · The dashed remainder of the current turn. The only place the
-            //     spiral promises anything: this is where tomorrow goes.
-            if reveal > 0.9, unroll < 1 {
-                let from = g.start + g.turns * 2 * .pi
-                let to = g.start + ceil(g.turns) * 2 * .pi
-                if to - from > 0.05 {
-                    var p = Path()
-                    p.addArc(center: .zero, radius: g.outerRadius - g.band / 2,
-                             startAngle: .radians(from), endAngle: .radians(to), clockwise: false)
-                    ctx.stroke(p, with: .color(Theme.paper.opacity(0.09 * (1 - unroll))),
-                               style: StrokeStyle(lineWidth: g.band, dash: [2, 5]))
+            // 1 · The next few empty slots, fading out clockwise of noon. Where
+            //     tomorrow goes. This used to be a full dashed turn drawn at a
+            //     *constant* radius, which could only ever read as a circle —
+            //     the spiral's radius grows with the swept angle, so a
+            //     fixed-radius arc is not a continuation of anything.
+            if settled {
+                for j in 0..<3 {
+                    let a = g.start + CGFloat(j) * g.dTheta
+                    let slot = Arc(start: a, width: g.dTheta * 0.94,
+                                   radius: g.radius(at: a), band: g.band * 0.9)
+                    ctx.stroke(slot.path,
+                               with: .color(Theme.paper.opacity((0.15 - CGFloat(j) * 0.045) * (1 - unroll))),
+                               lineWidth: 1)
                 }
             }
 
@@ -202,7 +245,7 @@ struct SpiralCanvas: View, Animatable {
                 let local = min(1, max(0, (head - CGFloat(i)) / 1.5))
                 if local <= 0 { continue }
 
-                var arc = g.arc(i)
+                var arc = g.arc(i, weight: day.weight)
                 var alpha = local
                 if let k = monthOrder[i] {
                     // 35 % stagger across the month — this is what makes it
@@ -219,18 +262,71 @@ struct SpiralCanvas: View, Animatable {
 
                 ctx.fill(arc.path,
                          with: .color(day.tone?.opacity(alpha)
-                                      ?? Theme.paper.opacity(0.06 * alpha)))
+                                      ?? Theme.paper.opacity(0.07 * alpha)))
             }
 
-            // 4 · Selection outline.
+            // 4 · Month boundaries. A hairline across the band everywhere, and
+            //     the name only on the outermost turn — the one place there is
+            //     room. Without these the disc has no temporal landmarks at all
+            //     and you cannot say where March was.
+            if settled {
+                for mark in monthMarks where mark.index < days.count {
+                    let a = g.slotStart(CGFloat(mark.index))
+                    let outer = g.radius(at: a)
+                    let inner = max(1, outer - g.band)
+                    var tick = Path()
+                    tick.move(to: CGPoint(x: inner * cos(a), y: inner * sin(a)))
+                    tick.addLine(to: CGPoint(x: outer * cos(a), y: outer * sin(a)))
+                    ctx.stroke(tick, with: .color(Theme.paper.opacity(0.28 * (1 - unroll))),
+                               lineWidth: 0.8)
+
+                    // Outermost turn only, and never so near noon that it
+                    // collides with the today marker.
+                    let daysAgo = CGFloat(days.count - 1 - mark.index)
+                    guard daysAgo * g.dTheta < 2 * .pi - 0.28, daysAgo > 1.6 else { continue }
+                    let mid = a + g.dTheta / 2
+                    let lr = g.outerRadius + 12
+                    ctx.draw(Text(verbatim: mark.label)
+                                .font(.mono(8, weight: .medium))
+                                .foregroundStyle(Theme.paper.opacity(0.42 * (1 - unroll))),
+                             at: CGPoint(x: lr * cos(mid), y: lr * sin(mid)))
+                }
+            }
+
+            // 5 · The streak as an arc: how long you've been going, as a length
+            //     rather than a number.
+            if settled, streak > 1 {
+                let span = min(CGFloat(streak), CGFloat(days.count)) * g.dTheta
+                var p = Path()
+                p.addArc(center: .zero, radius: g.outerRadius + 5,
+                         startAngle: .radians(g.start - span), endAngle: .radians(g.start),
+                         clockwise: false)
+                ctx.stroke(p, with: .color(Theme.amber.opacity(0.55 * (1 - unroll))),
+                           style: StrokeStyle(lineWidth: 2, lineCap: .round))
+            }
+
+            // 6 · Today, always at noon. Replaces the two legend captions that
+            //     described a whole ring instead of pointing at a day.
+            if settled {
+                var tick = Path()
+                tick.move(to: CGPoint(x: 0, y: -(g.outerRadius + 2)))
+                tick.addLine(to: CGPoint(x: 0, y: -(g.outerRadius + 9)))
+                ctx.stroke(tick, with: .color(Theme.amber.opacity(1 - unroll)), lineWidth: 1.5)
+                ctx.draw(Text(verbatim: todayLabel)
+                            .font(.mono(8, weight: .medium))
+                            .foregroundStyle(Theme.amber.opacity(0.85 * (1 - unroll))),
+                         at: CGPoint(x: 0, y: -(g.outerRadius + 18)))
+            }
+
+            // 7 · Selection outline.
             if let s = selected, s < days.count {
-                var arc = g.arc(s)
+                var arc = g.arc(s, weight: days[s].weight)
                 if let k = monthOrder[s] { arc = arc.lerp(to: d.arc(k), unroll) }
                 arc.radius += 5
                 ctx.stroke(arc.path, with: .color(Theme.amber), lineWidth: 1.5)
             }
 
-            // 5 · Today's breath — an outline on today's own empty segment.
+            // 8 · Today's breath — an outline on today's own segment.
             if pulse > 0, let last = days.indices.last {
                 let arc = g.arc(last)
                 ctx.stroke(arc.path,
@@ -238,9 +334,9 @@ struct SpiralCanvas: View, Animatable {
                            lineWidth: 1.5)
             }
 
-            // 6 · The amber head running ahead of the thread.
+            // 9 · The amber head running ahead of the thread.
             if reveal > 0, reveal < 1 {
-                let a = g.start + head * g.dTheta
+                let a = g.slotEnd(head)
                 let r = g.radius(at: a) - g.band / 2
                 ctx.fill(Path(ellipseIn: CGRect(x: r * cos(a) - 3.2, y: r * sin(a) - 3.2,
                                                 width: 6.4, height: 6.4)),
@@ -283,7 +379,6 @@ struct YearSpiralCard: View {
     @State private var monthOrder: [Int: Int] = [:]
     @State private var monthLabel: String?
     @State private var didReveal = false
-    @State private var knownDayCount = 0
 
     private let side: CGFloat = 314
     private var geometry: SpiralGeometry { .init(count: max(1, CGFloat(days.count))) }
@@ -294,19 +389,42 @@ struct YearSpiralCard: View {
         return days[selected]
     }
 
+    /// Run of recording days ending at today, with the same one-day grace the
+    /// rest of the app grants: a morning before you've filmed still counts.
+    private var streak: Int {
+        var i = days.count - 1
+        if i >= 0, days[i].tone == nil { i -= 1 }      // today still open
+        var run = 0
+        while i >= 0, days[i].tone != nil { run += 1; i -= 1 }
+        return run
+    }
+
+    /// Index of each month's first day, with its name. Resolved here so the
+    /// draw loop never touches a date formatter.
+    private var monthMarks: [MonthMark] {
+        var result: [MonthMark] = []
+        for i in days.indices where i > 0 && days[i].monthKey != days[i - 1].monthKey {
+            result.append(MonthMark(index: i,
+                                    label: days[i].id.formatted(.dateTime.month(.abbreviated))
+                                                     .uppercased()))
+        }
+        return result
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
             ZStack {
-                SpiralCanvas(days: days, monthOrder: monthOrder, reveal: reveal,
-                             unroll: unroll, growth: growth, pulse: pulse, selected: selected)
+                SpiralCanvas(days: days, monthMarks: monthMarks, streak: streak,
+                             monthOrder: monthOrder, todayLabel: String(localized: "TODAY"),
+                             reveal: reveal, unroll: unroll, growth: growth,
+                             pulse: pulse, selected: selected)
                     .frame(width: side, height: side)
                     .contentShape(Rectangle())
                     .onTapGesture(count: 1, coordinateSpace: .local) { handleTap($0) }
                 centreLabel
             }
             .frame(maxWidth: .infinity)
-            legend
             if let day = selectedDay { dayCard(day) }
         }
         .padding(14)
@@ -317,8 +435,7 @@ struct YearSpiralCard: View {
         .onChange(of: isActive) { _, active in if active { startIfNeeded() } }
         .onAppear { if isActive { startIfNeeded() } }
         .onChange(of: days.count) { old, new in
-            guard didReveal, new == old + 1 else { knownDayCount = new; return }
-            knownDayCount = new
+            guard didReveal, new == old + 1 else { return }
             growNewDay()
         }
     }
@@ -357,17 +474,6 @@ struct YearSpiralCard: View {
         }
         .opacity(Double(min(1, max(0, (reveal - 0.78) / 0.22))))
         .allowsHitTesting(false)
-    }
-
-    private var legend: some View {
-        HStack {
-            Text("CENTRE: START")
-            Spacer()
-            Text("OUTSIDE: TODAY")
-        }
-        .font(.mono(8.5))
-        .tracking(1)
-        .foregroundStyle(.white.opacity(0.3))
     }
 
     private func dayCard(_ day: SpiralDay) -> some View {
@@ -413,7 +519,6 @@ struct YearSpiralCard: View {
     private func startIfNeeded() {
         guard !didReveal else { return }
         didReveal = true
-        knownDayCount = days.count
         guard !reduceMotion else {
             reveal = 1
             if !hasRecordedToday { pulse = 0.45 }
@@ -433,8 +538,9 @@ struct YearSpiralCard: View {
         }
     }
 
-    /// The reward: the rim grows. Turn count and band width both follow from the
-    /// day count, so this is the same formula with `count + 1` — not a special case.
+    /// The reward: the disc turns one notch and today takes the top. With the
+    /// day count in the denominator of `dTheta` this is the same formula with
+    /// `count + 1` — in the middle of the range, a pure rotation.
     private func growNewDay() {
         guard !reduceMotion else { return }
         growth = 0
