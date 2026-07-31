@@ -188,15 +188,21 @@ struct SpiralCanvas: View, Animatable {
     var unroll: CGFloat     // 0…1 month dial
     var growth: CGFloat     // 0…1 "new day"
     var pulse: CGFloat      // 0…1 today's breath
+    /// 0…1 for everything that arrives *after* the thread has landed on today:
+    /// the empty slots ahead of noon, the month names, the streak, the marker.
+    /// Its own channel rather than a late slice of `reveal`, so the annotations
+    /// can't start appearing while segments are still winding out.
+    var trail: CGFloat
     var selected: Int?
 
-    var animatableData: AnimatablePair<CGFloat, AnimatablePair<CGFloat, AnimatablePair<CGFloat, CGFloat>>> {
-        get { .init(reveal, .init(unroll, .init(growth, pulse))) }
+    var animatableData: AnimatablePair<CGFloat, AnimatablePair<CGFloat, AnimatablePair<CGFloat, AnimatablePair<CGFloat, CGFloat>>>> {
+        get { .init(reveal, .init(unroll, .init(growth, .init(pulse, trail)))) }
         set {
             reveal = newValue.first
             unroll = newValue.second.first
             growth = newValue.second.second.first
-            pulse  = newValue.second.second.second
+            pulse  = newValue.second.second.second.first
+            trail  = newValue.second.second.second.second
         }
     }
 
@@ -213,7 +219,10 @@ struct SpiralCanvas: View, Animatable {
             let g = geometry
             let d = dial
             let head = reveal * CGFloat(days.count)
-            let settled = reveal > 0.9 && unroll < 1
+            // Everything annotational fades with this, so the disc finishes
+            // drawing itself before anything is written on top of it.
+            let annotate = trail * (1 - unroll)
+            let settled = annotate > 0.001
 
             // 1 · The next few empty slots, fading out clockwise of noon. Where
             //     tomorrow goes. This used to be a full dashed turn drawn at a
@@ -222,11 +231,16 @@ struct SpiralCanvas: View, Animatable {
             //     fixed-radius arc is not a continuation of anything.
             if settled {
                 for j in 0..<3 {
+                    // Staggered thirds: the outline sweeps clockwise out of
+                    // noon, one slot handing over to the next, so it continues
+                    // the thread's motion instead of blinking on.
+                    let u = min(1, max(0, trail * 3 - CGFloat(j)))
+                    guard u > 0.001 else { continue }
                     let a = g.start + CGFloat(j) * g.dTheta
-                    let slot = Arc(start: a, width: g.dTheta * 0.94,
+                    let slot = Arc(start: a, width: g.dTheta * 0.94 * u,
                                    radius: g.radius(at: a), band: g.band * 0.9)
                     ctx.stroke(slot.path,
-                               with: .color(Theme.paper.opacity((0.15 - CGFloat(j) * 0.045) * (1 - unroll))),
+                               with: .color(Theme.paper.opacity((0.15 - CGFloat(j) * 0.045) * u * (1 - unroll))),
                                lineWidth: 1)
                 }
             }
@@ -277,7 +291,7 @@ struct SpiralCanvas: View, Animatable {
                     var tick = Path()
                     tick.move(to: CGPoint(x: inner * cos(a), y: inner * sin(a)))
                     tick.addLine(to: CGPoint(x: outer * cos(a), y: outer * sin(a)))
-                    ctx.stroke(tick, with: .color(Theme.paper.opacity(0.28 * (1 - unroll))),
+                    ctx.stroke(tick, with: .color(Theme.paper.opacity(0.28 * annotate)),
                                lineWidth: 0.8)
 
                     // Outermost turn only, and never so near noon that it
@@ -288,7 +302,7 @@ struct SpiralCanvas: View, Animatable {
                     let lr = g.outerRadius + 12
                     ctx.draw(Text(verbatim: mark.label)
                                 .font(.mono(8, weight: .medium))
-                                .foregroundStyle(Theme.paper.opacity(0.42 * (1 - unroll))),
+                                .foregroundStyle(Theme.paper.opacity(0.42 * annotate)),
                              at: CGPoint(x: lr * cos(mid), y: lr * sin(mid)))
                 }
             }
@@ -296,12 +310,12 @@ struct SpiralCanvas: View, Animatable {
             // 5 · The streak as an arc: how long you've been going, as a length
             //     rather than a number.
             if settled, streak > 1 {
-                let span = min(CGFloat(streak), CGFloat(days.count)) * g.dTheta
+                let span = min(CGFloat(streak), CGFloat(days.count)) * g.dTheta * trail
                 var p = Path()
                 p.addArc(center: .zero, radius: g.outerRadius + 5,
                          startAngle: .radians(g.start - span), endAngle: .radians(g.start),
                          clockwise: false)
-                ctx.stroke(p, with: .color(Theme.amber.opacity(0.55 * (1 - unroll))),
+                ctx.stroke(p, with: .color(Theme.amber.opacity(0.55 * annotate)),
                            style: StrokeStyle(lineWidth: 2, lineCap: .round))
             }
 
@@ -311,10 +325,10 @@ struct SpiralCanvas: View, Animatable {
                 var tick = Path()
                 tick.move(to: CGPoint(x: 0, y: -(g.outerRadius + 2)))
                 tick.addLine(to: CGPoint(x: 0, y: -(g.outerRadius + 9)))
-                ctx.stroke(tick, with: .color(Theme.amber.opacity(1 - unroll)), lineWidth: 1.5)
+                ctx.stroke(tick, with: .color(Theme.amber.opacity(annotate)), lineWidth: 1.5)
                 ctx.draw(Text(verbatim: todayLabel)
                             .font(.mono(8, weight: .medium))
-                            .foregroundStyle(Theme.amber.opacity(0.85 * (1 - unroll))),
+                            .foregroundStyle(Theme.amber.opacity(0.85 * annotate)),
                          at: CGPoint(x: 0, y: -(g.outerRadius + 18)))
             }
 
@@ -375,6 +389,7 @@ struct YearSpiralCard: View {
     @State private var unroll: CGFloat = 0
     @State private var growth: CGFloat = 1
     @State private var pulse: CGFloat = 0
+    @State private var trail: CGFloat = 0
     @State private var selected: Int?
     @State private var monthOrder: [Int: Int] = [:]
     @State private var monthLabel: String?
@@ -424,7 +439,7 @@ struct YearSpiralCard: View {
                 SpiralCanvas(days: days, monthMarks: monthMarks, streak: streak,
                              monthOrder: monthOrder, todayLabel: String(localized: "TODAY"),
                              reveal: reveal, unroll: unroll, growth: growth,
-                             pulse: pulse, selected: selected)
+                             pulse: pulse, trail: trail, selected: selected)
                     .frame(width: side, height: side)
                     .contentShape(Rectangle())
                     .onTapGesture(count: 1, coordinateSpace: .local) { handleTap($0) }
@@ -541,16 +556,25 @@ struct YearSpiralCard: View {
 
         guard !reduceMotion else {
             reveal = 1
+            trail = 1
             if !hasRecordedToday, !didPulse { didPulse = true; pulse = 0.45 }
             return
         }
 
         reveal = 0
+        trail = 0
         // Next runloop tick. Resetting and animating within one update leaves
         // SwiftUI comparing 1 against 1, with nothing to interpolate.
         DispatchQueue.main.async {
             guard visit == token else { return }
             withAnimation(.timingCurve(0.16, 0.84, 0.3, 1, duration: 1.1)) { reveal = 1 }
+        }
+        // Handed over the moment the thread lands on today, so the empty slots
+        // ahead of noon read as the same gesture carrying on rather than as a
+        // second thing starting.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.05) {
+            guard visit == token else { return }
+            withAnimation(.easeOut(duration: 0.5)) { trail = 1 }
         }
         if !hasRecordedToday, !didPulse {
             didPulse = true
@@ -562,7 +586,7 @@ struct YearSpiralCard: View {
     /// after the intro has settled, so it reads as the disc noticing the gap.
     private func schedulePulse(token: Int) {
         for n in 0..<3 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2 + Double(n) * 1.4) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.7 + Double(n) * 1.4) {
                 guard visit == token else { return }     // left the page meanwhile
                 withAnimation(.easeInOut(duration: 0.7)) { pulse = 1 }
                 withAnimation(.easeInOut(duration: 0.7).delay(0.7)) { pulse = 0 }
