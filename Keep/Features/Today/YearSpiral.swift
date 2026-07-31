@@ -378,7 +378,13 @@ struct YearSpiralCard: View {
     @State private var selected: Int?
     @State private var monthOrder: [Int: Int] = [:]
     @State private var monthLabel: String?
-    @State private var didReveal = false
+    /// Bumped on every arrival and departure, so work scheduled for one visit
+    /// can tell that it now belongs to a stale one.
+    @State private var visit = 0
+    /// The breath is once per app session, unlike the intro. Three amber
+    /// pulses each time you swiped past would be nagging, which is the one
+    /// thing this element must never do.
+    @State private var didPulse = false
 
     private let side: CGFloat = 314
     private var geometry: SpiralGeometry { .init(count: max(1, CGFloat(days.count))) }
@@ -432,10 +438,12 @@ struct YearSpiralCard: View {
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.hairline, lineWidth: 1))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("Year spiral, \(recordedDays) of \(days.count) days recorded"))
-        .onChange(of: isActive) { _, active in if active { startIfNeeded() } }
-        .onAppear { if isActive { startIfNeeded() } }
+        .onChange(of: isActive) { _, active in
+            if active { enter() } else { visit += 1; pulse = 0 }
+        }
+        .onAppear { if isActive { enter() } }
         .onChange(of: days.count) { old, new in
-            guard didReveal, new == old + 1 else { return }
+            guard isActive, new == old + 1 else { return }
             growNewDay()
         }
     }
@@ -516,22 +524,46 @@ struct YearSpiralCard: View {
 
     // MARK: Motion
 
-    private func startIfNeeded() {
-        guard !didReveal else { return }
-        didReveal = true
+    /// Runs on every arrival at the Memories page, not once per launch: the
+    /// disc draws itself while the page slides in.
+    ///
+    /// Nothing is reset on the way *out* — the page is still visible as it
+    /// slides away, and blanking it there would read as a glitch. The reset
+    /// belongs at the start of the next arrival, when the page is off-screen.
+    private func enter() {
+        visit += 1
+        let token = visit
+        selected = nil
+        monthOrder = [:]
+        monthLabel = nil
+        unroll = 0
+        pulse = 0
+
         guard !reduceMotion else {
             reveal = 1
-            if !hasRecordedToday { pulse = 0.45 }
+            if !hasRecordedToday, !didPulse { didPulse = true; pulse = 0.45 }
             return
         }
-        withAnimation(.timingCurve(0.16, 0.84, 0.3, 1, duration: 1.1)) { reveal = 1 }
-        if !hasRecordedToday { schedulePulse() }
+
+        reveal = 0
+        // Next runloop tick. Resetting and animating within one update leaves
+        // SwiftUI comparing 1 against 1, with nothing to interpolate.
+        DispatchQueue.main.async {
+            guard visit == token else { return }
+            withAnimation(.timingCurve(0.16, 0.84, 0.3, 1, duration: 1.1)) { reveal = 1 }
+        }
+        if !hasRecordedToday, !didPulse {
+            didPulse = true
+            schedulePulse(token: token)
+        }
     }
 
-    /// Three breaths, then quiet. No permanent pulse, no badge, no red.
-    private func schedulePulse() {
+    /// Three breaths, then quiet. No permanent pulse, no badge, no red. Starts
+    /// after the intro has settled, so it reads as the disc noticing the gap.
+    private func schedulePulse(token: Int) {
         for n in 0..<3 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(n) * 1.4) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2 + Double(n) * 1.4) {
+                guard visit == token else { return }     // left the page meanwhile
                 withAnimation(.easeInOut(duration: 0.7)) { pulse = 1 }
                 withAnimation(.easeInOut(duration: 0.7).delay(0.7)) { pulse = 0 }
             }

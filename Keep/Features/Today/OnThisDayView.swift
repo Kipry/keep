@@ -134,13 +134,17 @@ struct OnThisDayView: View {
             let clips = stats.clipsByDay[cursor] ?? []
             let components = cal.dateComponents([.year, .month], from: cursor)
             let seconds = Int(clips.reduce(0) { $0 + $1.effectiveDuration }.rounded())
-            // Band share: recorded days run 0.72…1 with the seconds captured,
-            // against a fixed twelve-second reference rather than the busiest
-            // day — otherwise one unusual day would reshape the whole disc.
-            // Empty days recess to a notch.
+            // Band share, driven by how many times you reached for the phone
+            // that day rather than by seconds captured — clip count is the
+            // signal that actually varies in a one-clip-a-day app, and it
+            // reads unambiguously. One clip is a quarter shorter than a full
+            // band and it saturates at four, against a fixed scale rather
+            // than the busiest day: otherwise one unusual day would reshape
+            // the whole disc. Empty days recess to a notch well below any of
+            // them.
             let weight: CGFloat = clips.isEmpty
                 ? 0.42
-                : 0.72 + 0.28 * min(1, CGFloat(seconds) / 12)
+                : 0.75 + 0.25 * min(1, CGFloat(clips.count - 1) / 3)
             result.append(SpiralDay(
                 id: cursor,
                 tone: ClipTone.dayTone(clips),
