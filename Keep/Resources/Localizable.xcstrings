@@ -2651,6 +2651,17 @@
           }
         }
       }
+    },
+    "φ is the golden ratio — 1.618 seconds. Long enough for a moment, short enough not to think about it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "φ ist der goldene Schnitt — 1,618 Sekunden. Lang genug für einen Moment, kurz genug, um nicht darüber nachzudenken."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

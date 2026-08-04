@@ -46,7 +46,9 @@ struct ProjectDetailView: View {
     @State private var selectedClipIDs: Set<UUID> = []
 
     // Clip preview carousel
-    @State private var previewingClipIndex: Int? = nil
+    // Identity, not an index: a raw offset into displayClips goes stale the
+    // moment a clip is deleted, and then points at the wrong clip or past the end.
+    @State private var previewingClipID: UUID? = nil
 
     // Bulk copy
     @State private var clipsToBulkCopy: [Clip]? = nil
@@ -57,8 +59,15 @@ struct ProjectDetailView: View {
 
     private let composer = VideoComposer()
 
+    /// The filmstrip's source of truth.
+    ///
+    /// While a reorder is in flight this is the working copy, but it still has
+    /// to be filtered: `dragClips` is a plain snapshot taken at drag start and
+    /// knows nothing about a clip deleted since. That was the whole bug — a
+    /// deleted clip stayed on the strip while the header and the export bar,
+    /// which read `project.activeClips` live, had already counted down.
     private var displayClips: [Clip] {
-        dragClips.isEmpty ? project.activeClips : dragClips
+        dragClips.isEmpty ? project.activeClips : dragClips.filter { !$0.isDeleted }
     }
 
     private var selectedClips: [Clip] {
@@ -132,6 +141,9 @@ struct ProjectDetailView: View {
                     // orphaned the video file, while the multi-select path right
                     // below soft-deletes. Same gesture, two different fates.
                     c.softDelete()
+                    // Deleting proves no drag is in flight. Persists any reorder
+                    // made before the drag was abandoned, then clears the state.
+                    if !dragClips.isEmpty { commitDragOrder() }
                     try? modelContext.save()
                     WidgetDataStore.refresh(context: modelContext)
                     clipToDelete = nil
@@ -150,6 +162,7 @@ struct ProjectDetailView: View {
         ) {
             Button("Move to Trash", role: .destructive) {
                 for clip in selectedClips { clip.softDelete() }
+                if !dragClips.isEmpty { commitDragOrder() }
                 try? modelContext.save()
                 WidgetDataStore.refresh(context: modelContext)
                 selectedClipIDs.removeAll()
@@ -228,10 +241,12 @@ struct ProjectDetailView: View {
             }
         }
         .fullScreenCover(isPresented: Binding(
-            get: { previewingClipIndex != nil },
-            set: { if !$0 { previewingClipIndex = nil } }
+            get: { previewingClipID != nil },
+            set: { if !$0 { previewingClipID = nil } }
         )) {
-            if let idx = previewingClipIndex {
+            // Resolved at presentation time against the current list.
+            if let id = previewingClipID,
+               let idx = displayClips.firstIndex(where: { $0.id == id }) {
                 ClipPreviewCarousel(clips: displayClips, initialIndex: idx)
             }
         }
@@ -424,11 +439,7 @@ struct ProjectDetailView: View {
                         onTrim: { clipToTrim = $0 },
                         onSetDuration: { clipToSetDuration = $0 },
                         onSetAsCover: { setClipAsCover($0) },
-                        onPreview: { clip in
-                            if let idx = displayClips.firstIndex(where: { $0.id == clip.id }) {
-                                previewingClipIndex = idx
-                            }
-                        }
+                        onPreview: { clip in previewingClipID = clip.id }
                     )
                 }
 
@@ -448,6 +459,16 @@ struct ProjectDetailView: View {
                 }
             }
             .padding(.top, 4)
+        }
+        // Catch-all drop target. FilmCell has its own, which wins whenever the
+        // finger is actually over a cell; this one exists for everywhere else —
+        // the gaps between cells, the sprocket strips, the row padding, the
+        // "add to the reel" button. Without it, a release over any of those
+        // never reached performDrop and the drag state stayed set for good.
+        .onDrop(of: [UTType.plainText], isTargeted: nil) { _ in
+            guard !dragClips.isEmpty else { return false }
+            commitDragOrder()
+            return true
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if isSelectMode {
@@ -614,7 +635,22 @@ struct ProjectDetailView: View {
     }
 
     private func commitDragOrder() {
-        for (i, clip) in dragClips.enumerated() { clip.order = i }
+        // Skip anything deleted mid-drag, or it would consume an order index and
+        // leave the surviving clips with a gapped sequence.
+        for (i, clip) in dragClips.filter({ !$0.isDeleted }).enumerated() { clip.order = i }
+        endDrag()
+    }
+
+    /// Drops the reorder working state.
+    ///
+    /// SwiftUI's `.onDrag` has no "session ended" callback, and the only drop
+    /// target used to be `FilmCell` itself — so releasing the finger over a gap,
+    /// the sprocket strip, the row padding or the export bar left `dragClips`
+    /// and `draggingClipID` set for the rest of the screen's life. That froze
+    /// the strip on a stale snapshot, held the dragged cell at `.opacity(0.3)`
+    /// (the "greyed out" clip), and killed tap-to-preview, which is gated on
+    /// `draggingClipID == nil`.
+    private func endDrag() {
         dragClips = []
         draggingClipID = nil
     }

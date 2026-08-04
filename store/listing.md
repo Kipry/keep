@@ -39,7 +39,7 @@ Die schönsten Momente sind vorbei, bevor die Kamera-App geladen hat. keep. mach
 
 SO FUNKTIONIERT'S
 • Sperrbildschirm-Widget: Ein Tap startet die Aufnahme direkt
-• Feste oder variable Länge: 1, 2, 3, 5 Sekunden – oder gedrückt halten
+• Feste oder variable Länge: 1 bis 5 Sekunden – oder gedrückt halten
 • Projekte: Urlaub, Alltag, Workout – jeder Clip landet in seiner eigenen Story
 • Filmstreifen: trimmen, sortieren, neu anordnen wie an einer echten Filmrolle
 • Lautstärke-Angleich: Clips aus Wochen klingen im fertigen Film gleich laut
@@ -105,7 +105,7 @@ The best moments are gone before the camera app even loads. keep. makes capturin
 
 HOW IT WORKS
 • Lock screen widget: one tap takes you straight to recording
-• Fixed or variable length: 1, 2, 3, 5 seconds — or press and hold
+• Fixed or variable length: 1 to 5 seconds — or press and hold
 • Projects: holiday, everyday, workout — every clip lands in its own story
 • Filmstrip: trim, sort and rearrange like a real reel
 • Volume matching: clips recorded weeks apart sound equally loud in the finished film

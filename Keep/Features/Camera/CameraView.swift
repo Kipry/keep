@@ -11,12 +11,18 @@ struct CameraView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var camera = CameraService()
 
-    @AppStorage("defaultRecordingDuration") private var defaultDuration: Double = 1.0
+    @AppStorage("defaultRecordingDuration") private var defaultDuration = RecordingDuration.standard
+
+    // Held, not allocated per fire: `prepare()` immediately before
+    // `impactOccurred()` pays the Taptic Engine spin-up inline every time.
+    // These are primed when the camera is ready and again when recording starts.
+    @State private var startHaptic = UIImpactFeedbackGenerator(style: .heavy)
+    @State private var stopHaptic  = UIImpactFeedbackGenerator(style: .rigid)
 
     @State private var recordingStart: Date?
     @State private var elapsed: Double = 0
     @State private var timer: Timer?
-    @State private var durationLimit: Double = 1.0
+    @State private var durationLimit = RecordingDuration.standard
     @State private var isHoldRecording = false
     @State private var holdStartTask: Task<Void, Never>?
     @State private var holdZoomStart: CGFloat = 1.0
@@ -56,7 +62,9 @@ struct CameraView: View {
             }
         }
         .task {
-            durationLimit = defaultDuration
+            startHaptic.prepare()
+            // resolve, not read: a stored 2 s no longer has a pill of its own.
+            durationLimit = RecordingDuration.resolve(defaultDuration)
             // Warm up a one-shot location fix (and show the opt-in prompt on
             // first use) so it's ready by the time the clip is saved.
             LocationService.shared.prime()
@@ -75,11 +83,17 @@ struct CameraView: View {
             guard let url else { return }
             finishRecording(url: url)
         }
-        // Strong, tactile haptics the moment recording actually starts/stops —
-        // hooked to camera.isRecording so every trigger path (tap, hold, lock,
-        // auto-stop, volume button) gets the same physical feedback.
+        // START only. `isRecording` is set optimistically right after
+        // `output.startRecording(...)` returns, so this edge is prompt — and it
+        // fires only on the success path, which a call-site haptic could not
+        // promise. The STOP edge deliberately does NOT ride on this: it is set
+        // in `fileOutput(_:didFinishRecordingTo:...)`, i.e. only once
+        // AVFoundation has finished muxing and closing the file, plus a
+        // `Task { @MainActor }` hop. That was the delay users felt.
         .onChange(of: camera.isRecording) { _, recording in
-            recordingHaptic(started: recording)
+            guard recording else { return }
+            startHaptic.impactOccurred(intensity: 1.0)
+            stopHaptic.prepare()          // warm for the stop that follows
         }
         .statusBarHidden(true)
         .animation(.easeInOut(duration: 0.25), value: showZoomLabel)
@@ -388,13 +402,11 @@ struct CameraView: View {
 
     private var durationPicker: some View {
         HStack(spacing: 6) {
-            // Must offer everything Settings does, or a 2s default would open
-            // the camera with no segment selected.
-            ForEach([1.0, 2.0, 3.0, 5.0], id: \.self) { d in
+            ForEach(RecordingDuration.options, id: \.self) { d in
                 Button {
                     durationLimit = d
                 } label: {
-                    Text(verbatim: "\(Int(d))s")
+                    Text(verbatim: RecordingDuration.label(d))
                         .font(.mono(13, weight: .medium))
                         .foregroundStyle(durationLimit == d ? Theme.ink : .white)
                         .padding(.horizontal, 15)
@@ -514,8 +526,7 @@ struct CameraView: View {
         if isLocked {
             isLocked = false
             isHoldRecording = false
-            camera.stopRecording()
-            stopTimer()
+            endRecording()
             return
         }
         if let task = holdStartTask {
@@ -523,8 +534,7 @@ struct CameraView: View {
             holdStartTask = nil
             if isHoldRecording {
                 isHoldRecording = false
-                camera.stopRecording()
-                stopTimer()
+                endRecording()
                 lastZoom = camera.currentZoomFactor
                 zoomLabelTask?.cancel()
                 zoomLabelTask = Task {
@@ -584,8 +594,7 @@ struct CameraView: View {
 
     private func handleRecordTap() async {
         if camera.isRecording {
-            camera.stopRecording()
-            stopTimer()
+            endRecording()
         } else {
             do {
                 startTimer()
@@ -597,21 +606,22 @@ struct CameraView: View {
         }
     }
 
-    // Heavy single thump when recording starts; a sharp rigid double-tick when
-    // it stops — unmistakably physical, like a mechanical shutter engaging.
-    private func recordingHaptic(started: Bool) {
-        if started {
-            let gen = UIImpactFeedbackGenerator(style: .heavy)
-            gen.prepare()
-            gen.impactOccurred(intensity: 1.0)
-        } else {
-            let gen = UIImpactFeedbackGenerator(style: .rigid)
-            gen.prepare()
-            gen.impactOccurred(intensity: 1.0)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.09) {
-                gen.impactOccurred(intensity: 0.7)
-            }
+    /// Every user-facing way to end a recording goes through here.
+    ///
+    /// The sharp rigid double-tick fires *first*, synchronously, before the
+    /// stop is even handed to AVFoundation — so it lands on the moment the
+    /// user acted, not on the moment the file finished writing. The camera
+    /// screen may still linger a beat afterwards; that is fine, the tick has
+    /// already told the hand it worked.
+    ///
+    /// Deliberately not used by the camera-flip path, where recording resumes.
+    private func endRecording() {
+        stopHaptic.impactOccurred(intensity: 1.0)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.09) {
+            stopHaptic.impactOccurred(intensity: 0.7)
         }
+        camera.stopRecording()
+        stopTimer()
     }
 
     private func finishRecording(url: URL) {
@@ -650,8 +660,7 @@ struct CameraView: View {
                 guard let start = recordingStart else { return }
                 elapsed = Date().timeIntervalSince(start)
                 if !isHoldRecording && elapsed >= durationLimit {
-                    camera.stopRecording()
-                    stopTimer()
+                    endRecording()
                 }
             }
         }

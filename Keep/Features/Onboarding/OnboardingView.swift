@@ -569,11 +569,15 @@ private struct CameraPhase: View {
                         .frame(width: 36, height: 36)
                 }
 
-                HStack(spacing: 28) {
-                    ForEach(["1s", "3s", "5s"], id: \.self) { label in
-                        Text(label)
+                // Mirrors the real picker rather than a hardcoded list — this
+                // showed three options where the app has four, and marked the
+                // wrong one as selected.
+                HStack(spacing: 20) {
+                    ForEach(RecordingDuration.options, id: \.self) { d in
+                        Text(verbatim: RecordingDuration.label(d))
                             .font(.mono(11))
-                            .foregroundStyle(label == "1s" ? Theme.amber : Color(white: 0.35))
+                            .foregroundStyle(d == RecordingDuration.standard
+                                             ? Theme.amber : Color(white: 0.35))
                     }
                 }
 
@@ -582,11 +586,11 @@ private struct CameraPhase: View {
         }
         // All phases stay mounted (they cross-fade via opacity), so onAppear
         // fires only once — the ring must restart from zero each time this
-        // phase becomes visible, sweeping shut in exactly the 1s it's shown.
+        // phase becomes visible, sweeping shut in the default duration.
         .onChange(of: isActive) { _, active in
             if active {
                 progress = 0
-                withAnimation(.linear(duration: 1.0)) { progress = 1 }
+                withAnimation(.linear(duration: RecordingDuration.standard)) { progress = 1 }
             } else {
                 var t = Transaction()
                 t.disablesAnimations = true

@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct SettingsView: View {
-    @AppStorage("defaultRecordingDuration") private var defaultDuration: Double = 1.0
+    @AppStorage("defaultRecordingDuration") private var defaultDuration = RecordingDuration.standard
     // Key must match RecordingQuality.defaultsKey.
     @AppStorage("recordingQuality") private var recordingQuality = RecordingQuality.p1080.rawValue
     @AppStorage("locationGranularity") private var locationGranularity = "place"
@@ -74,20 +74,29 @@ struct SettingsView: View {
 
             VStack(spacing: 0) {
                 stackedRow("Default Duration") {
-                    ForEach([1.0, 2.0, 3.0, 5.0], id: \.self) { d in
+                    ForEach(RecordingDuration.options, id: \.self) { d in
                         Button { defaultDuration = d } label: {
-                            Text(verbatim: "\(Int(d))s")
+                            let isSelected = RecordingDuration.resolve(defaultDuration) == d
+                            Text(verbatim: RecordingDuration.label(d))
                                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(defaultDuration == d ? Theme.ink : .white.opacity(0.6))
+                                .foregroundStyle(isSelected ? Theme.ink : .white.opacity(0.6))
                                 .frame(width: 44, height: 32)
                                 .background(
-                                    defaultDuration == d ? Theme.amber : Color(white: 0.22),
+                                    isSelected ? Theme.amber : Color(white: 0.22),
                                     in: RoundedRectangle(cornerRadius: 8)
                                 )
+                                .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityAddTraits(defaultDuration == d ? [.isButton, .isSelected] : .isButton)
                     }
+                }
+                rowDivider
+                row {
+                    Text("φ is the golden ratio — 1.618 seconds. Long enough for a moment, short enough not to think about it.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .lineSpacing(2)
+                        .padding(.vertical, 10)
                 }
                 rowDivider
                 stackedRow("Resolution") {
