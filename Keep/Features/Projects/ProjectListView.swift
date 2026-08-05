@@ -249,15 +249,18 @@ struct ProjectListView: View {
 
 struct ProjectCard: View {
     let project: Project
+    /// Decoded once per cover rather than on every body evaluation — at cover
+    /// size that is a real cost, and the grid re-evaluates on any data change.
+    @State private var cover: UIImage?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ZStack(alignment: .bottomLeading) {
                 Group {
-                    if let data = project.coverThumbnailData,
-                       let img = UIImage(data: data) {
-                        Image(uiImage: img)
+                    if let cover {
+                        Image(uiImage: cover)
                             .resizable()
+                            .interpolation(.high)
                             .scaledToFill()
                     } else {
                         Rectangle()
@@ -299,6 +302,9 @@ struct ProjectCard: View {
                 .background(.black.opacity(0.55), in: Capsule())
                 .overlay(Capsule().stroke(Theme.paper.opacity(0.4), lineWidth: 1))
                 .padding(8)
+        }
+        .task(id: project.coverThumbnailData) {
+            cover = project.coverThumbnailData.flatMap(UIImage.init(data:))
         }
     }
 }

@@ -54,6 +54,9 @@ struct ContentView: View {
             ClipFileRepair.run(in: modelContext)
             TrashSweep.run(in: modelContext)
             VideoComposer.purgeExports()
+            // Re-renders covers captured at the old 320 px size. One pass per
+            // install: afterwards every cover is already large enough.
+            await CoverThumbnailRepair.run(in: modelContext)
         }
         // Widget deep link (keep://diary). Handled here rather than in a page,
         // because switching tabs is this view's responsibility.

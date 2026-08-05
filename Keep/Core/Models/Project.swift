@@ -11,6 +11,10 @@ final class Project {
     var deletedAt: Date?
     var isArchived: Bool = false
     var coverThumbnailData: Data?
+    /// Which clip the cover was rendered from, so it can be re-rendered later
+    /// (a sharper size, a different crop) without guessing. Nil for projects
+    /// whose cover predates this field.
+    var coverClipID: UUID? = nil
 
     @Relationship(deleteRule: .cascade)
     var clips: [Clip]

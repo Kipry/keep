@@ -36,6 +36,8 @@ struct ProjectDetailView: View {
     /// Held so the overlay's Cancel can actually reach the running export.
     @State private var exportTask: Task<Void, Never>?
     @State private var importFailureCount = 0
+    /// Set once the share sheet reports that "Save Video" actually finished.
+    @State private var didSaveToPhotos = false
 
     // Drag-and-drop reorder
     @State private var dragClips: [Clip] = []
@@ -238,6 +240,14 @@ struct ProjectDetailView: View {
                         withAnimation { showCopyToast = false }
                     }
                 }
+            }
+        }
+        .overlay {
+            if didSaveToPhotos {
+                ExportSavedOverlay {
+                    withAnimation(.easeOut(duration: 0.25)) { didSaveToPhotos = false }
+                }
+                .transition(.opacity)
             }
         }
         .fullScreenCover(isPresented: Binding(
@@ -679,10 +689,16 @@ struct ProjectDetailView: View {
         modelContext.insert(clip)
         attachLocation(to: clip, imported: location)
         Task {
-            if let img = await composer.thumbnail(from: fileURL),
-               let data = img.jpegData(compressionQuality: 0.7) {
-                clip.thumbnailData = data
-                if project.activeClips.count == 1 { project.coverThumbnailData = data }
+            // One render at cover size, downscaled for the filmstrip cell —
+            // cheaper than two generator passes, and the cover stops being a
+            // 320 px image stretched across 496 px of card.
+            if let img = await composer.thumbnail(from: fileURL, maxEdge: Cover.maxEdge) {
+                clip.thumbnailData = img.downscaled(maxEdge: 320)
+                    .jpegData(compressionQuality: 0.7)
+                if project.activeClips.count == 1 {
+                    project.coverThumbnailData = img.jpegData(compressionQuality: Cover.quality)
+                    project.coverClipID = clip.id
+                }
             }
             // Measure the audio now, while there's exactly one clip to look at,
             // rather than making the first export wait on the whole project.
@@ -761,7 +777,11 @@ struct ProjectDetailView: View {
 
         if let thumb = ui.downscaled(maxEdge: 320).jpegData(compressionQuality: 0.7) {
             clip.thumbnailData = thumb
-            if project.activeClips.count == 1 { project.coverThumbnailData = thumb }
+            if project.activeClips.count == 1 {
+                project.coverThumbnailData = ui.downscaled(maxEdge: Cover.maxEdge)
+                    .jpegData(compressionQuality: Cover.quality)
+                project.coverClipID = clip.id
+            }
             ClipTone.analyzeIfNeeded(clip)
         }
         WidgetDataStore.refresh(context: modelContext)
@@ -787,9 +807,10 @@ struct ProjectDetailView: View {
         let offset = CMTime(seconds: clip.trimStart, preferredTimescale: 600)
         let url = clip.fileURL
         Task { @MainActor in
-            if let img = await composer.thumbnail(from: url, at: offset),
-               let data = img.jpegData(compressionQuality: 0.75) {
+            if let img = await composer.thumbnail(from: url, at: offset, maxEdge: Cover.maxEdge),
+               let data = img.jpegData(compressionQuality: Cover.quality) {
                 project.coverThumbnailData = data
+                project.coverClipID = clip.id
                 try? modelContext.save()
                 WidgetDataStore.refresh(context: modelContext)
             }
@@ -947,8 +968,15 @@ struct ProjectDetailView: View {
         // Whatever the user picked has taken its own copy by now (Photos, Files,
         // Messages…), so our render is dead weight — drop it rather than let
         // every export pile up in the container forever.
-        activityVC.completionWithItemsHandler = { _, _, _, _ in
+        //
+        // The same callback says which activity ran and whether it finished.
+        // Only `.saveToCameraRoll` completing means the video is in the photo
+        // library — sharing to Messages or Files is a different promise, and
+        // claiming otherwise would be a lie the user can check.
+        activityVC.completionWithItemsHandler = { activity, completed, _, _ in
             try? FileManager.default.removeItem(at: url)
+            guard completed, activity == .saveToCameraRoll else { return }
+            withAnimation(.easeOut(duration: 0.25)) { didSaveToPhotos = true }
         }
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let rootVC = windowScene.keyWindow?.rootViewController else { return }

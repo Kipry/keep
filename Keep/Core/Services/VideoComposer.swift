@@ -122,11 +122,15 @@ actor VideoComposer {
 
     // MARK: Thumbnail
 
-    func thumbnail(from url: URL, at time: CMTime = .zero) async -> UIImage? {
+    /// `maxEdge` is the longest side in pixels. 320 is right for a filmstrip
+    /// cell; a project cover is drawn at 166 × 196 pt, which is 496 × 588 px on
+    /// a 3× screen, so it needs considerably more.
+    func thumbnail(from url: URL, at time: CMTime = .zero,
+                   maxEdge: CGFloat = 320) async -> UIImage? {
         let asset = AVURLAsset(url: url)
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
-        generator.maximumSize = CGSize(width: 320, height: 320)
+        generator.maximumSize = CGSize(width: maxEdge, height: maxEdge)
         return try? await withCheckedThrowingContinuation { continuation in
             generator.generateCGImageAsynchronously(for: time) { image, _, error in
                 if let image {

@@ -2739,6 +2739,28 @@
           }
         }
       }
+    },
+    "Saved to Photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In deiner Mediathek"
+          }
+        }
+      }
+    },
+    "YOUR VIDEO IS IN YOUR LIBRARY": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DEIN VIDEO IST GESPEICHERT"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

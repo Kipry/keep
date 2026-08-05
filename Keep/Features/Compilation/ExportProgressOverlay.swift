@@ -152,3 +152,91 @@ struct ExportProgressOverlay: View {
         .frame(height: 3)
     }
 }
+
+// MARK: - Saved confirmation
+
+/// Confirms that the export actually landed in the photo library.
+///
+/// The evidence comes from `UIActivityViewController`'s completion handler,
+/// which reports the chosen activity and whether it finished — the app already
+/// received both and threw them away. `.saveToCameraRoll` completing is proof
+/// enough; anything stronger would mean asking for read access to the photo
+/// library purely to look, and a permission prompt is too high a price for a
+/// confirmation.
+struct ExportSavedOverlay: View {
+    var onDismiss: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var ring: CGFloat = 0
+    @State private var tick: CGFloat = 0
+    @State private var captionIn = false
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.88).ignoresSafeArea()
+
+            RadialGradient(colors: [Theme.amber.opacity(0.14), .clear],
+                           center: .center, startRadius: 0, endRadius: 190)
+                .frame(width: 380, height: 380)
+                .allowsHitTesting(false)
+
+            VStack(spacing: 30) {
+                ZStack {
+                    Circle()
+                        .trim(from: 0, to: ring)
+                        .stroke(Theme.amber, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .frame(width: 96, height: 96)
+                    Checkmark()
+                        .trim(from: 0, to: tick)
+                        .stroke(Theme.paper, style: StrokeStyle(lineWidth: 4.5,
+                                                                lineCap: .round, lineJoin: .round))
+                        .frame(width: 46, height: 36)
+                }
+
+                VStack(spacing: 8) {
+                    Text("Saved to Photos")
+                        .font(.hand(30))
+                        .foregroundStyle(.white)
+                    Text("YOUR VIDEO IS IN YOUR LIBRARY")
+                        .font(.eyebrow)
+                        .tracking(2.5)
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+                .opacity(captionIn ? 1 : 0)
+                .offset(y: captionIn ? 0 : 8)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { onDismiss() }
+        .onAppear(perform: play)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Saved to Photos"))
+    }
+
+    private func play() {
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        guard !reduceMotion else {
+            ring = 1; tick = 1; captionIn = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { onDismiss() }
+            return
+        }
+        // The ring closes, the tick is drawn into it, the words arrive last —
+        // one gesture in three beats rather than three things appearing.
+        withAnimation(.easeOut(duration: 0.42)) { ring = 1 }
+        withAnimation(.easeOut(duration: 0.3).delay(0.34)) { tick = 1 }
+        withAnimation(.easeOut(duration: 0.28).delay(0.5)) { captionIn = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.1) { onDismiss() }
+    }
+}
+
+/// Drawn as a single stroke so `trim` sweeps it on in one continuous motion.
+private struct Checkmark: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX, y: rect.midY))
+        p.addLine(to: CGPoint(x: rect.minX + rect.width * 0.36, y: rect.maxY))
+        p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        return p
+    }
+}
