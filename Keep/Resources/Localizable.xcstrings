@@ -166,17 +166,6 @@
         }
       }
     },
-    "Memories": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rückblicke"
-          }
-        }
-      }
-    },
     "Recording Days": {
       "extractionState": "manual",
       "localizations": {
@@ -2659,6 +2648,94 @@
           "stringUnit": {
             "state": "translated",
             "value": "φ ist der goldene Schnitt — 1,618 Sekunden. Lang genug für einen Moment, kurz genug, um nicht darüber nachzudenken."
+          }
+        }
+      }
+    },
+    "Chronicle": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chronik"
+          }
+        }
+      }
+    },
+    "The fastest way to a clip": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der schnellste Weg zu einem Clip"
+          }
+        }
+      }
+    },
+    "Put the REC button on your lock screen. One tap, and you're recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leg den REC-Knopf auf deinen Sperrbildschirm. Ein Tipp, und du nimmst auf."
+          }
+        }
+      }
+    },
+    "SHOW ME HOW": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ZEIG MIR WIE"
+          }
+        }
+      }
+    },
+    "Set Up the Widget": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widget einrichten"
+          }
+        }
+      }
+    },
+    "One tap on your lock screen starts a recording — no unlocking, no hunting for the app. It takes about twenty seconds to set up, once.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Tipp auf dem Sperrbildschirm startet eine Aufnahme — kein Entsperren, kein Suchen. Die Einrichtung dauert einmalig etwa zwanzig Sekunden."
+          }
+        }
+      }
+    },
+    "Widget": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widget"
+          }
+        }
+      }
+    },
+    "Got it": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verstanden"
           }
         }
       }

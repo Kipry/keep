@@ -33,6 +33,13 @@ struct ProjectListView: View {
                     .padding(.top, Layout.headerTop)
                     .padding(.bottom, 12)
 
+                // Sits in the pinned region so it shows in the empty state as
+                // well as the populated one — and it is the only screen every
+                // user lands on.
+                WidgetHintCard()
+                    .padding(.horizontal, Layout.gutter)
+                    .padding(.bottom, 12)
+
                 if projects.isEmpty {
                     // Outside the ScrollView on purpose: a Spacer inside one has
                     // no free height to claim, which left the empty state stuck
@@ -114,6 +121,7 @@ struct ProjectListView: View {
         // never rewrite the snapshot (streak and week go stale overnight).
         .onAppear {
             WidgetDataStore.refresh(context: modelContext)
+            WidgetInstallation.shared.refresh()
             handlePendingDeepLink()
             handlePendingOpen()
         }

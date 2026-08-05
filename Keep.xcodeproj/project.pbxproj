@@ -48,6 +48,7 @@
 		6F64E3A7CA3B974E470EA53A /* ClipFileRepair.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641C480235C501F716869E69 /* ClipFileRepair.swift */; };
 		8DDD0E0E5B6B36CE01C06E0D /* TrashSweep.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5D0C3509CD70CE81012C7B /* TrashSweep.swift */; };
 		3C7A1E4D90B2F5610AD3E88C /* AudioLoudness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1B9D02A4C7361FB80E29D4 /* AudioLoudness.swift */; };
+		9A4C7E1B60D3F582A17C0B4E /* WidgetSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D5F03A9C842E71B905A3FD6 /* WidgetSetup.swift */; };
 		A63F80D2519E4C7B02A1FD65 /* YearSpiral.swift in Sources */ = {isa = PBXBuildFile; fileRef = C41A75E68B03D29F14E7A0B3 /* YearSpiral.swift */; };
 		7B4E2A91C05D183FA6721E4B /* ClipTone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D9C6F30E84B57A10C3D9182 /* ClipTone.swift */; };
 		AE435650A6DD218729E32302 /* MemoriesStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FEF1B8A70C659C2355B054E /* MemoriesStats.swift */; };
@@ -130,6 +131,7 @@
 		641C480235C501F716869E69 /* ClipFileRepair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFileRepair.swift; sourceTree = "<group>"; };
 		BB5D0C3509CD70CE81012C7B /* TrashSweep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashSweep.swift; sourceTree = "<group>"; };
 		5E1B9D02A4C7361FB80E29D4 /* AudioLoudness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioLoudness.swift; sourceTree = "<group>"; };
+		6D5F03A9C842E71B905A3FD6 /* WidgetSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSetup.swift; sourceTree = "<group>"; };
 		C41A75E68B03D29F14E7A0B3 /* YearSpiral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YearSpiral.swift; sourceTree = "<group>"; };
 		2D9C6F30E84B57A10C3D9182 /* ClipTone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipTone.swift; sourceTree = "<group>"; };
 		1FEF1B8A70C659C2355B054E /* MemoriesStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoriesStats.swift; sourceTree = "<group>"; };
@@ -235,9 +237,18 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		3E8B1D50F27A649C05B8E13A /* Widget */ = {
+			isa = PBXGroup;
+			children = (
+				6D5F03A9C842E71B905A3FD6 /* WidgetSetup.swift */,
+			);
+			path = Widget;
+			sourceTree = "<group>";
+		};
 		A1000000000000000000012A /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				3E8B1D50F27A649C05B8E13A /* Widget */,
 				A1000000000000000000013A /* Camera */,
 				A100000000000000000005AA /* Import */,
 				A100000000000000000006AA /* Compilation */,
@@ -531,6 +542,7 @@
 				6F64E3A7CA3B974E470EA53A /* ClipFileRepair.swift in Sources */,
 				8DDD0E0E5B6B36CE01C06E0D /* TrashSweep.swift in Sources */,
 				3C7A1E4D90B2F5610AD3E88C /* AudioLoudness.swift in Sources */,
+				9A4C7E1B60D3F582A17C0B4E /* WidgetSetup.swift in Sources */,
 				A63F80D2519E4C7B02A1FD65 /* YearSpiral.swift in Sources */,
 				7B4E2A91C05D183FA6721E4B /* ClipTone.swift in Sources */,
 				AE435650A6DD218729E32302 /* MemoriesStats.swift in Sources */,

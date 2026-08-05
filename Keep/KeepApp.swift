@@ -11,7 +11,7 @@ import CoreText
 final class AppDeepLink {
     var pendingRecordProjectID: UUID?
     var pendingOpenProjectID: UUID?
-    /// Tab the app should switch to (widget's week strip opens the diary).
+    /// Tab the app should switch to (the widget's streak and week strip).
     var pendingTab: AppTab?
 }
 
@@ -36,11 +36,14 @@ struct KeepApp: App {
     // keep://record/<UUID>  →  open project + start recording
     // keep://open/<UUID>    →  just open project detail
     // keep://diary          →  switch to the diary tab
+    // keep://chronicle      →  switch to the chronicle tab (widget's streak)
     private func handleDeepLink(_ url: URL) {
         guard url.scheme == "keep" else { return }
         switch url.host {
         case "diary":
             deepLink.pendingTab = .timeline
+        case "chronicle":
+            deepLink.pendingTab = .today
         case "record", "open":
             guard let idString = url.pathComponents.dropFirst().first,
                   let id = UUID(uuidString: idString) else { return }

@@ -116,7 +116,7 @@ viele Änderungen entstanden ohne Compiler, also zuerst `Product → Build`, dan
       nach dem Update ist das Widget kurz leer, bis die App einmal geöffnet wurde. Das ist erwartet.)
 
 **Sprache & Bedienbarkeit**
-- [ ] Gerätesprache auf **Englisch** → Tab-Leiste zeigt „Projects / Diary / Memories", Onboarding ist durchgängig englisch (inkl. Datum im Sperrbildschirm-Mock).
+- [ ] Gerätesprache auf **Englisch** → Tab-Leiste zeigt „Projects / Diary / Chronicle", Onboarding ist durchgängig englisch (inkl. Datum im Sperrbildschirm-Mock).
 - [ ] **Textgröße auf Maximum** → Titel skalieren, Einstellungen brechen nicht um.
 - [ ] **VoiceOver** → Aufnahme-Knopf und Tab-Leiste sind ansagbar.
 - [ ] **Feedback-Knopf** in den Einstellungen öffnet die Mail-App mit vorbelegter Adresse und Geräteinfos.

@@ -16,6 +16,7 @@ struct SettingsView: View {
     @State private var showArchive = false
     @State private var showTrash = false
     @State private var showMailFallback = false
+    @State private var showWidgetSetup = false
 
     private var appVersion: String {
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "—"
@@ -31,6 +32,7 @@ struct SettingsView: View {
                     audioSection
                     locationSection
                     librarySection
+                    widgetSection
                     tutorialSection
                     aboutSection
                     feedbackSection
@@ -42,6 +44,7 @@ struct SettingsView: View {
         .preferredColorScheme(.dark)
         .fullScreenCover(isPresented: $showArchive) { ArchiveView() }
         .fullScreenCover(isPresented: $showTrash) { TrashView() }
+        .sheet(isPresented: $showWidgetSetup) { WidgetSetupSheet() }
     }
 
     // MARK: - Header
@@ -263,6 +266,37 @@ struct SettingsView: View {
                     Button { showTrash = true } label: {
                         HStack {
                             Text("Trash")
+                                .foregroundStyle(.white)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.3))
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .background(Theme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.hairline, lineWidth: 1))
+            .padding(.horizontal, 20)
+        }
+    }
+
+    // MARK: - Widget section
+    //
+    // The onboarding explains this once and is then gone for good; without a
+    // permanent entry point the instructions were unreachable afterwards.
+
+    private var widgetSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("Widget")
+
+            VStack(spacing: 0) {
+                row {
+                    Button { showWidgetSetup = true } label: {
+                        HStack {
+                            Text("Set Up the Widget")
                                 .foregroundStyle(.white)
                             Spacer()
                             Image(systemName: "chevron.right")

@@ -797,7 +797,7 @@ private struct MockTabBar: View {
     private let items: [(String, String, LocalizedStringKey)] = [
         ("square.grid.2x2",             "square.grid.2x2.fill",         "Projects"),
         ("calendar.day.timeline.left",  "calendar.day.timeline.left",   "Diary"),
-        ("sparkles",                    "sparkles",                     "Memories")
+        ("sparkles",                    "sparkles",                     "Chronicle")
     ]
 
     var body: some View {

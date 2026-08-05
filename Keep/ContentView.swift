@@ -10,6 +10,7 @@ enum AppTab {
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(AppDeepLink.self) private var deepLink
     @State private var selectedTab: AppTab = .projects
     @State private var dragOffset: CGFloat = 0
@@ -57,6 +58,11 @@ struct ContentView: View {
         // Widget deep link (keep://diary). Handled here rather than in a page,
         // because switching tabs is this view's responsibility.
         .onAppear { consumePendingTab() }
+        // Adding a widget means leaving the app and coming back, so this is the
+        // moment the hint should disappear.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { WidgetInstallation.shared.refresh() }
+        }
         .onChange(of: deepLink.pendingTab) { _, _ in consumePendingTab() }
     }
 
@@ -123,7 +129,7 @@ private struct AppTabBar: View {
         HStack(spacing: 0) {
             tabItem(.projects, icon: "square.grid.2x2",      label: "Projects")
             tabItem(.timeline, icon: "calendar.day.timeline.left", fillIcon: "calendar.day.timeline.left", label: "Diary")
-            tabItem(.today,    icon: "sparkles", fillIcon: "sparkles", label: "Memories")
+            tabItem(.today,    icon: "sparkles", fillIcon: "sparkles", label: "Chronicle")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 10)

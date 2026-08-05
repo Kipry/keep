@@ -129,6 +129,9 @@ private func openURL(for id: String) -> URL {
 }
 
 private let diaryURL = URL(string: "keep://diary")!
+/// The streak and the week strip are what the Chronicle page is about — its
+/// spiral is the same data drawn large.
+private let chronicleURL = URL(string: "keep://chronicle")!
 
 private func durationLabel(_ t: Double) -> String {
     guard t > 0 else { return "—" }
@@ -409,7 +412,7 @@ struct HomeWidgetView: View {
 
             Spacer(minLength: 6)
 
-            Link(destination: diaryURL) {
+            Link(destination: chronicleURL) {
                 VStack(alignment: .leading, spacing: 0) {
                     streakRow(snap)
                     weekStrip(snap).padding(.top, 7)

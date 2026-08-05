@@ -47,7 +47,7 @@ SO FUNKTIONIERT'S
 • Export in 1080p oder 4K: alle Clips eines Projekts in einem Tap zu einem fertigen Video
 • Tagebuch-Zeitachse: durch deine Tage scrollen und zurückblicken
 • Orte-Karte: sieh auf einer Karte, wo deine Momente entstanden sind – mit Reiseroute durch die letzten Tage
-• Rückblicke & Streak: sieh, an welchen Tagen du festgehalten hast
+• Chronik & Streak: deine Jahresspirale und die Tage, an denen du festgehalten hast
 • Papierkorb: Gelöschtes lässt sich 30 Tage lang wiederherstellen
 
 DEINE MOMENTE BLEIBEN BEI DIR
@@ -73,7 +73,7 @@ Willkommen bei keep. – der ersten Version.
 
 • Aufnehmen direkt vom Sperrbildschirm
 • Projekte, Filmstreifen und Ein-Tap-Export
-• Tagebuch-Zeitachse, Orte-Karte, Rückblicke und Streak
+• Tagebuch-Zeitachse, Orte-Karte, Chronik und Streak
 • Fotos importieren
 
 Wir freuen uns über dein Feedback.
@@ -113,7 +113,7 @@ HOW IT WORKS
 • Export in 1080p or 4K: turn a whole project into a finished video in one tap
 • Journal timeline: scroll through your days and look back
 • Places map: see where your moments happened, with a travel route through your recent days
-• Memories & streak: see the days you captured
+• Chronicle & streak: your year as a spiral, and the days you captured
 • Trash: anything deleted can be restored for 30 days
 
 YOUR MOMENTS STAY YOURS
@@ -139,7 +139,7 @@ Welcome to keep. — our very first release.
 
 • Record straight from the lock screen
 • Projects, filmstrip and one-tap export
-• Journal timeline, places map, memories and streak
+• Journal timeline, places map, chronicle and streak
 • Import photos
 
 We'd love your feedback.
@@ -157,7 +157,7 @@ Empfohlene 6–7 Motive (jeweils am echten Gerät oder Simulator aufnehmen):
 3. Projekt-Filmstreifen mit echten Clips
 4. Tagebuch-Zeitachse
 5. Orte-Karte mit Pins und Reiseroute
-6. „Heute" mit Streak/Rückblicken
+6. Chronik mit Jahresspirale und Streak
 7. Fertiges Export-Video / Teilen-Sheet
 
 Die vorhandenen Onboarding-Mocks (`OnboardingView.swift`) spiegeln 1–4 bereits pixelgenau und taugen als Bild-/Text-Vorlage.

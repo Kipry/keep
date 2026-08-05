@@ -2,6 +2,42 @@ import Foundation
 import SwiftData
 import WidgetKit
 
+// MARK: - WidgetInstallation
+
+/// Whether the user has actually put a keep. widget on a screen.
+///
+/// The lock-screen widget is the whole point of the app, and the onboarding
+/// step that explains it is the one people tap past. A reminder is only
+/// tolerable if it can tell — it must never appear for someone who already has
+/// the widget, and must disappear the moment they add one. Anything that can't
+/// tell is a nag.
+///
+/// Counts *any* family, not just `.accessoryCircular`: someone running the
+/// medium home-screen widget already has a one-tap record button and does not
+/// need to be told about widgets.
+@Observable
+final class WidgetInstallation {
+    static let shared = WidgetInstallation()
+
+    /// Optimistic until proven otherwise, so the card can't flash on screen
+    /// during the first query — and a query that fails is treated as "has one",
+    /// because guessing wrong in that direction only costs a missed hint.
+    private(set) var hasWidget = true
+
+    private init() {}
+
+    func refresh() {
+        WidgetCenter.shared.getCurrentConfigurations { result in
+            let installed: Bool
+            switch result {
+            case .success(let infos): installed = !infos.isEmpty
+            case .failure:            installed = true
+            }
+            Task { @MainActor in WidgetInstallation.shared.hasWidget = installed }
+        }
+    }
+}
+
 // Writes the widget's snapshot to the shared App Group. The widget cannot read
 // SwiftData, so everything it draws — including the streak and this week's
 // recording days — is precomputed here and stored as a small JSON blob.
