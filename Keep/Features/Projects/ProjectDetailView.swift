@@ -59,6 +59,15 @@ struct ProjectDetailView: View {
     // Interactive edge-swipe back
     @State private var backSwipeX: CGFloat = 0
 
+    // Poster header
+    /// Rendered from the cover clip's video at poster size. The stored cover
+    /// JPEG is 640 px on its long edge — enough for a 166 pt card, but the
+    /// poster is full-bleed and would need a 3.3x upscale of it.
+    @State private var posterImage: UIImage?
+    /// The stored cover, shown instantly while the poster render is in flight.
+    @State private var posterFallback: UIImage?
+    @State private var posterCollapsed = false
+
     private let composer = VideoComposer()
 
     /// The filmstrip's source of truth.
@@ -267,8 +276,13 @@ struct ProjectDetailView: View {
     private var content: some View {
         ZStack(alignment: .topLeading) {
             VStack(spacing: 0) {
-                navBar
-                titleBlock
+                // Select mode and the empty project keep the plain bar: there is
+                // no film to put on a poster, and select mode needs its own
+                // controls.
+                if !showsPoster {
+                    navBar
+                    titleBlock
+                }
 
                 if project.activeClips.isEmpty {
                     emptyState
@@ -277,6 +291,11 @@ struct ProjectDetailView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+
+            if showsPoster {
+                floatingTopBar
+                    .frame(maxWidth: .infinity, alignment: .top)
+            }
 
             // Camera FAB — primary capture action, floating above the export bar
             if !project.activeClips.isEmpty && !isSelectMode {
@@ -389,22 +408,10 @@ struct ProjectDetailView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.amber)
                 } else {
-                    if !project.activeClips.isEmpty {
-                        Button { isPlayerPresented = true } label: {
-                            Image(systemName: "play.fill")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.white)
-                                .frame(width: 32, height: 32)
-                                .background(.white.opacity(0.1), in: Circle())
-                        }
-                        Button { isSelectMode = true } label: {
-                            Image(systemName: "checkmark.circle")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.white)
-                                .frame(width: 32, height: 32)
-                                .background(.white.opacity(0.1), in: Circle())
-                        }
-                    }
+                    // No play control here any more. This bar now only appears
+                    // for an empty project or in select mode, and neither can
+                    // play anything — the poster and the collapsed top bar own
+                    // playback.
                     PhotosPicker(selection: $importSelections, maxSelectionCount: 20,
                                  matching: .any(of: [.videos, .images])) {
                         Image(systemName: "plus")
@@ -427,11 +434,188 @@ struct ProjectDetailView: View {
         Color.clear.frame(height: 4)
     }
 
+    // MARK: - Poster header
+
+    // Playing the project back is the reason you open one, but it lived as a
+    // 32 pt ghost circle in the nav bar — the same shape and colour as the
+    // overflow control beside it, in the corner hardest to reach, saying
+    // nothing about what it does. The header is now the film itself: the cover
+    // frame full-bleed, a paper disc on top of it, and underneath the sentence
+    // the old button never said — how many clips, and how long the result runs.
+    //
+    // Amber stays reserved for the shutter, so the disc is paper.
+
+    static let posterHeight: CGFloat = 300
+
+    private var showsPoster: Bool { !project.activeClips.isEmpty && !isSelectMode }
+
+    /// The clip the poster frame comes from — the recorded cover, else the first.
+    private var coverClip: Clip? {
+        if let id = project.coverClipID,
+           let clip = project.activeClips.first(where: { $0.id == id }) { return clip }
+        return project.activeClips.first
+    }
+
+    private var posterHeader: some View {
+        ZStack(alignment: .bottom) {
+            Group {
+                if let image = posterImage ?? posterFallback {
+                    Image(uiImage: image)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFill()
+                } else {
+                    Rectangle().fill(Theme.filmCard)
+                }
+            }
+            .frame(width: UIScreen.main.bounds.width, height: Self.posterHeight)
+            .clipped()
+            .overlay {
+                // Dissolves into the page so the filmstrip reads as a
+                // continuation of the poster rather than a second surface.
+                LinearGradient(
+                    colors: [.black.opacity(0.34), .clear, Theme.background.opacity(0.72),
+                             Theme.background],
+                    startPoint: .top, endPoint: .bottom
+                )
+            }
+
+            VStack(spacing: 18) {
+                Button { isPlayerPresented = true } label: {
+                    Circle()
+                        .fill(Theme.paper)
+                        .frame(width: 66, height: 66)
+                        .overlay {
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 24))
+                                .foregroundStyle(Theme.ink)
+                                .offset(x: 2)
+                        }
+                        .shadow(color: .black.opacity(0.5), radius: 14, y: 8)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Play project")
+
+                VStack(spacing: 3) {
+                    Text(project.name)
+                        .font(.hand(31))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.55)
+                    Text("\(project.activeClips.count) CLIPS · \(durationLabel)")
+                        .font(.mono(9))
+                        .tracking(1.7)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            }
+            .padding(.bottom, 16)
+        }
+        .frame(height: Self.posterHeight)
+        .contentShape(Rectangle())
+        .task(id: coverClip?.id) { await loadPoster() }
+    }
+
+    /// Renders the poster frame from the video itself. The stored cover JPEG is
+    /// sized for a 166 pt card; stretched full-bleed it would be a 3.3x upscale.
+    private func loadPoster() async {
+        posterImage = nil
+        posterFallback = project.coverThumbnailData.flatMap(UIImage.init(data:))
+        guard let clip = coverClip, clip.isAvailable else { return }
+        let offset = CMTime(seconds: clip.trimStart, preferredTimescale: 600)
+        posterImage = await composer.thumbnail(from: clip.fileURL, at: offset, maxEdge: 1280)
+    }
+
+    // MARK: - Floating top bar
+
+    /// Back, select and import stay put while the poster scrolls under them.
+    /// Once the poster's own disc is gone the bar takes on a background and a
+    /// paper play button, so playing is reachable at any scroll position.
+    private var floatingTopBar: some View {
+        HStack(spacing: 10) {
+            Button { dismiss() } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 34, height: 34)
+                    .background(posterCollapsed ? AnyShapeStyle(.white.opacity(0.1))
+                                                : AnyShapeStyle(.black.opacity(0.35)),
+                                in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Back")
+
+            if posterCollapsed {
+                Button { isPlayerPresented = true } label: {
+                    Circle()
+                        .fill(Theme.paper)
+                        .frame(width: 34, height: 34)
+                        .overlay {
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Theme.ink)
+                                .offset(x: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Play project")
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(project.name)
+                        .font(.hand(17))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text("\(project.activeClips.count) CLIPS · \(durationLabel)")
+                        .font(.mono(8))
+                        .tracking(1.2)
+                        .foregroundStyle(.white.opacity(0.4))
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 4)
+
+            Button { isSelectMode = true } label: { barCircle("checkmark.circle", size: 14) }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Select")
+            PhotosPicker(selection: $importSelections, maxSelectionCount: 20,
+                         matching: .any(of: [.videos, .images])) {
+                barCircle("plus", size: 15, weight: .bold)
+            }
+            .accessibilityLabel("Import")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background {
+            if posterCollapsed {
+                Theme.background.opacity(0.96)
+                    .overlay(alignment: .bottom) {
+                        Rectangle().fill(Theme.hairline).frame(height: 1)
+                    }
+                    .ignoresSafeArea(edges: .top)
+            }
+        }
+    }
+
+    private func barCircle(_ symbol: String, size: CGFloat,
+                           weight: Font.Weight = .regular) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: size, weight: weight))
+            .foregroundStyle(.white)
+            .frame(width: 34, height: 34)
+            .background(posterCollapsed ? AnyShapeStyle(.white.opacity(0.1))
+                                        : AnyShapeStyle(.black.opacity(0.35)),
+                        in: Circle())
+    }
+
     // MARK: - Filmstrip scroll view
 
     private var filmstripScrollView: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
+                if showsPoster {
+                    posterHeader
+                        .padding(.bottom, 2)
+                }
                 ForEach(filmRows.indices, id: \.self) { rowIdx in
                     FilmstripRow(
                         clips: filmRows[rowIdx],
@@ -468,7 +652,16 @@ struct ProjectDetailView: View {
                     .padding(.horizontal, 14)
                 }
             }
-            .padding(.top, 4)
+            .padding(.top, showsPoster ? 0 : 4)
+        }
+        .onScrollGeometryChange(for: CGFloat.self) { geo in
+            geo.contentOffset.y + geo.contentInsets.top
+        } action: { _, offset in
+            // Hand over to the compact bar just before the poster's play disc
+            // leaves the screen, so there is never a moment with no way to play.
+            let collapsed = offset > Self.posterHeight - 118
+            guard collapsed != posterCollapsed else { return }
+            withAnimation(.easeOut(duration: 0.22)) { posterCollapsed = collapsed }
         }
         // Catch-all drop target. FilmCell has its own, which wins whenever the
         // finger is actually over a cell; this one exists for everywhere else —
