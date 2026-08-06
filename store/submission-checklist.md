@@ -9,7 +9,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 | Widget-Bundle-ID | `com.kipry.keep.app.widget` |
 | App-Gruppe | `group.com.kipry.keep.app` |
 | Team-ID | `3832YDF43A` |
-| Version / Build | `1.0` / `1` |
+| Version / Build | `1.0` / `2` |
 | Mindest-iOS | 18.0 |
 | Kategorie | Lifestyle |
 | Signing | Automatic |
@@ -85,8 +85,12 @@ Der Simulator kann Kamera/Widget/Haptik nicht abbilden. **Der gesamte Stand ist 
 viele Änderungen entstanden ohne Compiler, also zuerst `Product → Build`, dann diese Liste.
 
 **Aufnahme & Kamera**
-- [ ] Aufnahme per Tap, per Halten, per **Lock** (nach links ziehen) und per **Lautstärketaste** — jeweils mit **Haptik**.
-- [ ] Dauer-Picker zeigt **1 / 2 / 3 / 5 s** und die Auswahl aus den Einstellungen ist vorbelegt.
+- [ ] Aufnahme per Tap, per Halten, per **Lock** (nach links ziehen) und per **Lautstärketaste**.
+- [ ] **Haptik sitzt im Moment des Stopps**, nicht verzögert — in allen fünf Fällen.
+      Kamera-Wechsel während der Aufnahme darf **keinen** Stopp-Tick auslösen.
+- [ ] Dauer-Picker zeigt **1s / φ / 3s / 5s**, φ ist vorbelegt und wird als Glyphe
+      gerendert (kein Kästchen). Migrationsprobe: vorher 2 s einstellen, dann updaten.
+- [ ] Ring läuft in **1,618 s** zu, gespeicherte Clipdauer liegt bei ~1,6 s.
 - [ ] Einstellungen → Aufnahme → Auflösung auf **4K**, aufnehmen, exportieren, in Fotos die Auflösung prüfen.
 - [ ] Einmal mit der **Frontkamera** aufnehmen (Fallback-Pfad, falls sie kein 4K kann).
 - [ ] Berechtigungs-Ablehnung → „Open Settings"-Screen statt schwarzem Bild.
@@ -103,7 +107,26 @@ viele Änderungen entstanden ohne Compiler, also zuerst `Product → Build`, dan
 - [ ] **Orte:** weit rauszoomen — einzelne Pins und Reiseroute bleiben sichtbar; Scrubben zeigt den Flugbogen.
 - [ ] Standort auf **„Aus"** → keine Abfrage, kein Ort gespeichert.
 
+**Projekt & Wiedergabe**
+- [ ] Projekt öffnen: **Filmplakat** oben, scharf, mit Papier-Abspielknopf und
+      „N CLIPS · Dauer" darunter.
+- [ ] Nach unten scrollen: der Knopf wandert **ohne Lücke** in die obere Leiste;
+      Zurück, Auswählen und Import bleiben durchgehend erreichbar.
+- [ ] **Löschen nach abgebrochenem Drag:** Clip anfassen, ziehen, **in einer Lücke**
+      loslassen — dann löschen. Muss sofort verschwinden. Danach eine Zelle
+      antippen: die Vorschau muss sich öffnen.
+- [ ] **Export → „Video sichern"** → animierte Bestätigung erscheint.
+      **→ „In Dateien sichern"** → es erscheint **keine**.
+
+**Widget-Einrichtung**
+- [ ] Widget entfernen → App öffnen → Hinweiskarte in der Bibliothek erscheint.
+- [ ] Widget hinzufügen → zurück in die App → Karte ist weg.
+- [ ] Karte wegklicken → bleibt weg; Anleitung weiterhin über Einstellungen → Widget.
+- [ ] Tipp auf die **Streak im mittleren Widget** öffnet die Chronik.
+
 **Bibliothek**
+- [ ] Vorschaubilder der Projekte sind **scharf** (alte Cover werden beim ersten
+      Start einmalig neu gerendert — kurz warten).
 - [ ] **Papierkorb:** einzelne Clips eines Projekts löschen → wiederherstellen → sitzen an der richtigen Stelle im Filmstreifen.
       Projekt löschen → wiederherstellen. Endgültig löschen → Speicherbelegung in den iOS-Einstellungen prüfen.
 - [ ] **Archiv:** Projekt archivieren → in Einstellungen sichtbar → wiederherstellen.
