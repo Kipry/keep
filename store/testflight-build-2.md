@@ -5,38 +5,42 @@
 Zum Kopieren in App Store Connect → TestFlight → Build 1.0 (2):
 
 ```
-Danke fürs Weitertesten! Neu in diesem Build — und genau darauf hätte ich
-gern Rückmeldung:
+NEU IN DIESEM BUILD
 
-• BEHOBEN: Gelöschte Clips blieben manchmal ausgegraut im Filmstreifen
-  stehen und verschwanden erst beim Neuöffnen. Bitte einmal gezielt
-  ausprobieren: einen Clip anfassen, verschieben, in einer Lücke loslassen
-  – und ihn dann löschen. Er muss sofort weg sein.
+Behoben
+• Gelöschte Clips blieben manchmal ausgegraut im Filmstreifen stehen und
+  verschwanden erst beim Neuöffnen des Projekts. Im selben Zustand ließen
+  sich Clips auch nicht mehr antippen.
+• Das haptische Feedback beim Stoppen kam verzögert – es wartete darauf,
+  dass die Videodatei fertig geschrieben war. Jetzt sitzt es im Moment
+  des Stopps.
+• Die Vorschaubilder in der Projektübersicht waren unscharf: sie wurden
+  in einem Drittel der nötigen Auflösung erzeugt.
 
-• Aufnahmedauer: neue Voreinstellung φ (der goldene Schnitt, 1,618 s).
-  2 s ist entfallen. Fühlt sich die Länge richtig an?
+Neu
+• Aufnahmedauer: neue Voreinstellung φ – der goldene Schnitt, 1,618
+  Sekunden. 2 Sekunden ist entfallen.
+• Projekte haben jetzt ein Filmplakat statt einer Kopfzeile: großer
+  Abspielknopf, darunter Anzahl der Clips und Länge des fertigen Films.
+• Export → „Video sichern" bestätigt jetzt animiert, wenn das Video
+  wirklich in der Mediathek gelandet ist.
+• Wer noch kein Widget eingerichtet hat, findet in der Bibliothek einen
+  Hinweis mit lesbarer Anleitung – auch dauerhaft in den Einstellungen.
+• „Rückblicke" heißt jetzt „Chronik" und zeigt deine Jahresspirale. Ein
+  Tipp auf die Streak im Widget öffnet sie direkt.
 
-• Haptik beim Stoppen sollte jetzt exakt im Moment des Stopps sitzen,
-  nicht mehr verzögert.
+WORAUF ICH BESONDERS SCHAUE
 
-• Projekt öffnen: der Kopfbereich ist jetzt ein Filmplakat mit großem
-  Abspielknopf. Findest du das Abspielen schneller als vorher? Beim
-  Scrollen wandert der Knopf nach oben in die Leiste.
-
-• Projektübersicht: die Vorschaubilder sollten deutlich schärfer sein.
-
-• Export → „Video sichern": es kommt eine animierte Bestätigung, wenn das
-  Video wirklich in der Mediathek gelandet ist. Bei „In Dateien sichern"
-  kommt bewusst keine.
-
-• Widget: wer noch keins eingerichtet hat, sieht in der Bibliothek einen
-  Hinweis mit Anleitung. Er sollte verschwinden, sobald das Widget da ist.
-
-• Die Seite „Rückblicke" heißt jetzt „Chronik" und zeigt deine
-  Jahresspirale. Ein Tipp auf die Streak im Widget öffnet sie direkt.
+1. Der Löschfehler. Bitte gezielt: einen Clip anfassen, verschieben und
+   in einer LÜCKE loslassen (nicht auf einem anderen Clip) – und ihn dann
+   löschen. Er muss sofort verschwinden.
+2. Fühlt sich φ als Länge richtig an? Zu kurz, zu lang, genau richtig?
+3. Findest du das Abspielen jetzt schneller als vorher?
+4. Beim Scrollen im Projekt: wandert der Abspielknopf sauber nach oben in
+   die Leiste, oder gibt es einen Moment ohne?
 
 Alles, was hakt oder komisch aussieht, gerne über den Feedback-Knopf in
-den Einstellungen.
+den Einstellungen – der öffnet eine vorbereitete Mail mit Geräteinfos.
 ```
 
 ## Vor dem Archivieren
