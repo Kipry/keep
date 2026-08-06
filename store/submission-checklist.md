@@ -9,7 +9,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 | Widget-Bundle-ID | `com.kipry.keep.app.widget` |
 | App-Gruppe | `group.com.kipry.keep.app` |
 | Team-ID | `3832YDF43A` |
-| Version / Build | `1.0` / `2` |
+| Version / Build | `1.0` / `3` |
 | Mindest-iOS | 18.0 |
 | Kategorie | Lifestyle |
 | Signing | Automatic |

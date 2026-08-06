@@ -21,7 +21,7 @@ enum TrashSweep {
         // Projects first: deleting one cascades to its clips, so sweeping them
         // up front avoids visiting those clips twice.
         let projects = ((try? context.fetch(FetchDescriptor<Project>())) ?? [])
-            .filter { $0.isDeleted && ($0.deletedAt ?? .distantFuture) < cutoff }
+            .filter { $0.isTrashed && ($0.deletedAt ?? .distantFuture) < cutoff }
         for project in projects {
             for clip in project.clips { clip.deleteFile() }
             context.delete(project)
@@ -29,7 +29,7 @@ enum TrashSweep {
         }
 
         let clips = ((try? context.fetch(FetchDescriptor<Clip>())) ?? [])
-            .filter { $0.isDeleted && ($0.deletedAt ?? .distantFuture) < cutoff }
+            .filter { $0.isTrashed && ($0.deletedAt ?? .distantFuture) < cutoff }
         for clip in clips {
             clip.deleteFile()
             context.delete(clip)

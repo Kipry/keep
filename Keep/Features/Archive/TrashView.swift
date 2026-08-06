@@ -3,7 +3,7 @@ import SwiftData
 
 /// The trash the app has always promised and never had.
 ///
-/// `softDelete()` set `isDeleted` from the very first version, but every query
+/// `softDelete()` set `isTrashed` from the very first version, but every query
 /// filtered those records out and `restore()` had no call site anywhere — so a
 /// deletion was, from the user's side, permanent, while the confirmation
 /// dialog said it "can be restored at any time". This is the screen that makes
@@ -12,10 +12,10 @@ struct TrashView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    @Query(filter: #Predicate<Project> { $0.isDeleted }, sort: \Project.deletedAt, order: .reverse)
+    @Query(filter: #Predicate<Project> { $0.isTrashed }, sort: \Project.deletedAt, order: .reverse)
     private var deletedProjects: [Project]
 
-    @Query(filter: #Predicate<Clip> { $0.isDeleted }, sort: \Clip.deletedAt, order: .reverse)
+    @Query(filter: #Predicate<Clip> { $0.isTrashed }, sort: \Clip.deletedAt, order: .reverse)
     private var deletedClips: [Clip]
 
     @State private var projectToPurge: Project?
@@ -26,7 +26,7 @@ struct TrashView: View {
     /// project, not again on their own — otherwise deleting a project would
     /// flood the trash with all of its clips.
     private var looseClips: [Clip] {
-        deletedClips.filter { !($0.project?.isDeleted ?? false) }
+        deletedClips.filter { !($0.project?.isTrashed ?? false) }
     }
 
     private var isEmpty: Bool { deletedProjects.isEmpty && looseClips.isEmpty }

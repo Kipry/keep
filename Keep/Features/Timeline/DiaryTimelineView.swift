@@ -56,7 +56,7 @@ struct TimelineData {
     }
 
     static func build(projects: [Project], calendar: Calendar) -> TimelineData? {
-        let active = projects.filter { !$0.isDeleted }
+        let active = projects.filter { !$0.isTrashed }
         guard !active.isEmpty else { return nil }
 
         let today = calendar.startOfDay(for: Date())
@@ -162,7 +162,7 @@ struct DiaryTimelineView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @Query(filter: #Predicate<Project> { !$0.isDeleted })
+    @Query(filter: #Predicate<Project> { !$0.isTrashed })
     private var projects: [Project]
 
     @State private var data: TimelineData?

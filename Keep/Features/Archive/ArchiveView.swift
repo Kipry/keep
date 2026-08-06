@@ -6,7 +6,7 @@ struct ArchiveView: View {
     @Environment(\.dismiss) private var dismiss
 
     @Query(
-        filter: #Predicate<Project> { $0.isArchived && !$0.isDeleted },
+        filter: #Predicate<Project> { $0.isArchived && !$0.isTrashed },
         sort: \Project.updatedAt,
         order: .reverse
     )

@@ -11,7 +11,14 @@ final class Clip {
     var fileBookmark: Data?
     var fileURLString: String
     var order: Int
-    var isDeleted: Bool
+    /// In the trash. NOT called `isDeleted`: `PersistentModel` declares an
+    /// `isDeleted` of its own, and a stored property of that name shadows the
+    /// protocol's — so SwiftData's own machinery would have been reading our
+    /// trash flag whenever it asked whether the object was deleted.
+    /// `originalName` renames the existing column instead of dropping it, so
+    /// nothing already in the trash comes back.
+    @Attribute(originalName: "isDeleted")
+    var isTrashed: Bool
     var deletedAt: Date?
     var thumbnailData: Data?
     var trimStart: Double = 0
@@ -78,7 +85,7 @@ final class Clip {
         self.duration = duration
         self.fileURLString = fileURL.absoluteString
         self.order = order
-        self.isDeleted = false
+        self.isTrashed = false
         self.fileBookmark = try? fileURL.bookmarkData(options: .minimalBookmark)
     }
 
@@ -111,13 +118,13 @@ final class Clip {
 
     /// Moves the clip to the soft-delete trash. Permanent removal happens after 30 days.
     func softDelete() {
-        isDeleted = true
+        isTrashed = true
         deletedAt = Date()
     }
 
     /// Restores the clip from the trash.
     func restore() {
-        isDeleted = false
+        isTrashed = false
         deletedAt = nil
     }
 

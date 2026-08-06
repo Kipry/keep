@@ -6,7 +6,7 @@ struct ProjectListView: View {
     @Environment(AppDeepLink.self) private var deepLink
 
     @Query(
-        filter: #Predicate<Project> { !$0.isDeleted && !$0.isArchived },
+        filter: #Predicate<Project> { !$0.isTrashed && !$0.isArchived },
         sort: \Project.updatedAt,
         order: .reverse
     )

@@ -7,7 +7,14 @@ final class Project {
     var name: String
     var createdAt: Date
     var updatedAt: Date = Date()
-    var isDeleted: Bool
+    /// In the trash. NOT called `isDeleted`: `PersistentModel` declares an
+    /// `isDeleted` of its own, and a stored property of that name shadows the
+    /// protocol's — so SwiftData's own machinery would have been reading our
+    /// trash flag whenever it asked whether the object was deleted.
+    /// `originalName` renames the existing column instead of dropping it, so
+    /// nothing already in the trash comes back.
+    @Attribute(originalName: "isDeleted")
+    var isTrashed: Bool
     var deletedAt: Date?
     var isArchived: Bool = false
     var coverThumbnailData: Data?
@@ -24,7 +31,7 @@ final class Project {
         self.name = name
         self.createdAt = Date()
         self.updatedAt = Date()
-        self.isDeleted = false
+        self.isTrashed = false
         self.isArchived = false
         self.clips = []
     }
@@ -32,7 +39,7 @@ final class Project {
     /// Active (non-deleted) clips sorted by their intended playback order.
     var activeClips: [Clip] {
         clips
-            .filter { !$0.isDeleted }
+            .filter { !$0.isTrashed }
             .sorted { $0.order < $1.order }
     }
 
@@ -45,12 +52,12 @@ final class Project {
     }
 
     func softDelete() {
-        isDeleted = true
+        isTrashed = true
         deletedAt = Date()
     }
 
     func restore() {
-        isDeleted = false
+        isTrashed = false
         deletedAt = nil
     }
 

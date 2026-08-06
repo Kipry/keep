@@ -1,14 +1,18 @@
-# TestFlight — Build 1.0 (2)
+# TestFlight — Build 1.0 (3)
 
 ## „Was soll getestet werden?" (What to Test)
 
-Zum Kopieren in App Store Connect → TestFlight → Build 1.0 (2):
+Zum Kopieren in App Store Connect → TestFlight → Build 1.0 (3):
 
 ```
 NEU IN DIESEM BUILD
 
 Behoben
 • ABSTURZ beim Löschen des letzten Clips in einem Projekt.
+• Clips ließen sich bei manchen von euch überhaupt nicht löschen. Ursache
+  war ein Namenskonflikt im Datenmodell: unser Papierkorb-Kennzeichen hieß
+  genauso wie ein Feld, das SwiftData selbst benutzt. Umbenannt – eure
+  Daten bleiben erhalten.
 • Gelöschte Clips blieben manchmal ausgegraut im Filmstreifen stehen und
   verschwanden erst beim Neuöffnen des Projekts – oder ließen sich gar
   nicht mehr löschen, weder über das x noch über die Mehrfachauswahl. Im
@@ -52,7 +56,7 @@ den Einstellungen – der öffnet eine vorbereitete Mail mit Geräteinfos.
 
 ## Vor dem Archivieren
 
-- [x] Build-Nummer auf **2** erhöht (App + Widget, Debug + Release).
+- [x] Build-Nummer auf **3** erhöht (App + Widget, Debug + Release).
       `MARKETING_VERSION` bleibt **1.0** — 1.0 ist nie im Store erschienen,
       es zählt allein die Build-Nummer nach oben.
 - [ ] **Bauen.** Der gesamte Stand ist ungebaut; ohne erfolgreichen

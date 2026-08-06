@@ -88,7 +88,7 @@ enum WidgetDataStore {
         let today = calendar.startOfDay(for: Date())
 
         let allClips = ((try? context.fetch(FetchDescriptor<Clip>())) ?? [])
-            .filter { !$0.isDeleted && !($0.project?.isDeleted ?? false) }
+            .filter { !$0.isTrashed && !($0.project?.isTrashed ?? false) }
         let recordedDays = Set(allClips.map { calendar.startOfDay(for: $0.createdAt) })
         // Clamped to today: a photo imported with a broken EXIF date can sit in
         // the future, and a future last day would keep the streak "alive"
@@ -96,7 +96,7 @@ enum WidgetDataStore {
         let lastDay = recordedDays.filter { $0 <= today }.max()
 
         let projects = ((try? context.fetch(FetchDescriptor<Project>())) ?? [])
-            .filter { !$0.isDeleted && !$0.isArchived }
+            .filter { !$0.isTrashed && !$0.isArchived }
         guard let project = projects.max(by: { $0.updatedAt < $1.updatedAt }) else {
             clear()
             return

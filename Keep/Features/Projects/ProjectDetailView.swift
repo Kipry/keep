@@ -79,7 +79,7 @@ struct ProjectDetailView: View {
     /// deleted clip stayed on the strip while the header and the export bar,
     /// which read `project.activeClips` live, had already counted down.
     private var displayClips: [Clip] {
-        dragClips.isEmpty ? project.activeClips : dragClips.filter { !$0.isDeleted }
+        dragClips.isEmpty ? project.activeClips : dragClips.filter { !$0.isTrashed }
     }
 
     private var selectedClips: [Clip] {
@@ -869,7 +869,7 @@ struct ProjectDetailView: View {
     private func commitDragOrder() {
         // Skip anything deleted mid-drag, or it would consume an order index and
         // leave the surviving clips with a gapped sequence.
-        for (i, clip) in dragClips.filter({ !$0.isDeleted }).enumerated() { clip.order = i }
+        for (i, clip) in dragClips.filter({ !$0.isTrashed }).enumerated() { clip.order = i }
         endDrag()
     }
 
@@ -1465,7 +1465,7 @@ private struct ProjectPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @Query(
-        filter: #Predicate<Project> { !$0.isDeleted },
+        filter: #Predicate<Project> { !$0.isTrashed },
         sort: \Project.updatedAt,
         order: .reverse
     )
@@ -1698,7 +1698,7 @@ private struct BulkProjectPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @Query(
-        filter: #Predicate<Project> { !$0.isDeleted },
+        filter: #Predicate<Project> { !$0.isTrashed },
         sort: \Project.updatedAt,
         order: .reverse
     )

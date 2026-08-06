@@ -8,10 +8,10 @@ struct OnThisDayView: View {
     /// hang off this instead, or it plays to an empty room.
     let isActive: Bool
 
-    @Query(filter: #Predicate<Clip> { !$0.isDeleted })
+    @Query(filter: #Predicate<Clip> { !$0.isTrashed })
     private var storedClips: [Clip]
 
-    @Query(filter: #Predicate<Project> { !$0.isDeleted })
+    @Query(filter: #Predicate<Project> { !$0.isTrashed })
     private var projects: [Project]
 
     /// Clips of trashed projects were still counted in every stat and in the
@@ -19,7 +19,7 @@ struct OnThisDayView: View {
     /// always filtered them (`WidgetDataStore.refresh`). Only `grouped(from:to:)`
     /// got this right before.
     private var allClips: [Clip] {
-        storedClips.filter { !($0.project?.isDeleted ?? false) }
+        storedClips.filter { !($0.project?.isTrashed ?? false) }
     }
 
     /// Everything derived from the clip list, computed once per change instead
