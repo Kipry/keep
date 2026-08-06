@@ -36,6 +36,7 @@ struct ProjectDetailView: View {
     /// Held so the overlay's Cancel can actually reach the running export.
     @State private var exportTask: Task<Void, Never>?
     @State private var importFailureCount = 0
+    @State private var deleteError: String?
     /// Set once the share sheet reports that "Save Video" actually finished.
     @State private var didSaveToPhotos = false
 
@@ -85,11 +86,22 @@ struct ProjectDetailView: View {
         displayClips.filter { selectedClipIDs.contains($0.id) }
     }
 
-    private var filmRows: [[Clip]] {
+    /// Rows of four, each identified by its first clip.
+    ///
+    /// `ForEach(rows.indices, id: \.self)` with `rows[i]` inside is a crash
+    /// waiting for the array to shrink: SwiftUI captures the index range when
+    /// the view is built and can evaluate the body once more with a stale index
+    /// before it re-diffs. Deleting the last clip in a project took the row
+    /// count from one to zero and the next evaluation read `rows[0]` — index out
+    /// of range. Identity comes from the data now, so there is no index to go
+    /// stale.
+    private var filmRows: [FilmRow] {
         let clips = displayClips
         guard !clips.isEmpty else { return [] }
-        return stride(from: 0, to: clips.count, by: 4).map {
-            Array(clips[$0..<min($0 + 4, clips.count)])
+        return stride(from: 0, to: clips.count, by: 4).compactMap { start in
+            let slice = Array(clips[start..<min(start + 4, clips.count)])
+            guard let first = slice.first else { return nil }
+            return FilmRow(id: first.id, clips: slice)
         }
     }
 
@@ -155,8 +167,7 @@ struct ProjectDetailView: View {
                     // Deleting proves no drag is in flight. Persists any reorder
                     // made before the drag was abandoned, then clears the state.
                     if !dragClips.isEmpty { commitDragOrder() }
-                    try? modelContext.save()
-                    WidgetDataStore.refresh(context: modelContext)
+                    persistDeletion()
                     clipToDelete = nil
                 }
             }
@@ -174,14 +185,19 @@ struct ProjectDetailView: View {
             Button("Move to Trash", role: .destructive) {
                 for clip in selectedClips { clip.softDelete() }
                 if !dragClips.isEmpty { commitDragOrder() }
-                try? modelContext.save()
-                WidgetDataStore.refresh(context: modelContext)
+                persistDeletion()
                 selectedClipIDs.removeAll()
                 isSelectMode = false
             }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("They can be restored from the trash at any time.")
+        }
+        .alert("Could Not Delete",
+               isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The clip is still here. \(deleteError ?? "")")
         }
         .alert("Export Failed",
                isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
@@ -263,10 +279,8 @@ struct ProjectDetailView: View {
             get: { previewingClipID != nil },
             set: { if !$0 { previewingClipID = nil } }
         )) {
-            // Resolved at presentation time against the current list.
-            if let id = previewingClipID,
-               let idx = displayClips.firstIndex(where: { $0.id == id }) {
-                ClipPreviewCarousel(clips: displayClips, initialIndex: idx)
+            if let id = previewingClipID, displayClips.contains(where: { $0.id == id }) {
+                ClipPreviewCarousel(clips: displayClips, initialID: id)
             }
         }
     }
@@ -616,9 +630,9 @@ struct ProjectDetailView: View {
                     posterHeader
                         .padding(.bottom, 2)
                 }
-                ForEach(filmRows.indices, id: \.self) { rowIdx in
+                ForEach(filmRows) { row in
                     FilmstripRow(
-                        clips: filmRows[rowIdx],
+                        clips: row.clips,
                         draggingClipID: $draggingClipID,
                         isSelectMode: isSelectMode,
                         selectedClipIDs: $selectedClipIDs,
@@ -835,6 +849,21 @@ struct ProjectDetailView: View {
             dragClips.move(fromOffsets: IndexSet(integer: fromIdx),
                            toOffset: toIdx > fromIdx ? toIdx + 1 : toIdx)
         }
+    }
+
+    /// Writes the soft-delete out and tells the widget.
+    ///
+    /// Was `try? modelContext.save()`. A failing save left the clip flagged in
+    /// memory but not on disk, so it came back on the next launch — and the
+    /// user was told nothing, which looks exactly like "deleting doesn't work".
+    /// A delete that didn't stick has to say so.
+    private func persistDeletion() {
+        do {
+            try modelContext.save()
+        } catch {
+            deleteError = error.localizedDescription
+        }
+        WidgetDataStore.refresh(context: modelContext)
     }
 
     private func commitDragOrder() {
@@ -1492,29 +1521,40 @@ private struct ProjectPickerSheet: View {
     }
 }
 
+/// One row of the filmstrip, identified by the clip that starts it.
+private struct FilmRow: Identifiable {
+    let id: UUID
+    let clips: [Clip]
+}
+
 // MARK: - ClipPreviewCarousel
 
 private struct ClipPreviewCarousel: View {
     let clips: [Clip]
-    let initialIndex: Int
     @Environment(\.dismiss) private var dismiss
-    @State private var currentIndex: Int
+    @State private var currentID: UUID
     @State private var players: [UUID: AVPlayer] = [:]
 
-    init(clips: [Clip], initialIndex: Int) {
+    init(clips: [Clip], initialID: UUID) {
         self.clips = clips
-        self.initialIndex = initialIndex
-        _currentIndex = State(initialValue: initialIndex)
+        _currentID = State(initialValue: initialID)
+    }
+
+    private var currentIndex: Int {
+        clips.firstIndex { $0.id == currentID } ?? 0
     }
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            TabView(selection: $currentIndex) {
-                ForEach(clips.indices, id: \.self) { idx in
-                    playerPage(for: clips[idx], index: idx)
-                        .tag(idx)
+            // Selection rides on the clip's id, not its offset: the same
+            // stale-index crash applies here, and an offset also silently
+            // points at a different clip once one is removed.
+            TabView(selection: $currentID) {
+                ForEach(clips) { clip in
+                    playerPage(for: clip)
+                        .tag(clip.id)
                         .ignoresSafeArea()
                 }
             }
@@ -1569,9 +1609,9 @@ private struct ClipPreviewCarousel: View {
                 .padding(.bottom, 32)
             }
         }
-        .onChange(of: currentIndex) { old, new in
-            if old < clips.count { players[clips[old].id]?.pause() }
-            if new < clips.count { seekAndPlay(clips[new]) }
+        .onChange(of: currentID) { oldID, newID in
+            players[oldID]?.pause()
+            if let clip = clips.first(where: { $0.id == newID }) { seekAndPlay(clip) }
         }
         .onAppear { PlaybackAudio.activate() }   // audible over the silent switch
         .onDisappear { PlaybackAudio.deactivate() }
@@ -1595,11 +1635,11 @@ private struct ClipPreviewCarousel: View {
     }
 
     @ViewBuilder
-    private func playerPage(for clip: Clip, index: Int) -> some View {
+    private func playerPage(for clip: Clip) -> some View {
         if clip.isPhoto {
             // Show the original still image directly — always correctly oriented,
             // independent of how the backing still-video was rendered.
-            Zoomable(isActive: index == currentIndex) {
+            Zoomable(isActive: clip.id == currentID) {
                 ZStack {
                     Color.black
                     if let img = photoImage(for: clip) {
@@ -1612,7 +1652,7 @@ private struct ClipPreviewCarousel: View {
         } else {
             // Play/pause is handed to Zoomable rather than attached here, so it
             // can be made to wait on the double-tap-to-zoom recogniser.
-            Zoomable(isActive: index == currentIndex, onSingleTap: { togglePlayback(clip) }) {
+            Zoomable(isActive: clip.id == currentID, onSingleTap: { togglePlayback(clip) }) {
                 ZStack {
                     Color.black
                     if let player = players[clip.id] {
@@ -1628,7 +1668,7 @@ private struct ClipPreviewCarousel: View {
                     }
                     let p = AVPlayer(playerItem: item)
                     players[clip.id] = p
-                    if index == currentIndex { seekAndPlay(clip) }
+                    if clip.id == currentID { seekAndPlay(clip) }
                 }
             }
             .onDisappear {
