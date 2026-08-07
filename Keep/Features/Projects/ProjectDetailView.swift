@@ -1361,6 +1361,15 @@ private struct FilmCell: View {
     let onPreview: () -> Void
     let onToggleSelect: () -> Void
 
+    /// Decoded once per thumbnail identity, not on every `body` pass. Every
+    /// visible cell in a row re-evaluates `body` whenever `draggingClipID`
+    /// changes — it's a shared binding — so decoding the JPEG inline here used
+    /// to redo that work for every cell in the strip on every cell the drag
+    /// crossed, not just the one moving.
+    @State private var thumbnail: UIImage?
+    /// Same reasoning: `isAvailable` is a synchronous file-system stat call.
+    @State private var isFileAvailable = true
+
     private var isDraggingMe: Bool { draggingClipID == clip.id }
     private var isDraggingOther: Bool { draggingClipID != nil && !isDraggingMe }
 
@@ -1368,8 +1377,8 @@ private struct FilmCell: View {
         ZStack(alignment: .bottomTrailing) {
             // Thumbnail
             Group {
-                if let data = clip.thumbnailData, let img = UIImage(data: data) {
-                    Image(uiImage: img)
+                if let thumbnail {
+                    Image(uiImage: thumbnail)
                         .resizable()
                         .scaledToFill()
                 } else {
@@ -1416,7 +1425,7 @@ private struct FilmCell: View {
         }
         // Missing-file overlay
         .overlay {
-            if !clip.isAvailable {
+            if !isFileAvailable {
                 ZStack {
                     RoundedRectangle(cornerRadius: 2).fill(.black.opacity(0.72))
                     VStack(spacing: 3) {
@@ -1511,6 +1520,12 @@ private struct FilmCell: View {
                 onFinish: onDropFinish
             )
         )
+        .task(id: clip.thumbnailData) {
+            thumbnail = clip.thumbnailData.flatMap(UIImage.init(data:))
+        }
+        .task(id: clip.fileURLString) {
+            isFileAvailable = clip.isAvailable
+        }
     }
 }
 
@@ -1699,16 +1714,7 @@ private struct ClipPreviewCarousel: View {
         if clip.isPhoto {
             // Show the original still image directly — always correctly oriented,
             // independent of how the backing still-video was rendered.
-            Zoomable(isActive: clip.id == currentID) {
-                ZStack {
-                    Color.black
-                    if let img = photoImage(for: clip) {
-                        Image(uiImage: img)
-                            .resizable()
-                            .scaledToFit()
-                    }
-                }
-            }
+            PhotoPreviewPage(clip: clip, isActive: clip.id == currentID)
         } else {
             // Play/pause is handed to Zoomable rather than attached here, so it
             // can be made to wait on the double-tap-to-zoom recogniser.
@@ -1737,13 +1743,40 @@ private struct ClipPreviewCarousel: View {
         }
     }
 
-    // Loads the full still image for a photo clip, falling back to its thumbnail.
-    private func photoImage(for clip: Clip) -> UIImage? {
-        if let url = clip.photoSourceURL, let img = UIImage(contentsOfFile: url.path) {
-            return img
+}
+
+// MARK: - PhotoPreviewPage
+
+/// One photo page of the carousel. Was a plain function called inline from
+/// `ForEach(clips) { playerPage(for: $0) }` — `ForEach` builds every page's
+/// view *value* as soon as the carousel appears, so a decode running as plain
+/// Swift code inside that builder happened for every photo clip in the
+/// project immediately, not just the one on screen. As its own view with the
+/// decode behind `.task`, it only runs once the page is actually mounted.
+private struct PhotoPreviewPage: View {
+    let clip: Clip
+    let isActive: Bool
+    @State private var image: UIImage?
+
+    var body: some View {
+        Zoomable(isActive: isActive) {
+            ZStack {
+                Color.black
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                }
+            }
         }
-        if let data = clip.thumbnailData { return UIImage(data: data) }
-        return nil
+        .task(id: clip.id) {
+            // Full still image, falling back to the thumbnail.
+            if let url = clip.photoSourceURL, let img = UIImage(contentsOfFile: url.path) {
+                image = img
+            } else if let data = clip.thumbnailData {
+                image = UIImage(data: data)
+            }
+        }
     }
 }
 

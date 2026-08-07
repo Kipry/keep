@@ -87,16 +87,26 @@ enum WidgetDataStore {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        let allClips = ((try? context.fetch(FetchDescriptor<Clip>())) ?? [])
-            .filter { !$0.isTrashed && !($0.project?.isTrashed ?? false) }
+        // Predicated at the fetch, not filtered after: this used to pull every
+        // Clip and every Project row into memory on every refresh (every clip
+        // add, every delete) and filter them in Swift. `isTrashed` on the
+        // fetched type itself pushes down to SQL like every other `@Query` in
+        // the app; the cross-relationship "is the *project* trashed" check
+        // can't be expressed as reliably in a compiled predicate, so it stays
+        // an in-memory pass — but now over the much smaller already-filtered set.
+        let clipDescriptor = FetchDescriptor<Clip>(predicate: #Predicate<Clip> { !$0.isTrashed })
+        let allClips = ((try? context.fetch(clipDescriptor)) ?? [])
+            .filter { !($0.project?.isTrashed ?? false) }
         let recordedDays = Set(allClips.map { calendar.startOfDay(for: $0.createdAt) })
         // Clamped to today: a photo imported with a broken EXIF date can sit in
         // the future, and a future last day would keep the streak "alive"
         // forever.
         let lastDay = recordedDays.filter { $0 <= today }.max()
 
-        let projects = ((try? context.fetch(FetchDescriptor<Project>())) ?? [])
-            .filter { !$0.isTrashed && !$0.isArchived }
+        let projectDescriptor = FetchDescriptor<Project>(
+            predicate: #Predicate<Project> { !$0.isTrashed && !$0.isArchived }
+        )
+        let projects = (try? context.fetch(projectDescriptor)) ?? []
         guard let project = projects.max(by: { $0.updatedAt < $1.updatedAt }) else {
             clear()
             return
