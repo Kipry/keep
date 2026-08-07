@@ -51,9 +51,6 @@ struct ContentView: View {
         }
         .onboardingGate()
         .task {
-            #if DEBUG
-            await DemoDataSeeder.seedIfRequested(context: modelContext)
-            #endif
             ClipFileRepair.run(in: modelContext)
             TrashSweep.run(in: modelContext)
             VideoComposer.purgeExports()
