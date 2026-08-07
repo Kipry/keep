@@ -378,14 +378,27 @@ struct ProjectDetailView: View {
         DragGesture(minimumDistance: 12, coordinateSpace: .global)
             .onChanged { v in
                 guard v.startLocation.x < backSwipeZone, v.translation.width > 0 else { return }
-                backSwipeX = min(v.translation.width, 220)
+                // Tracks the finger the whole way to the edge now, not just the
+                // first 220pt — a page that only ever peeked out from under
+                // its own content never looked like it was actually leaving.
+                backSwipeX = min(v.translation.width, UIScreen.main.bounds.width)
             }
             .onEnded { v in
                 let committed = v.startLocation.x < backSwipeZone
                     && v.translation.width > 90
                     && abs(v.translation.width) > abs(v.translation.height)
                 if committed {
-                    dismiss()
+                    // `dismiss()` hands off to fullScreenCover's own dismiss
+                    // transition, which slides *down* — calling it mid-drag
+                    // used to interrupt the rightward slide at whatever x the
+                    // finger let go, so the motion visibly changed direction.
+                    // Finishing the slide off-screen ourselves first means the
+                    // page is already gone by the time that transition takes
+                    // over, so its direction is never seen.
+                    withAnimation(.easeOut(duration: 0.22)) {
+                        backSwipeX = UIScreen.main.bounds.width
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { dismiss() }
                 } else {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { backSwipeX = 0 }
                 }
@@ -629,7 +642,7 @@ struct ProjectDetailView: View {
     // MARK: - Filmstrip scroll view
 
     private var filmstripScrollView: some View {
-        ScrollView {
+        ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 12) {
                 if showsPoster {
                     posterHeader
