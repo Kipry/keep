@@ -117,9 +117,26 @@ final class Clip {
     }
 
     /// Moves the clip to the soft-delete trash. Permanent removal happens after 30 days.
+    ///
+    /// If this clip was the project's cover, the cover goes with it — a trashed
+    /// clip has no business still being shown as the project's face in the
+    /// library. `coverClipID` identifies the source directly; projects that
+    /// predate that field are matched by the same byte-equality
+    /// `CoverThumbnailRepair` already uses. Left blank rather than reassigned:
+    /// a cover is otherwise only ever chosen explicitly (the first clip, or a
+    /// manual pick), never guessed.
     func softDelete() {
         isTrashed = true
         deletedAt = Date()
+        guard let project else { return }
+        let wasCover = project.coverClipID == id
+            || (project.coverClipID == nil
+                && thumbnailData != nil
+                && project.coverThumbnailData == thumbnailData)
+        if wasCover {
+            project.coverClipID = nil
+            project.coverThumbnailData = nil
+        }
     }
 
     /// Restores the clip from the trash.
