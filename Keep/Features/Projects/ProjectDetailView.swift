@@ -368,15 +368,20 @@ struct ProjectDetailView: View {
 
     // MARK: - Back-swipe gesture
 
+    /// Apple's Human Interface Guidelines minimum touch target — the old 28 pt
+    /// meant a swipe that started a finger's-width off the bezel simply never
+    /// registered, which is what actually reads as "the gesture doesn't work"
+    /// rather than "I missed the edge".
+    private let backSwipeZone: CGFloat = 44
+
     private var backSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 12, coordinateSpace: .global)
             .onChanged { v in
-                // Only react to drags that begin at the very left edge.
-                guard v.startLocation.x < 28, v.translation.width > 0 else { return }
+                guard v.startLocation.x < backSwipeZone, v.translation.width > 0 else { return }
                 backSwipeX = min(v.translation.width, 220)
             }
             .onEnded { v in
-                let committed = v.startLocation.x < 28
+                let committed = v.startLocation.x < backSwipeZone
                     && v.translation.width > 90
                     && abs(v.translation.width) > abs(v.translation.height)
                 if committed {
@@ -652,18 +657,10 @@ struct ProjectDetailView: View {
                 }
 
                 if !isSelectMode {
-                    Button { isCameraPresented = true } label: {
-                        Text("+ add to the reel")
-                            .font(.scrawl(22))
-                            .foregroundStyle(.white.opacity(0.25))
-                            .frame(maxWidth: .infinity, minHeight: 88)
-                            .background {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(.white.opacity(0.12),
-                                            style: StrokeStyle(lineWidth: 1.4, dash: [6]))
-                            }
-                    }
-                    .padding(.horizontal, 14)
+                    Button { isCameraPresented = true } label: { FilmstripAddRow() }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 14)
+                        .accessibilityLabel("Add a clip")
                 }
             }
             .padding(.top, showsPoster ? 0 : 4)
@@ -1228,7 +1225,7 @@ private struct FilmstripRow: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            sprocketHoles
+            FilmSprocketHoles()
             HStack(spacing: 5) {
                 ForEach(clips) { clip in
                     FilmCell(
@@ -1262,14 +1259,21 @@ private struct FilmstripRow: View {
                 }
             }
             .padding(.horizontal, 6)
-            sprocketHoles
+            FilmSprocketHoles()
         }
         .background(Theme.filmCard)
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .padding(.horizontal, 14)
     }
+}
 
-    private var sprocketHoles: some View {
+// MARK: - Sprocket holes
+
+/// The punched strip along the top and bottom of every film card — shared by
+/// `FilmstripRow` and `FilmstripAddRow` so the reel reads as one continuous
+/// strip rather than two different card styles glued together.
+private struct FilmSprocketHoles: View {
+    var body: some View {
         HStack(spacing: 0) {
             ForEach(0..<18, id: \.self) { _ in
                 Spacer(minLength: 0)
@@ -1280,6 +1284,49 @@ private struct FilmstripRow: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 5)
+    }
+}
+
+// MARK: - Filmstrip add row
+
+/// The empty slot past the last clip. Was a generic dashed rectangle with no
+/// relationship to what sits above it; now it is the next frame of the same
+/// physical strip — same sprocket holes, same card, one dashed amber cell
+/// where a clip will land — so "recording continues here" is shown rather
+/// than stated in a caption.
+private struct FilmstripAddRow: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            FilmSprocketHoles()
+            HStack(spacing: 5) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Theme.amber.opacity(0.05))
+                    RoundedRectangle(cornerRadius: 2)
+                        .strokeBorder(Theme.amber.opacity(0.4),
+                                      style: StrokeStyle(lineWidth: 1.3, dash: [4, 3]))
+                    VStack(spacing: 5) {
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                        Text("NEXT")
+                            .font(.mono(7, weight: .medium))
+                            .tracking(1.2)
+                    }
+                    .foregroundStyle(Theme.amber.opacity(0.6))
+                }
+                .aspectRatio(4/5, contentMode: .fit)
+
+                ForEach(0..<3, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(.white.opacity(0.04))
+                        .aspectRatio(4/5, contentMode: .fit)
+                }
+            }
+            .padding(.horizontal, 6)
+            FilmSprocketHoles()
+        }
+        .background(Theme.filmCard)
+        .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }
 

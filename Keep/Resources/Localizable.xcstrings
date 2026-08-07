@@ -2882,6 +2882,28 @@
           }
         }
       }
+    },
+    "NEXT": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NÄCHSTER"
+          }
+        }
+      }
+    },
+    "Add a clip": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clip hinzufügen"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

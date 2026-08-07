@@ -75,11 +75,19 @@ struct ContentView: View {
         switchTab(to: tab)
     }
 
+    /// Apple's own minimum recommended touch target (Human Interface
+    /// Guidelines) — chosen over the old 30 pt because that read as "must
+    /// start exactly at the bezel" in practice. Still narrow enough that the
+    /// Diary tab's full-width day scrubber and the Chronicle carousels, which
+    /// both read horizontal drags across the whole page, are never touched by
+    /// a start point this close to the edge.
+    private let edgeZone: CGFloat = 44
+
     private func edgeSwipe(width: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 12, coordinateSpace: .global)
             .onChanged { v in
-                let fromLeft  = v.startLocation.x < 30
-                let fromRight = v.startLocation.x > width - 30
+                let fromLeft  = v.startLocation.x < edgeZone
+                let fromRight = v.startLocation.x > width - edgeZone
                 let dx = v.translation.width
                 // Only track intentional horizontal edge drags.
                 guard (fromLeft && dx > 0) || (fromRight && dx < 0) else { return }
@@ -91,8 +99,8 @@ struct ContentView: View {
             }
             .onEnded { v in
                 let dx = v.translation.width
-                let fromLeft  = v.startLocation.x < 30
-                let fromRight = v.startLocation.x > width - 30
+                let fromLeft  = v.startLocation.x < edgeZone
+                let fromRight = v.startLocation.x > width - edgeZone
                 let vx = v.velocity.width
                 let fast = (dx < 0 && vx < -500) || (dx > 0 && vx > 500)   // direction-matched flick
                 let commit = abs(dx) > abs(v.translation.height) * 1.2
