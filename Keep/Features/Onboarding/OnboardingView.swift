@@ -7,7 +7,7 @@ struct OnboardingView: View {
     @State private var step = 0
     @State private var forward = true
 
-    private let totalSteps = 6
+    private let totalSteps = 7
 
     var body: some View {
         ZStack {
@@ -114,10 +114,11 @@ struct OnboardingView: View {
     private var stepContent: some View {
         switch step {
         case 0: StepWelcome()
-        case 1: StepLockScreen()
-        case 2: StepLibrary()
-        case 3: StepFilmstrip()
-        case 4: StepExport()
+        case 1: StepPrivate()
+        case 2: StepLockScreen()
+        case 3: StepLibrary()
+        case 4: StepFilmstrip()
+        case 5: StepExport()
         default: StepWidget()
         }
     }
@@ -315,7 +316,124 @@ private struct AmberLens: View {
     }
 }
 
-// MARK: - Step 2: Lock screen
+// MARK: - Step 2: Private
+
+/// The positioning slide. It comes second on purpose: before anyone learns what
+/// the app does, they should know what it isn't. Every other daily-video app
+/// people have met wanted an account and a feed — saying so plainly, once and
+/// loudly, is worth a whole slide.
+private struct StepPrivate: View {
+    var body: some View {
+        StepShell(
+            eyebrow:  "YOURS ALONE",
+            headline: "Stays on\nyour phone.",
+            subtext:  "No cloud. No account. No feed. Your clips never leave this device — there is nobody here but you."
+        ) {
+            LocalVault()
+                .padding(.top, 20)
+        }
+    }
+}
+
+/// A phone inside a closed perimeter, with cloud / account / feed drifting off
+/// and fading outside it.
+private struct LocalVault: View {
+    @State private var drift = false
+    @State private var spin  = false
+
+    private let ringRadius: CGFloat = 118
+
+    // Placed by angle so the ring stays the thing that separates them from the
+    // phone — clockwise from the top left.
+    private let excluded: [(symbol: String, angle: Double, label: LocalizedStringKey)] = [
+        ("icloud.slash",    -140, "cloud"),
+        ("person.fill.xmark", -20, "account"),
+        ("heart.slash",      100, "feed")
+    ]
+
+    var body: some View {
+        ZStack {
+            // Perimeter — a closed line nothing crosses.
+            Circle()
+                .stroke(Theme.amber.opacity(0.20),
+                        style: StrokeStyle(lineWidth: 1.2, dash: [3, 7]))
+                .frame(width: ringRadius * 2, height: ringRadius * 2)
+                .rotationEffect(.degrees(spin ? 360 : 0))
+                .animation(.linear(duration: 44).repeatForever(autoreverses: false), value: spin)
+
+            Circle()
+                .fill(Theme.amber.opacity(0.05))
+                .frame(width: ringRadius * 2, height: ringRadius * 2)
+                .blur(radius: 18)
+
+            phone
+
+            ForEach(excluded.indices, id: \.self) { i in
+                excludedChip(excluded[i])
+            }
+        }
+        .frame(width: 372, height: 344)
+        .onAppear {
+            spin = true
+            withAnimation(.easeInOut(duration: 3.4).repeatForever(autoreverses: true)) {
+                drift = true
+            }
+        }
+    }
+
+    private var phone: some View {
+        RoundedRectangle(cornerRadius: 26)
+            .fill(Theme.cardSurface)
+            .frame(width: 106, height: 194)
+            .overlay {
+                RoundedRectangle(cornerRadius: 26)
+                    .stroke(Theme.amber.opacity(0.45), lineWidth: 1.4)
+            }
+            .overlay {
+                VStack(spacing: 14) {
+                    // A little stack of frames — what's being kept.
+                    ZStack {
+                        ForEach(0..<3, id: \.self) { i in
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Theme.filmCard)
+                                .overlay(RoundedRectangle(cornerRadius: 3)
+                                    .stroke(.white.opacity(0.10), lineWidth: 1))
+                                .frame(width: 40, height: 50)
+                                .rotationEffect(.degrees(Double(i - 1) * 7))
+                                .offset(x: CGFloat(i - 1) * 5)
+                        }
+                        Image(systemName: "film")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.white.opacity(0.35))
+                    }
+
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 17))
+                        .foregroundStyle(Theme.amber)
+                }
+            }
+            .shadow(color: Theme.amber.opacity(0.18), radius: 22)
+    }
+
+    private func excludedChip(_ item: (symbol: String, angle: Double, label: LocalizedStringKey)) -> some View {
+        let radians  = item.angle * .pi / 180
+        let distance = Double(ringRadius) + (drift ? 44 : 34)
+        return HStack(spacing: 5) {
+            Image(systemName: item.symbol)
+                .font(.system(size: 11))
+            Text(item.label)
+                .font(.mono(10))
+        }
+        .foregroundStyle(.white.opacity(drift ? 0.13 : 0.26))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(.white.opacity(0.04)))
+        .overlay(Capsule().stroke(.white.opacity(0.07), lineWidth: 1))
+        .offset(x: CGFloat(cos(radians) * distance), y: CGFloat(sin(radians) * distance))
+    }
+}
+
+// MARK: - Step 3: Lock screen
 
 private struct StepLockScreen: View {
     var body: some View {
@@ -657,7 +775,7 @@ private struct SuccessPhase: View {
     }
 }
 
-// MARK: - Step 3: Library
+// MARK: - Step 4: Library
 
 private struct StepLibrary: View {
     var body: some View {
@@ -699,14 +817,6 @@ private struct ProjectGridMock: View {
                                 .foregroundStyle(.white)
                         }
                         Spacer()
-                        Circle()
-                            .fill(.white.opacity(0.1))
-                            .frame(width: 36, height: 36)
-                            .overlay(
-                                Image(systemName: "magnifyingglass")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundStyle(.white)
-                            )
                     }
                 }
                 .padding(.horizontal, 24)
@@ -834,14 +944,14 @@ private struct MockTabBar: View {
     }
 }
 
-// MARK: - Step 4: Filmstrip
+// MARK: - Step 5: Filmstrip
 
 private struct StepFilmstrip: View {
     var body: some View {
         StepShell(
             eyebrow:  "FILMSTRIP",
             headline: "Your cut.\nFrame by frame.",
-            subtext:  "Trim, sort, rearrange your clips.\nJust like a real film strip."
+            subtext:  "Trim, sort, rearrange your clips.\nPress play to see the film so far."
         ) {
             PhoneFrame { FilmstripMock() }
         }
@@ -856,45 +966,16 @@ private struct FilmstripMock: View {
         ["ClipConcert", "ClipSparkler", "ClipSunset", "ClipCity"]
     ]
 
+    /// Matches `ProjectDetailView.posterHeight`.
+    private let posterHeight: CGFloat = 300
+
     var body: some View {
         ZStack(alignment: .bottom) {
             Theme.background
 
             VStack(spacing: 0) {
-                // Nav bar — mirrors ProjectDetailView navBar
-                HStack(alignment: .center) {
-                    Text("‹")
-                        .font(.hand(28))
-                        .foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
-
-                    VStack(spacing: 2) {
-                        Text("Summer 2026")
-                            .font(.hand(22))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                        Text("7 CLIPS · 21s")
-                            .font(.mono(9))
-                            .tracking(0.5)
-                            .foregroundStyle(.white.opacity(0.4))
-                    }
-                    .frame(maxWidth: .infinity)
-
-                    HStack(spacing: 2) {
-                        Circle()
-                            .fill(.white.opacity(0.1))
-                            .frame(width: 32, height: 32)
-                            .overlay(Image(systemName: "play.fill").font(.system(size: 12)).foregroundStyle(.white))
-                        Circle()
-                            .fill(.white.opacity(0.1))
-                            .frame(width: 32, height: 32)
-                            .overlay(Image(systemName: "plus").font(.system(size: 15, weight: .bold)).foregroundStyle(.white))
-                    }
-                    .frame(width: 100, alignment: .trailing)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 60)
-                .padding(.bottom, 12)
+                poster
+                    .padding(.bottom, 12)
 
                 // Filmstrip rows + "add" button
                 VStack(spacing: 12) {
@@ -912,7 +993,6 @@ private struct FilmstripMock: View {
                         )
                         .padding(.horizontal, 14)
                 }
-                .padding(.top, 4)
 
                 Spacer()
             }
@@ -965,6 +1045,77 @@ private struct FilmstripMock: View {
             )
         }
     }
+
+    // MARK: Poster header (mirrors ProjectDetailView.posterHeader)
+
+    /// Stands in for the device safe area — the poster starts below it, the
+    /// floating bar sits inside it, exactly as on the real screen.
+    private let topInset: CGFloat = 54
+
+    private var poster: some View {
+        ZStack(alignment: .bottom) {
+            Image("ClipSunset")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 393, height: posterHeight)
+                .clipped()
+                .overlay {
+                    LinearGradient(
+                        colors: [.black.opacity(0.34), .clear,
+                                 Theme.background.opacity(0.72), Theme.background],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                }
+
+            VStack(spacing: 18) {
+                Circle()
+                    .fill(Theme.paper)
+                    .frame(width: 66, height: 66)
+                    .overlay {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(Theme.ink)
+                            .offset(x: 2)
+                    }
+                    .shadow(color: .black.opacity(0.5), radius: 14, y: 8)
+
+                VStack(spacing: 3) {
+                    Text("Summer 2026")
+                        .font(.hand(31))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text("7 CLIPS · 21s")
+                        .font(.mono(9))
+                        .tracking(1.7)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            }
+            .padding(.bottom, 16)
+        }
+        .frame(height: posterHeight)
+        .overlay(alignment: .top) { floatingBar }
+        .padding(.top, topInset)
+    }
+
+    private var floatingBar: some View {
+        HStack(spacing: 10) {
+            barCircle("chevron.left", size: 15, weight: .semibold)
+            Spacer(minLength: 4)
+            barCircle("checkmark.circle", size: 14)
+            barCircle("plus", size: 15, weight: .bold)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    private func barCircle(_ symbol: String, size: CGFloat,
+                           weight: Font.Weight = .regular) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: size, weight: weight))
+            .foregroundStyle(.white)
+            .frame(width: 34, height: 34)
+            .background(.black.opacity(0.35), in: Circle())
+    }
 }
 
 // MARK: - Mock filmstrip row (matches real FilmstripRow structure)
@@ -1015,7 +1166,7 @@ private struct MockFilmstripRow: View {
     }
 }
 
-// MARK: - Step 5: Export
+// MARK: - Step 6: Export
 
 private struct StepExport: View {
     var body: some View {
@@ -1138,7 +1289,7 @@ private struct MockExportFilmStrip: View {
     }
 }
 
-// MARK: - Step 6: Widget setup
+// MARK: - Step 7: Widget setup
 
 private struct StepWidget: View {
     var body: some View {

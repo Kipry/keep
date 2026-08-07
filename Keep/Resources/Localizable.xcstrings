@@ -2410,17 +2410,6 @@
         }
       }
     },
-    "Trim, sort, rearrange your clips.\nJust like a real film strip.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clips trimmen, sortieren, neu anordnen.\nWie an einem echten Filmstreifen."
-          }
-        }
-      }
-    },
     "+ add to the film": {
       "extractionState": "manual",
       "localizations": {
@@ -2813,6 +2802,83 @@
           "stringUnit": {
             "state": "translated",
             "value": "Der Clip ist noch da. %@"
+          }
+        }
+      }
+    },
+    "Trim, sort, rearrange your clips.\nPress play to see the film so far.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clips trimmen, sortieren, neu anordnen.\nAuf Play tippen und den Film bisher ansehen."
+          }
+        }
+      }
+    },
+    "YOURS ALONE": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NUR FÜR DICH"
+          }
+        }
+      }
+    },
+    "Stays on\nyour phone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bleibt auf\ndeinem Handy."
+          }
+        }
+      }
+    },
+    "No cloud. No account. No feed. Your clips never leave this device — there is nobody here but you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Cloud. Kein Konto. Kein Feed. Deine Clips verlassen dieses Gerät nicht — hier bist nur du."
+          }
+        }
+      }
+    },
+    "cloud": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud"
+          }
+        }
+      }
+    },
+    "account": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto"
+          }
+        }
+      }
+    },
+    "feed": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feed"
           }
         }
       }

@@ -113,43 +113,20 @@ struct WidgetHintCard: View {
 
     var body: some View {
         if !didDismiss && !installation.hasWidget {
-            Button { showSheet = true } label: {
-                HStack(alignment: .top, spacing: 12) {
-                    Circle()
-                        .fill(Theme.amber)
-                        .frame(width: 10, height: 10)
-                        .padding(.top, 4)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("The fastest way to a clip")
-                            .font(.hand(18))
-                            .foregroundStyle(.white)
-                        Text("Put the REC button on your lock screen. One tap, and you're recording.")
-                            .font(.system(size: 12.5))
-                            .foregroundStyle(.white.opacity(0.45))
-                            .lineSpacing(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .multilineTextAlignment(.leading)
-                        Text("SHOW ME HOW")
-                            .font(.mono(9, weight: .medium))
-                            .tracking(1.4)
-                            .foregroundStyle(Theme.amber)
-                            .padding(.top, 4)
-                    }
-                    Spacer(minLength: 4)
-                }
-                .padding(14)
-                .background(Theme.amber.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14)
-                    .stroke(Theme.amber.opacity(0.28), lineWidth: 1))
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .overlay(alignment: .topTrailing) {
+            // The × is a *sibling* of the card button, not an overlay on top of
+            // it. A button nested inside another button's hit region never gets
+            // the tap — the outer one claims it — so the close control used to
+            // open the sheet instead of dismissing the card.
+            ZStack(alignment: .topTrailing) {
+                Button { showSheet = true } label: { cardBody }
+                    .buttonStyle(.plain)
+
                 Button { withAnimation(.easeOut(duration: 0.2)) { didDismiss = true } } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(.white.opacity(0.35))
-                        .frame(width: 30, height: 30)
+                        .frame(width: 34, height: 34)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Dismiss")
@@ -157,5 +134,37 @@ struct WidgetHintCard: View {
             .sheet(isPresented: $showSheet) { WidgetSetupSheet() }
             .transition(.opacity.combined(with: .move(edge: .top)))
         }
+    }
+
+    private var cardBody: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Circle()
+                .fill(Theme.amber)
+                .frame(width: 10, height: 10)
+                .padding(.top, 4)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("The fastest way to a clip")
+                    .font(.hand(18))
+                    .foregroundStyle(.white)
+                Text("Put the REC button on your lock screen. One tap, and you're recording.")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(.white.opacity(0.45))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+                Text("SHOW ME HOW")
+                    .font(.mono(9, weight: .medium))
+                    .tracking(1.4)
+                    .foregroundStyle(Theme.amber)
+                    .padding(.top, 4)
+            }
+            // Room for the × so it never sits on top of the text.
+            Spacer(minLength: 30)
+        }
+        .padding(14)
+        .background(Theme.amber.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14)
+            .stroke(Theme.amber.opacity(0.28), lineWidth: 1))
+        .contentShape(Rectangle())
     }
 }
