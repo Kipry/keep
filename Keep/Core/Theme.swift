@@ -113,7 +113,7 @@ extension Font {
 // MARK: - Named type-scale tokens (mirrors wireframe spec)
 
 extension Font {
-    static var pageTitle:    Font { .hand(32) }   // tab-level screen title
+    static var pageTitle:    Font { .hand(28) }   // tab-level screen title
     static var appWordmark:  Font { .wordmark(36) }   // "keep."
     static var navTitle:     Font { .hand(22) }   // compact nav header
     static var cardTitle:    Font { .hand(15) }   // name on grid card
@@ -140,11 +140,22 @@ enum Layout {
 // MARK: - Shared screen header
 
 /// The eyebrow + title block every tab shows at the top, with an optional
-/// trailing control. Takes `Text` rather than strings so callers keep their
-/// own localisation and can pass a formatted date as the eyebrow.
+/// trailing control. `eyebrow` takes `Text` so callers can pass a formatted
+/// date; `title` takes a plain string because `ScreenHeader` builds the
+/// trailing amber "." itself — every one of these titles is the app's own
+/// fixed chrome copy, never user content, so appending a dot no one asked
+/// for is safe here in a way it would not be on a project name.
+///
+/// `minimumScaleFactor` used to let a long title quietly render smaller than
+/// a short one on the same font size — "Set Up the Widget" squeezed down
+/// next to a close button while "keep." had the whole row to itself, so the
+/// "same" title size read as inconsistent screen to screen. `pageTitle` is
+/// sized (28, not 32) so the longest current title still fits at full size
+/// against its own trailing control on a 375pt-wide phone; the scale factor
+/// stays only as a safety net for whatever the next long title turns out to be.
 struct ScreenHeader<Trailing: View>: View {
     let eyebrow: Text
-    let title: Text
+    let title: LocalizedStringKey
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
@@ -154,12 +165,12 @@ struct ScreenHeader<Trailing: View>: View {
                     .font(.eyebrow)
                     .tracking(2.5)
                     .foregroundStyle(.white.opacity(0.35))
-                title
+                (Text(title).foregroundStyle(.white)
+                 + Text(".").foregroundStyle(Theme.amber))
                     .font(.pageTitle)
-                    .tracking(Font.handTracking(for: 32))
-                    .foregroundStyle(.white)
+                    .tracking(Font.handTracking(for: 28))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(0.75)
             }
             Spacer(minLength: 8)
             trailing
@@ -168,7 +179,7 @@ struct ScreenHeader<Trailing: View>: View {
 }
 
 extension ScreenHeader where Trailing == EmptyView {
-    init(eyebrow: Text, title: Text) {
+    init(eyebrow: Text, title: LocalizedStringKey) {
         self.init(eyebrow: eyebrow, title: title) { EmptyView() }
     }
 }

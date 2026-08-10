@@ -169,7 +169,7 @@ struct ProjectListView: View {
     // MARK: - Pinned header
 
     private var header: some View {
-        ScreenHeader(eyebrow: Text("YOUR LIBRARY"), title: Text("keep."))
+        ScreenHeader(eyebrow: Text("YOUR LIBRARY"), title: "keep")
     }
 
     // MARK: - Empty state

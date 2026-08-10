@@ -57,8 +57,7 @@ struct WidgetSetupSheet: View {
     }
 
     private var header: some View {
-        HStack(alignment: .bottom) {
-            ScreenHeader(eyebrow: Text("YOUR TRIGGER"), title: Text("Set Up the Widget"))
+        ScreenHeader(eyebrow: Text("YOUR TRIGGER"), title: "Set Up the Widget") {
             Button { dismiss() } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 13, weight: .bold))
@@ -68,7 +67,6 @@ struct WidgetSetupSheet: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Close")
-            .padding(.leading, 10)
         }
         .padding(.horizontal, Layout.gutter)
         .padding(.top, Layout.headerTop)

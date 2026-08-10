@@ -25,8 +25,7 @@ struct ArchiveView: View {
                     // same height and size as every other one — it previously
                     // hand-rolled its own with a larger font and a 4pt narrower
                     // gutter than its own content grid.
-                    HStack(alignment: .bottom) {
-                        ScreenHeader(eyebrow: Text("ARCHIVED"), title: Text("Archive"))
+                    ScreenHeader(eyebrow: Text("ARCHIVED"), title: "Archive") {
                         Button { dismiss() } label: {
                             Image(systemName: "xmark")
                                 .font(.system(size: 13, weight: .bold))
@@ -36,7 +35,6 @@ struct ArchiveView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Close")
-                        .padding(.leading, 10)
                     }
                     .padding(.horizontal, Layout.gutter)
                     .padding(.top, Layout.headerTop)
