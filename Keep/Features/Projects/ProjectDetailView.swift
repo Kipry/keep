@@ -40,6 +40,10 @@ struct ProjectDetailView: View {
     /// Set once the share sheet reports that "Save Video" actually finished.
     @State private var didSaveToPhotos = false
 
+    // Single-clip export
+    @State private var isExportingClip = false
+    @State private var clipExportTask: Task<Void, Never>?
+
     // Drag-and-drop reorder
     @State private var dragClips: [Clip] = []
     @State private var draggingClipID: UUID? = nil
@@ -280,7 +284,7 @@ struct ProjectDetailView: View {
             set: { if !$0 { previewingClipID = nil } }
         )) {
             if let id = previewingClipID, displayClips.contains(where: { $0.id == id }) {
-                ClipPreviewCarousel(clips: displayClips, initialID: id)
+                ClipPreviewCarousel(clips: displayClips, initialID: id, onExport: { exportClip($0) })
             }
         }
     }
@@ -349,6 +353,7 @@ struct ProjectDetailView: View {
                     .animation(.easeInOut(duration: 0.3), value: isExporting)
             }
             if isImporting { progressOverlay(text: "Importing…") }
+            if isExportingClip { progressOverlay(text: "Exporting…") }
 
             if showCopyToast {
                 VStack {
@@ -665,7 +670,8 @@ struct ProjectDetailView: View {
                         onTrim: { clipToTrim = $0 },
                         onSetDuration: { clipToSetDuration = $0 },
                         onSetAsCover: { setClipAsCover($0) },
-                        onPreview: { clip in previewingClipID = clip.id }
+                        onPreview: { clip in previewingClipID = clip.id },
+                        onExport: { exportClip($0) }
                     )
                 }
 
@@ -1194,19 +1200,21 @@ struct ProjectDetailView: View {
         }
     }
 
-    // Presents UIActivityViewController directly from the key window, bypassing SwiftUI sheet
-    private func presentShareSheet(for url: URL) {
+    // Presents UIActivityViewController directly from the key window, bypassing SwiftUI sheet.
+    //
+    // `deleteAfter` covers our own rendered temp files — dead weight the
+    // moment the chosen app has taken its copy. A photo clip's export shares
+    // its *source* image directly (see `exportClip`), which the Clip still
+    // references for re-rendering its display duration later, so that path
+    // passes false rather than deleting a file the app still needs.
+    private func presentShareSheet(for url: URL, deleteAfter: Bool = true) {
         let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        // Whatever the user picked has taken its own copy by now (Photos, Files,
-        // Messages…), so our render is dead weight — drop it rather than let
-        // every export pile up in the container forever.
-        //
         // The same callback says which activity ran and whether it finished.
         // Only `.saveToCameraRoll` completing means the video is in the photo
         // library — sharing to Messages or Files is a different promise, and
         // claiming otherwise would be a lie the user can check.
         activityVC.completionWithItemsHandler = { activity, completed, _, _ in
-            try? FileManager.default.removeItem(at: url)
+            if deleteAfter { try? FileManager.default.removeItem(at: url) }
             guard completed, activity == .saveToCameraRoll else { return }
             withAnimation(.easeOut(duration: 0.25)) { didSaveToPhotos = true }
         }
@@ -1216,6 +1224,49 @@ struct ProjectDetailView: View {
         while let presented = topVC.presentedViewController { topVC = presented }
         activityVC.popoverPresentationController?.sourceView = topVC.view
         topVC.present(activityVC, animated: true)
+    }
+
+    // MARK: - Single-clip export
+
+    /// A photo clip shares its original image directly — instant, and what
+    /// someone means by "export" for a photo is the photo, not the silent
+    /// still-video the app wraps it in to flow through the same pipeline as a
+    /// real clip. A video clip goes through the same `compose` a full project
+    /// export uses, with only itself in the list, so its trim and level
+    /// carry over exactly as the app plays it — sharing the raw file would
+    /// export whatever was trimmed away too.
+    private func exportClip(_ clip: Clip) {
+        if clip.isPhoto {
+            guard let url = clip.photoSourceURL else {
+                exportError = String(localized: "This clip's photo is missing.")
+                return
+            }
+            presentShareSheet(for: url, deleteAfter: false)
+            return
+        }
+        guard clip.isAvailable else {
+            exportError = String(localized: "This clip's video file is missing.")
+            return
+        }
+        clipExportTask?.cancel()
+        clipExportTask = Task {
+            isExportingClip = true
+            let gain = await ClipAudioLevels.gains(for: [clip]).first ?? 1
+            let info = VideoComposer.ClipInfo(url: clip.fileURL, trimStart: clip.trimStart,
+                                              trimEnd: clip.trimEnd, gain: gain)
+            let quality = RecordingQuality.current.exportChoices.first ?? .p1080
+            do {
+                let out = try await composer.compose(clips: [info], quality: quality)
+                guard !Task.isCancelled else { return }
+                isExportingClip = false
+                presentShareSheet(for: out)
+            } catch is CancellationError {
+                isExportingClip = false
+            } catch {
+                isExportingClip = false
+                exportError = error.localizedDescription
+            }
+        }
     }
 }
 
@@ -1235,6 +1286,7 @@ private struct FilmstripRow: View {
     let onSetDuration: (Clip) -> Void
     let onSetAsCover: (Clip) -> Void
     let onPreview: (Clip) -> Void
+    let onExport: (Clip) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -1255,6 +1307,7 @@ private struct FilmstripRow: View {
                         onSetDuration: { onSetDuration(clip) },
                         onSetAsCover: { onSetAsCover(clip) },
                         onPreview: { onPreview(clip) },
+                        onExport: { onExport(clip) },
                         onToggleSelect: {
                             if selectedClipIDs.contains(clip.id) {
                                 selectedClipIDs.remove(clip.id)
@@ -1359,6 +1412,7 @@ private struct FilmCell: View {
     let onSetDuration: () -> Void
     let onSetAsCover: () -> Void
     let onPreview: () -> Void
+    let onExport: () -> Void
     let onToggleSelect: () -> Void
 
     /// Decoded once per thumbnail identity, not on every `body` pass. Every
@@ -1497,6 +1551,9 @@ private struct FilmCell: View {
                 Button { onCopyToProject() } label: {
                     Label("Copy to Project…", systemImage: "doc.on.doc")
                 }
+                Button { onExport() } label: {
+                    Label("Export", systemImage: "square.and.arrow.up")
+                }
             }
         }
         .onTapGesture {
@@ -1606,12 +1663,14 @@ private struct FilmRow: Identifiable {
 
 private struct ClipPreviewCarousel: View {
     let clips: [Clip]
+    let onExport: (Clip) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var currentID: UUID
     @State private var players: [UUID: AVPlayer] = [:]
 
-    init(clips: [Clip], initialID: UUID) {
+    init(clips: [Clip], initialID: UUID, onExport: @escaping (Clip) -> Void) {
         self.clips = clips
+        self.onExport = onExport
         _currentID = State(initialValue: initialID)
     }
 
@@ -1654,6 +1713,17 @@ private struct ClipPreviewCarousel: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(.black.opacity(0.4), in: Capsule())
+                        Spacer()
+                    }
+                    if currentIndex < clips.count {
+                        Button { onExport(clips[currentIndex]) } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.title3.bold())
+                                .foregroundStyle(.white)
+                                .padding(12)
+                                .background(.black.opacity(0.5), in: Circle())
+                        }
+                        .accessibilityLabel("Export")
                     }
                 }
                 .padding(.horizontal, 16)

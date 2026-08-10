@@ -2904,6 +2904,50 @@
           }
         }
       }
+    },
+    "Export": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportieren"
+          }
+        }
+      }
+    },
+    "Exporting…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird exportiert …"
+          }
+        }
+      }
+    },
+    "This clip's photo is missing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Foto zu diesem Clip fehlt."
+          }
+        }
+      }
+    },
+    "This clip's video file is missing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Videodatei zu diesem Clip fehlt."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
