@@ -138,23 +138,22 @@ struct TrashView: View {
     // MARK: Header
 
     private var header: some View {
-        HStack(alignment: .bottom) {
-            ScreenHeader(eyebrow: Text("DELETED"), title: Text("Trash")) {
+        ScreenHeader(eyebrow: Text("DELETED"), title: "Trash") {
+            HStack(spacing: 10) {
                 if !isEmpty {
                     AmberChip(label: "EMPTY") { showEmptyConfirm = true }
                         .accessibilityLabel("Empty trash")
                 }
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .frame(width: 32, height: 32)
+                        .background(Theme.control, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Close")
             }
-            Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.6))
-                    .frame(width: 32, height: 32)
-                    .background(Theme.control, in: Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close")
-            .padding(.leading, 10)
         }
         .padding(.horizontal, Layout.gutter)
         .padding(.top, Layout.headerTop)

@@ -815,9 +815,9 @@ private struct ProjectGridMock: View {
                                 .font(.mono(10))
                                 .tracking(2)
                                 .foregroundStyle(.white.opacity(0.35))
-                            Text("keep.")
+                            (Text("keep").foregroundStyle(.white)
+                             + Text(".").foregroundStyle(Theme.amber))
                                 .font(.hand(36))
-                                .foregroundStyle(.white)
                         }
                         Spacer()
                     }

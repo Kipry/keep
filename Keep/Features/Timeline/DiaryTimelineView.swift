@@ -318,7 +318,7 @@ struct DiaryTimelineView: View {
     // only ever renders in .time mode anyway, so modePill is now the header's
     // only trailing content and never resizes.
     private func header() -> some View {
-        ScreenHeader(eyebrow: Text("DIARY"), title: Text("Your Timeline")) {
+        ScreenHeader(eyebrow: Text("DIARY"), title: "Your Timeline") {
             modePill
         }
     }
@@ -732,7 +732,7 @@ struct DiaryTimelineView: View {
     /// screen so the tab's top edge doesn't jump when the first clip lands.
     private var emptyScreen: some View {
         VStack(spacing: 0) {
-            ScreenHeader(eyebrow: Text("DIARY"), title: Text("Your Timeline"))
+            ScreenHeader(eyebrow: Text("DIARY"), title: "Your Timeline")
                 .padding(.horizontal, Layout.gutter)
                 .padding(.top, Layout.headerTop)
 

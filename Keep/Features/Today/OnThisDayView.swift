@@ -174,7 +174,7 @@ struct OnThisDayView: View {
     // Matches the DIARY / LIBRARY headers: mono eyebrow (here the date) above a
     // hand-lettered title, bottom-aligned with the trailing action button.
     private var header: some View {
-        ScreenHeader(eyebrow: Text(headerDateLabel), title: Text("Chronicle")) {
+        ScreenHeader(eyebrow: Text(headerDateLabel), title: "Chronicle") {
             Button { showSettings = true } label: {
                 Image(systemName: "gearshape")
                     .font(.system(size: 17, weight: .medium))
