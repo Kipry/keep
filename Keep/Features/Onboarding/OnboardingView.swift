@@ -240,13 +240,16 @@ private struct StepWelcome: View {
     }
 }
 
-// "keep." wordmark in Patrick Hand (matches the app + design)
+// "keep." wordmark in Bricolage Grotesque ExtraBold — matches the App Icon,
+// which pairs this exact lockup (lens icon above, wordmark + amber period
+// below) rather than folding the icon into the period itself.
 private struct Wordmark: View {
     var size: CGFloat = 40
     var body: some View {
         (Text("keep").foregroundStyle(Color.white)
          + Text(".").foregroundStyle(Theme.amber))
-            .font(.hand(size))
+            .font(.wordmark(size))
+            .tracking(Font.handTracking(for: size) * 2)   // Bricolage's own spec calls for ~-0.04em, double .hand's
     }
 }
 
@@ -984,7 +987,7 @@ private struct FilmstripMock: View {
                     }
 
                     Text("+ add to the film")
-                        .font(.scrawl(22))
+                        .font(.hand(22))
                         .foregroundStyle(.white.opacity(0.25))
                         .frame(maxWidth: .infinity, minHeight: 72)
                         .background(

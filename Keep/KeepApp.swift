@@ -56,10 +56,9 @@ struct KeepApp: App {
 
     private static func registerFonts() {
         let files = [
-            "PatrickHand-Regular.ttf",
+            "BricolageGrotesque-ExtraBold.ttf",
             "JetBrainsMono-Regular.ttf",
             "JetBrainsMono-Medium.ttf",
-            "Caveat-Regular.ttf",
         ]
         for file in files {
             guard let url = Bundle.main.url(forResource: file, withExtension: nil) else { continue }

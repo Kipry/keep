@@ -23,10 +23,9 @@
 		A100000000000000000007AB /* ProjectPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000007AA /* ProjectPlayerView.swift */; };
 		A100000000000000000009AB /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000009AA /* Theme.swift */; };
 		C9D93A1A05D3BC3A3CF84A28 /* Zoomable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DDB57BD1463D329736BBBC7 /* Zoomable.swift */; };
-		A10000000000000000000A1B /* PatrickHand-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A1A /* PatrickHand-Regular.ttf */; };
+		87584D9C7F7244D59775AE91 /* BricolageGrotesque-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 56B5C82194914DFB974389B6 /* BricolageGrotesque-ExtraBold.ttf */; };
 		A10000000000000000000A2B /* JetBrainsMono-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */; };
 		A10000000000000000000A3B /* JetBrainsMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */; };
-		A10000000000000000000A4B /* Caveat-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000A4A /* Caveat-Regular.ttf */; };
 		BDBD12C1BCD68B19DDA9F81F /* BumperIntro.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 3214CCF6B29CE7979B96852E /* BumperIntro.mp4 */; };
 		A10000000000000000000B1B /* ExportProgressOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000B1A /* ExportProgressOverlay.swift */; };
 		A10000000000000000000C1B /* OnThisDayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000C1A /* OnThisDayView.swift */; };
@@ -102,10 +101,9 @@
 		A100000000000000000007AA /* ProjectPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPlayerView.swift; sourceTree = "<group>"; };
 		A100000000000000000009AA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		9DDB57BD1463D329736BBBC7 /* Zoomable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zoomable.swift; sourceTree = "<group>"; };
-		A10000000000000000000A1A /* PatrickHand-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PatrickHand-Regular.ttf"; sourceTree = "<group>"; };
+		56B5C82194914DFB974389B6 /* BricolageGrotesque-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BricolageGrotesque-ExtraBold.ttf"; sourceTree = "<group>"; };
 		A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Regular.ttf"; sourceTree = "<group>"; };
 		A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Medium.ttf"; sourceTree = "<group>"; };
-		A10000000000000000000A4A /* Caveat-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Caveat-Regular.ttf"; sourceTree = "<group>"; };
 		3214CCF6B29CE7979B96852E /* BumperIntro.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BumperIntro.mp4"; sourceTree = "<group>"; };
 		A10000000000000000000B1A /* ExportProgressOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportProgressOverlay.swift; sourceTree = "<group>"; };
 		A10000000000000000000C1A /* OnThisDayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnThisDayView.swift; sourceTree = "<group>"; };
@@ -393,10 +391,9 @@
 		A10000000000000000000A6A /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
-				A10000000000000000000A1A /* PatrickHand-Regular.ttf */,
+				56B5C82194914DFB974389B6 /* BricolageGrotesque-ExtraBold.ttf */,
 				A10000000000000000000A2A /* JetBrainsMono-Regular.ttf */,
 				A10000000000000000000A3A /* JetBrainsMono-Medium.ttf */,
-				A10000000000000000000A4A /* Caveat-Regular.ttf */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -506,11 +503,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				A100000000000000000002AB /* Assets.xcassets in Resources */,
-				A10000000000000000000A1B /* PatrickHand-Regular.ttf in Resources */,
+				87584D9C7F7244D59775AE91 /* BricolageGrotesque-ExtraBold.ttf in Resources */,
 				A10000000000000000000A2B /* JetBrainsMono-Regular.ttf in Resources */,
 				C3B3F5412FB67E7A00518F91 /* AppIcon-1024.png in Resources */,
 				A10000000000000000000A3B /* JetBrainsMono-Medium.ttf in Resources */,
-				A10000000000000000000A4B /* Caveat-Regular.ttf in Resources */,
 				BDBD12C1BCD68B19DDA9F81F /* BumperIntro.mp4 in Resources */,
 				A10000000000000000000D1B /* PrivacyInfo.xcprivacy in Resources */,
 				A10000000000000000000E1B /* Localizable.xcstrings in Resources */,
