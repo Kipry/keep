@@ -198,13 +198,22 @@ struct PlacesMapView: View {
                                     style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [7, 6]))
                     }
                     ForEach(clustered) { item in
-                        Annotation("", coordinate: item.coordinate, anchor: .center) {
+                        // A single-place pin hangs from a tail, like a real map
+                        // pin — the tail's tip is the coordinate, not the
+                        // thumbnail's center. A cluster is just a dot, so it
+                        // marks the spot directly.
+                        Annotation("", coordinate: item.coordinate,
+                                  anchor: item.isCluster ? .center : .bottom) {
                             annotationView(for: item)
                         }
                         .annotationTitles(.hidden)
                     }
                 }
-                .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
+                .mapStyle(.standard(elevation: .flat, emphasis: .muted,
+                                   pointsOfInterest: .excludingAll, showsTraffic: false))
+                .mapControlVisibility(.hidden)   // replaced by our own zoom buttons below
+                .colorScheme(.dark)
+                .warmMapGrading()
                 .onMapCameraChange(frequency: .onEnd) { ctx in
                     visibleRect = ctx.rect   // clustering input only
                     // Remember the altitude the user settles on. Only while
@@ -235,6 +244,9 @@ struct PlacesMapView: View {
             }
             .overlay(alignment: .bottom) {
                 if let place = activePlace { previewCard(for: place) }
+            }
+            .overlay(alignment: .topTrailing) {
+                if !places.places.isEmpty { zoomButtons }
             }
             .onAppear {
                 viewWidth = geo.size.width
@@ -271,6 +283,41 @@ struct PlacesMapView: View {
         .padding(12)
     }
 
+    private var zoomButtons: some View {
+        VStack(spacing: 6) {
+            zoomButton(symbol: "plus") { zoomBy(1.4) }
+            zoomButton(symbol: "minus") { zoomBy(1 / 1.4) }
+        }
+        .padding(12)
+    }
+
+    private func zoomButton(symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().stroke(.white.opacity(0.12), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// `followDistance` doubles as "the distance the user last settled at" (see
+    /// `onMapCameraChange`), so a manual nudge scales from the same value a
+    /// flight would land at — the two never disagree about how zoomed in "now" is.
+    private func zoomBy(_ factor: Double) {
+        cancelFlight()
+        follow = false
+        let newDistance = min(max(followDistance / factor, 250), 60_000)
+        followDistance = newDistance
+        let position = MapCameraPosition.camera(
+            MapCamera(centerCoordinate: visibleCenter, distance: newDistance)
+        )
+        if reduceMotion { camera = position }
+        else { withAnimation(.easeInOut(duration: 0.25)) { camera = position } }
+    }
+
     @ViewBuilder
     private func annotationView(for item: MapItem) -> some View {
         switch item {
@@ -288,39 +335,73 @@ struct PlacesMapView: View {
                 }
                 detailPlace = place
             } label: {
-                ZStack(alignment: .topTrailing) {
-                    Group {
-                        if let thumb = place.thumb {
-                            Image(uiImage: thumb)
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            Rectangle()
-                                .fill(Theme.filmCard)
-                                .overlay {
-                                    Image(systemName: "film")
-                                        .font(.system(size: 15))
-                                        .foregroundStyle(.white.opacity(0.3))
-                                }
+                // Hangs from a tail rather than floating centered on the
+                // coordinate — a pin should visibly point at the spot it
+                // marks. The size step and amber ring on the active pin are
+                // the only cues the map itself gives that this is "the one
+                // the scrubber is on"; the tail keeps that legible even where
+                // pins crowd together.
+                let side: CGFloat = isActivePin ? 62 : 54
+                // Only the thumbnail + tail participate in this VStack's own
+                // layout size — and that size is what `.bottom` anchoring
+                // measures from. The name label is attached as an overlay
+                // instead of a third stacked child specifically so it can
+                // float below the tail without moving the tail's tip (the
+                // actual coordinate marker) away from the map point.
+                VStack(spacing: 0) {
+                    ZStack(alignment: .topTrailing) {
+                        Group {
+                            if let thumb = place.thumb {
+                                Image(uiImage: thumb)
+                                    .resizable()
+                                    .scaledToFill()
+                            } else {
+                                Rectangle()
+                                    .fill(Theme.filmCard)
+                                    .overlay {
+                                        Image(systemName: "film")
+                                            .font(.system(size: 15))
+                                            .foregroundStyle(.white.opacity(0.3))
+                                    }
+                            }
+                        }
+                        .frame(width: side, height: side)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(isActivePin ? Theme.amber : Theme.paper, lineWidth: 3)
+                        )
+                        .shadow(color: isActivePin ? Theme.amber.opacity(0.6) : .black.opacity(0.4),
+                                radius: isActivePin ? 8 : 4, y: 2)
+
+                        if place.clipCount > 1 {
+                            Text("\(place.clipCount)")
+                                .font(.mono(10, weight: .medium))
+                                .foregroundStyle(Theme.ink)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(Theme.amber, in: Capsule())
+                                .offset(x: 8, y: -8)
                         }
                     }
-                    .frame(width: 54, height: 54)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(isActivePin ? Theme.amber : Theme.paper, lineWidth: 3)
-                    )
-                    .shadow(color: isActivePin ? Theme.amber.opacity(0.6) : .black.opacity(0.4),
-                            radius: isActivePin ? 8 : 4, y: 2)
 
-                    if place.clipCount > 1 {
-                        Text("\(place.clipCount)")
-                            .font(.mono(10, weight: .medium))
-                            .foregroundStyle(Theme.ink)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Theme.amber, in: Capsule())
-                            .offset(x: 8, y: -8)
+                    Rectangle()
+                        .fill(isActivePin ? Theme.amber : Theme.paper)
+                        .frame(width: 3, height: 9)
+                }
+                .overlay(alignment: .bottom) {
+                    if isActivePin, let name = place.displayName {
+                        Text(verbatim: name.uppercased())
+                            .font(.mono(9, weight: .medium))
+                            .tracking(1.1)
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Theme.background.opacity(0.85), in: RoundedRectangle(cornerRadius: 8))
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white.opacity(0.1), lineWidth: 1))
+                            .fixedSize()
+                            .offset(y: 20)
                     }
                 }
             }
@@ -679,5 +760,37 @@ struct PlacesMapView: View {
         if d >= 14 && d < 56 { return String(localized: "\(Int((Double(d) / 7).rounded())) weeks ago") }
         if d >= 56 { return String(localized: "\(Int((Double(d) / 30).rounded())) months ago") }
         return String(localized: "today")
+    }
+}
+
+// MARK: - Warm map grading
+
+private extension View {
+    /// Real MapKit tiles can't be recolored directly, so this grades the
+    /// rendered map instead of replacing it: desaturate first so Apple's blue
+    /// water and green land read as neutral, then a warm multiply wash and a
+    /// centre-weighted vignette, so the map reads as belonging to the app's
+    /// black-and-amber palette rather than generic system Maps — and the
+    /// vignette keeps the middle, where the pins are, the brightest part.
+    func warmMapGrading() -> some View {
+        self
+            .saturation(0.45)
+            .brightness(-0.04)
+            .overlay {
+                LinearGradient(
+                    colors: [Theme.amber.opacity(0.07), .clear, .black.opacity(0.22)],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .blendMode(.multiply)
+                .allowsHitTesting(false)
+            }
+            .overlay {
+                RadialGradient(
+                    colors: [.clear, Theme.background.opacity(0.5)],
+                    center: .center, startRadius: 120, endRadius: 340
+                )
+                .blendMode(.multiply)
+                .allowsHitTesting(false)
+            }
     }
 }

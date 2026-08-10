@@ -48,6 +48,11 @@ enum MapItem: Identifiable {
         case .cluster(_, let c, _): return c
         }
     }
+
+    var isCluster: Bool {
+        if case .cluster = self { return true }
+        return false
+    }
 }
 
 // MARK: - PlacesData
