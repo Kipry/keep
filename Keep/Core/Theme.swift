@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Colour tokens
 
@@ -31,19 +32,28 @@ enum Theme {
 
 // MARK: - Typography
 //
-// Three-font system matching the Keep / design-canvas spec:
-//   .hand   → PatrickHand-Regular   warm, organic display text
-//   .mono   → JetBrainsMono-Regular / -Medium  precise data labels
-//   .scrawl → Caveat-Medium          decorative / handwritten accents
+// Font system matching the Keep / design-canvas spec:
+//   .hand     → SF Pro Display, bold    feature titles, project names, nav labels, buttons
+//   .mono     → JetBrainsMono-Regular / -Medium  precise data labels
+//   .wordmark → Bricolage Grotesque ExtraBold    the "keep." logotype — nowhere else
+//
+// Patrick Hand and Caveat (the former `.hand` and `.scrawl`) read as childish
+// and lost legibility at small sizes; both are gone from the bundle entirely,
+// not just swapped out here.
 
-// Every branded font is built with `relativeTo:`. The two-argument
-// `Font.custom(_:size:)` produces a fixed point size that ignores Dynamic Type
-// entirely — with ~70 call sites going through these three functions, that one
-// omission made most of the app's text unscalable for anyone who enlarges it.
+// The custom fonts (`.mono`, `.wordmark`) are built with `relativeTo:` — the
+// two-argument `Font.custom(_:size:)` produces a fixed point size that ignores
+// Dynamic Type entirely, which used to leave most of the app's text
+// unscalable for anyone who enlarges it. `.hand` reaches for the same
+// guarantee on a *system* font via `UIFontMetrics`, since SwiftUI has no
+// `Font.system(size:relativeTo:)` — `UIFontMetrics.scaledFont(for:)` is the
+// mechanism `Font.custom(_:size:relativeTo:)` uses internally, just reached
+// through UIKit here.
 extension Font {
-    /// Patrick Hand — titles, project names, navigation labels, buttons
+    /// Bold system display text — titles, project names, navigation labels, buttons.
     static func hand(_ size: CGFloat) -> Font {
-        .custom("PatrickHand-Regular", size: size, relativeTo: textStyle(for: size))
+        let base = UIFont.systemFont(ofSize: size, weight: .bold)
+        return Font(UIFontMetrics(forTextStyle: uiTextStyle(for: size)).scaledFont(for: base))
     }
 
     /// JetBrains Mono — clip counts, durations, timestamps, eyebrow labels
@@ -55,10 +65,15 @@ extension Font {
         }
     }
 
-    /// Caveat — decorative / scrawl text ("add to the reel", "+" FAB glyph)
-    static func scrawl(_ size: CGFloat) -> Font {
-        .custom("Caveat-Medium", size: size, relativeTo: textStyle(for: size))
+    /// Bricolage Grotesque ExtraBold — the "keep." wordmark, and only the wordmark.
+    static func wordmark(_ size: CGFloat) -> Font {
+        .custom("BricolageGrotesque-ExtraBold", size: size, relativeTo: textStyle(for: size))
     }
+
+    /// `~-0.02em` tracking for `.hand` text, per the type spec. Font carries no
+    /// tracking of its own in SwiftUI — this pairs with `.tracking(_:)` on the
+    /// `Text` itself; a size, not a `Font`, is the return type for that reason.
+    static func handTracking(for size: CGFloat) -> CGFloat { -0.02 * size }
 
     /// Anchors each size to the nearest system text style so it scales at a
     /// sensible rate — small captions grow less than headlines, as they do in
@@ -76,6 +91,22 @@ extension Font {
         }
     }
 
+    /// Same ladder as `textStyle(for:)`, in `UIFont.TextStyle` terms — `.hand`
+    /// scales through `UIFontMetrics`, which speaks UIKit's style type rather
+    /// than SwiftUI's `Font.TextStyle`.
+    private static func uiTextStyle(for size: CGFloat) -> UIFont.TextStyle {
+        switch size {
+        case ..<11:  return .caption2
+        case ..<13:  return .caption1
+        case ..<15:  return .footnote
+        case ..<17:  return .subheadline
+        case ..<20:  return .body
+        case ..<24:  return .title3
+        case ..<30:  return .title2
+        default:     return .title1
+        }
+    }
+
     enum MonoWeight { case regular, medium }
 }
 
@@ -83,7 +114,7 @@ extension Font {
 
 extension Font {
     static var pageTitle:    Font { .hand(32) }   // tab-level screen title
-    static var appWordmark:  Font { .hand(36) }   // "keep."
+    static var appWordmark:  Font { .wordmark(36) }   // "keep."
     static var navTitle:     Font { .hand(22) }   // compact nav header
     static var cardTitle:    Font { .hand(15) }   // name on grid card
     static var handBody:     Font { .hand(18) }   // CTA / button labels
@@ -125,6 +156,7 @@ struct ScreenHeader<Trailing: View>: View {
                     .foregroundStyle(.white.opacity(0.35))
                 title
                     .font(.pageTitle)
+                    .tracking(Font.handTracking(for: 32))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)

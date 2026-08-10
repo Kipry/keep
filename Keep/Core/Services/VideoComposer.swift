@@ -393,17 +393,15 @@ actor VideoComposer {
             let rangeOrigin = CGPoint(x: leftInset, y: size.height - bottomInset - rangeSize.height)
             rangeString.draw(at: rangeOrigin)
 
-            // Title — hand-drawn, prominent. Shrinks in steps until it fits within
+            // Title — bold, prominent. Shrinks in steps until it fits within
             // two lines at `maxWidth`; if it still doesn't fit at the floor size,
             // the final draw call truncates the last line with an ellipsis.
             let maxTitleSize: CGFloat = size.width * 0.115
             let minTitleSize: CGFloat = size.width * 0.05
             var fontSize = maxTitleSize
-            var titleFont = UIFont(name: "PatrickHand-Regular", size: fontSize)
-                ?? .boldSystemFont(ofSize: fontSize)
+            var titleFont = UIFont.boldSystemFont(ofSize: fontSize)
             while fontSize > minTitleSize {
-                let font = UIFont(name: "PatrickHand-Regular", size: fontSize)
-                    ?? .boldSystemFont(ofSize: fontSize)
+                let font = UIFont.boldSystemFont(ofSize: fontSize)
                 let bounding = (projectName as NSString).boundingRect(
                     with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
                     options: [.usesLineFragmentOrigin, .usesFontLeading],
