@@ -53,7 +53,6 @@
 		AE435650A6DD218729E32302 /* MemoriesStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FEF1B8A70C659C2355B054E /* MemoriesStats.swift */; };
 		E099F9B396BEACE6D2995BD5 /* TrashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32B317E6D6DFB6B66D54B1DB /* TrashView.swift */; };
 		C328CD632FB72B1700443F80 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C328CD492FB728B300443F80 /* WidgetKit.framework */; };
-		C3B3F5412FB67E7A00518F91 /* AppIcon-1024.png in Resources */ = {isa = PBXBuildFile; fileRef = C3B3F5402FB67E7A00518F91 /* AppIcon-1024.png */; };
 		A10000000000000000000D1B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000D1A /* PrivacyInfo.xcprivacy */; };
 		A10000000000000000000E1B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000E1A /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
@@ -134,7 +133,6 @@
 		2D9C6F30E84B57A10C3D9182 /* ClipTone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipTone.swift; sourceTree = "<group>"; };
 		1FEF1B8A70C659C2355B054E /* MemoriesStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoriesStats.swift; sourceTree = "<group>"; };
 		32B317E6D6DFB6B66D54B1DB /* TrashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashView.swift; sourceTree = "<group>"; };
-		C3B3F5402FB67E7A00518F91 /* AppIcon-1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon-1024.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -382,7 +380,6 @@
 			children = (
 				A10000000000000000000A6A /* Fonts */,
 				3443639F7D611929A460297B /* Videos */,
-				C3B3F5402FB67E7A00518F91 /* AppIcon-1024.png */,
 				A10000000000000000000E1A /* Localizable.xcstrings */,
 			);
 			path = Resources;
@@ -505,7 +502,6 @@
 				A100000000000000000002AB /* Assets.xcassets in Resources */,
 				87584D9C7F7244D59775AE91 /* BricolageGrotesque-ExtraBold.ttf in Resources */,
 				A10000000000000000000A2B /* JetBrainsMono-Regular.ttf in Resources */,
-				C3B3F5412FB67E7A00518F91 /* AppIcon-1024.png in Resources */,
 				A10000000000000000000A3B /* JetBrainsMono-Medium.ttf in Resources */,
 				BDBD12C1BCD68B19DDA9F81F /* BumperIntro.mp4 in Resources */,
 				A10000000000000000000D1B /* PrivacyInfo.xcprivacy in Resources */,
