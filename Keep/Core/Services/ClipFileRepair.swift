@@ -62,9 +62,46 @@ enum Cover {
     /// Below this a stored cover predates the size above and is worth redoing.
     static let staleBelow: CGFloat = 560
 
+    /// Matches `FilmCell`'s own `4/5` — a cover cropped to this reads as the
+    /// same fixed shape a clip recorded in the app already has, whatever the
+    /// source's own aspect ratio was. Without this, a cover sourced from a
+    /// wide/landscape import (a screen recording, a photo from another app)
+    /// kept its native aspect in storage, and the library card — which
+    /// `scaledToFill`s it into a narrow portrait tile — had to crop it down
+    /// to a thin, unrecognisable centre sliver to do it. Not a stretch bug;
+    /// the crop itself was just far more extreme than a portrait source ever
+    /// needs, and read as "distorted" for it.
+    static let aspect: CGFloat = 4.0 / 5.0
+
     static func isStale(_ data: Data?) -> Bool {
         guard let data, let image = UIImage(data: data) else { return false }
-        return max(image.size.width, image.size.height) < staleBelow
+        if max(image.size.width, image.size.height) < staleBelow { return true }
+        let ratio = image.size.width / image.size.height
+        return abs(ratio - aspect) > 0.05
+    }
+
+    /// Center-crops to `aspect` before any resizing/encoding — so the crop
+    /// happens once, deliberately, here, instead of being left to whatever
+    /// box the image happens to be displayed in later.
+    static func cropped(_ image: UIImage) -> UIImage {
+        let w = image.size.width, h = image.size.height
+        guard w > 0, h > 0 else { return image }
+        let current = w / h
+        let cropRect: CGRect
+        if current > aspect {
+            let targetW = h * aspect
+            cropRect = CGRect(x: (w - targetW) / 2, y: 0, width: targetW, height: h)
+        } else {
+            let targetH = w / aspect
+            cropRect = CGRect(x: 0, y: (h - targetH) / 2, width: w, height: targetH)
+        }
+        // UIImage.size is in points; cropping(to:) on the backing CGImage
+        // needs pixels.
+        let scale = image.scale
+        let pixelRect = CGRect(x: cropRect.origin.x * scale, y: cropRect.origin.y * scale,
+                               width: cropRect.width * scale, height: cropRect.height * scale)
+        guard let cg = image.cgImage?.cropping(to: pixelRect) else { return image }
+        return UIImage(cgImage: cg, scale: scale, orientation: image.imageOrientation)
     }
 }
 
@@ -90,7 +127,7 @@ enum CoverThumbnailRepair {
             let offset = CMTime(seconds: source.trimStart, preferredTimescale: 600)
             guard let image = await composer.thumbnail(from: source.fileURL, at: offset,
                                                        maxEdge: Cover.maxEdge),
-                  let data = image.jpegData(compressionQuality: Cover.quality) else { continue }
+                  let data = Cover.cropped(image).jpegData(compressionQuality: Cover.quality) else { continue }
             project.coverThumbnailData = data
             project.coverClipID = source.id
             didChange = true

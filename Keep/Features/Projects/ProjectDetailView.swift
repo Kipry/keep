@@ -934,7 +934,7 @@ struct ProjectDetailView: View {
                 clip.thumbnailData = img.downscaled(maxEdge: 320)
                     .jpegData(compressionQuality: 0.7)
                 if project.activeClips.count == 1 {
-                    project.coverThumbnailData = img.jpegData(compressionQuality: Cover.quality)
+                    project.coverThumbnailData = Cover.cropped(img).jpegData(compressionQuality: Cover.quality)
                     project.coverClipID = clip.id
                 }
             }
@@ -1016,7 +1016,7 @@ struct ProjectDetailView: View {
         if let thumb = ui.downscaled(maxEdge: 320).jpegData(compressionQuality: 0.7) {
             clip.thumbnailData = thumb
             if project.activeClips.count == 1 {
-                project.coverThumbnailData = ui.downscaled(maxEdge: Cover.maxEdge)
+                project.coverThumbnailData = Cover.cropped(ui.downscaled(maxEdge: Cover.maxEdge))
                     .jpegData(compressionQuality: Cover.quality)
                 project.coverClipID = clip.id
             }
@@ -1046,7 +1046,7 @@ struct ProjectDetailView: View {
         let url = clip.fileURL
         Task { @MainActor in
             if let img = await composer.thumbnail(from: url, at: offset, maxEdge: Cover.maxEdge),
-               let data = img.jpegData(compressionQuality: Cover.quality) {
+               let data = Cover.cropped(img).jpegData(compressionQuality: Cover.quality) {
                 project.coverThumbnailData = data
                 project.coverClipID = clip.id
                 try? modelContext.save()
