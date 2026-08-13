@@ -671,11 +671,19 @@ struct ProjectDetailView: View {
                         onSetDuration: { clipToSetDuration = $0 },
                         onSetAsCover: { setClipAsCover($0) },
                         onPreview: { clip in previewingClipID = clip.id },
-                        onExport: { exportClip($0) }
+                        onExport: { exportClip($0) },
+                        // Only the last row can have an open slot to fill —
+                        // every earlier row is already full by construction
+                        // (filmRows chunks by 4).
+                        showsAddCell: !isSelectMode && row.id == filmRows.last?.id && row.clips.count < 4,
+                        onAddTapped: { isCameraPresented = true }
                     )
                 }
 
-                if !isSelectMode {
+                // The last row already absorbed the "next clip" cell unless
+                // it was completely full (or there were no rows at all) —
+                // only then does it need a row of its own.
+                if !isSelectMode, (filmRows.last?.clips.count ?? 4) >= 4 {
                     Button { isCameraPresented = true } label: { FilmstripAddRow() }
                         .buttonStyle(.plain)
                         .padding(.horizontal, 14)
@@ -934,7 +942,7 @@ struct ProjectDetailView: View {
                 clip.thumbnailData = img.downscaled(maxEdge: 320)
                     .jpegData(compressionQuality: 0.7)
                 if project.activeClips.count == 1 {
-                    project.coverThumbnailData = img.jpegData(compressionQuality: Cover.quality)
+                    project.coverThumbnailData = Cover.cropped(img).jpegData(compressionQuality: Cover.quality)
                     project.coverClipID = clip.id
                 }
             }
@@ -1016,7 +1024,7 @@ struct ProjectDetailView: View {
         if let thumb = ui.downscaled(maxEdge: 320).jpegData(compressionQuality: 0.7) {
             clip.thumbnailData = thumb
             if project.activeClips.count == 1 {
-                project.coverThumbnailData = ui.downscaled(maxEdge: Cover.maxEdge)
+                project.coverThumbnailData = Cover.cropped(ui.downscaled(maxEdge: Cover.maxEdge))
                     .jpegData(compressionQuality: Cover.quality)
                 project.coverClipID = clip.id
             }
@@ -1046,7 +1054,7 @@ struct ProjectDetailView: View {
         let url = clip.fileURL
         Task { @MainActor in
             if let img = await composer.thumbnail(from: url, at: offset, maxEdge: Cover.maxEdge),
-               let data = img.jpegData(compressionQuality: Cover.quality) {
+               let data = Cover.cropped(img).jpegData(compressionQuality: Cover.quality) {
                 project.coverThumbnailData = data
                 project.coverClipID = clip.id
                 try? modelContext.save()
@@ -1287,6 +1295,11 @@ private struct FilmstripRow: View {
     let onSetAsCover: (Clip) -> Void
     let onPreview: (Clip) -> Void
     let onExport: (Clip) -> Void
+    /// True only for the last row when it still has an open slot — the
+    /// "next clip" cell then fills in right after the last real clip instead
+    /// of forcing a whole new, mostly-empty row below it.
+    var showsAddCell: Bool = false
+    var onAddTapped: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -1318,10 +1331,21 @@ private struct FilmstripRow: View {
                     )
                 }
                 let padCount = 4 - min(clips.count, 4)
-                ForEach(0..<padCount, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(.white.opacity(0.04))
-                        .aspectRatio(4/5, contentMode: .fit)
+                if showsAddCell, padCount > 0 {
+                    Button { onAddTapped?() } label: { FilmAddCell() }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Add a clip")
+                    ForEach(0..<(padCount - 1), id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(.white.opacity(0.04))
+                            .aspectRatio(4/5, contentMode: .fit)
+                    }
+                } else {
+                    ForEach(0..<padCount, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(.white.opacity(0.04))
+                            .aspectRatio(4/5, contentMode: .fit)
+                    }
                 }
             }
             .padding(.horizontal, 6)
@@ -1353,35 +1377,42 @@ private struct FilmSprocketHoles: View {
     }
 }
 
-// MARK: - Filmstrip add row
+// MARK: - Filmstrip add cell / row
 
-/// The empty slot past the last clip. Was a generic dashed rectangle with no
-/// relationship to what sits above it; now it is the next frame of the same
-/// physical strip — same sprocket holes, same card, one dashed amber cell
-/// where a clip will land — so "recording continues here" is shown rather
-/// than stated in a caption.
+/// The single dashed amber cell marking where the next recorded clip lands.
+/// Shared by two placements: inline as a row's own next open slot (the
+/// common case — most rows aren't exactly full), and, only when the last row
+/// has no room left, heading a fresh row of its own below.
+private struct FilmAddCell: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Theme.amber.opacity(0.05))
+            RoundedRectangle(cornerRadius: 2)
+                .strokeBorder(Theme.amber.opacity(0.4),
+                              style: StrokeStyle(lineWidth: 1.3, dash: [4, 3]))
+            VStack(spacing: 5) {
+                Image(systemName: "camera.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("NEXT")
+                    .font(.mono(7, weight: .medium))
+                    .tracking(1.2)
+            }
+            .foregroundStyle(Theme.amber.opacity(0.6))
+        }
+        .aspectRatio(4/5, contentMode: .fit)
+    }
+}
+
+/// A whole extra row for the "next clip" cell — only needed when the last
+/// row of real clips is already full (4/4) and there is nowhere left in it
+/// to put the cell inline.
 private struct FilmstripAddRow: View {
     var body: some View {
         VStack(spacing: 0) {
             FilmSprocketHoles()
             HStack(spacing: 5) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Theme.amber.opacity(0.05))
-                    RoundedRectangle(cornerRadius: 2)
-                        .strokeBorder(Theme.amber.opacity(0.4),
-                                      style: StrokeStyle(lineWidth: 1.3, dash: [4, 3]))
-                    VStack(spacing: 5) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 15, weight: .semibold))
-                        Text("NEXT")
-                            .font(.mono(7, weight: .medium))
-                            .tracking(1.2)
-                    }
-                    .foregroundStyle(Theme.amber.opacity(0.6))
-                }
-                .aspectRatio(4/5, contentMode: .fit)
-
+                FilmAddCell()
                 ForEach(0..<3, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: 2)
                         .fill(.white.opacity(0.04))

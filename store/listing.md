@@ -32,14 +32,14 @@ Dein Leben, ein Clip pro Tag
 ```
 keep. ist dein tägliches Video-Tagebuch – gebaut für einen einzigen Handgriff.
 
-Ein Tipp auf den REC-Knopf im Sperrbildschirm, drei Sekunden Aufnahme, fertig. Kein Suchen, kein Hantieren. Der Clip speichert sich von selbst und landet automatisch in deinem Tagebuch – und du bist wieder im Moment statt am Handy.
+Ein Tipp auf den REC-Knopf im Sperrbildschirm, eine kurze Aufnahme, fertig. Kein Suchen, kein Hantieren. Der Clip speichert sich von selbst und landet automatisch in deinem Tagebuch – und du bist wieder im Moment statt am Handy.
 
 WARUM keep.
 Die schönsten Momente sind vorbei, bevor die Kamera-App geladen hat. keep. macht das Festhalten so schnell wie einen Gedanken – damit du dabei bist, statt am Handy zu hantieren.
 
 SO FUNKTIONIERT'S
 • Sperrbildschirm-Widget: Ein Tap startet die Aufnahme direkt
-• Feste oder variable Länge: 1 bis 5 Sekunden – oder gedrückt halten
+• Aufnahmedauer wählbar: 1, gut anderthalb (φ), 3 oder 5 Sekunden – fest eingestellt, kein Zufall
 • Projekte: Urlaub, Alltag, Workout – jeder Clip landet in seiner eigenen Story
 • Filmstreifen: trimmen, sortieren, neu anordnen wie an einer echten Filmrolle
 • Lautstärke-Angleich: Clips aus Wochen klingen im fertigen Film gleich laut
@@ -64,7 +64,7 @@ tagebuch,video,journal,clip,sekunde,rückblick,erinnerung,vlog,widget,sperrbilds
 
 **Werbetext / Promotional Text** (max. 170 Zeichen, jederzeit änderbar ohne Review)
 ```
-Drei Sekunden vom Sperrbildschirm – und dein Moment ist gesichert. Halt fest, was zählt, ohne den Moment zu verpassen.
+Ein Tap auf dem Sperrbildschirm, eine kurze Aufnahme – schon ist der Moment festgehalten. Kein Umweg über die Kamera-App, kein Zögern.
 ```
 
 **Neue Funktionen / What's New** (v1.0)
@@ -98,14 +98,14 @@ Your life, one clip a day
 ```
 keep. is your daily video journal — built around a single tap.
 
-Tap the REC button on your lock screen, record three seconds, done. No hunting, no fumbling. The clip saves itself and lands straight in your journal — and you're back in the moment instead of behind a phone.
+Tap the REC button on your lock screen, record a quick clip, done. No hunting, no fumbling. The clip saves itself and lands straight in your journal — and you're back in the moment instead of behind a phone.
 
 WHY keep.
 The best moments are gone before the camera app even loads. keep. makes capturing as fast as a thought — so you stay in the moment instead of wrestling with your phone.
 
 HOW IT WORKS
 • Lock screen widget: one tap takes you straight to recording
-• Fixed or variable length: 1 to 5 seconds — or press and hold
+• Choose your length: 1, a bit over 1.5 (φ), 3 or 5 seconds — set once in Settings
 • Projects: holiday, everyday, workout — every clip lands in its own story
 • Filmstrip: trim, sort and rearrange like a real reel
 • Volume matching: clips recorded weeks apart sound equally loud in the finished film
@@ -130,7 +130,7 @@ journal,video,diary,clip,seconds,memories,vlog,widget,lockscreen,map,places,capt
 
 **Promotional Text** (max. 170 chars)
 ```
-Three seconds from your lock screen and your moment is saved. Capture what matters without missing it.
+One tap from your lock screen, one quick clip — and the moment is saved. No detour through the camera app.
 ```
 
 **What's New** (v1.0)
