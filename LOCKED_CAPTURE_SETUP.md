@@ -5,12 +5,24 @@ und muss in Xcode passieren:** das Extension-Target selbst anlegen.
 
 ## Warum nicht automatisch?
 
-Apple dokumentiert den `NSExtensionPointIdentifier` für Capture-Extensions
-**nicht öffentlich** — die offizielle Anleitung sagt ausdrücklich, dass die
-Xcode-Vorlage die Info.plist erzeugt. Ich hätte den Wert raten müssen, und ein
-falscher Wert führt zu einer Extension, die sich fehlerfrei baut, signiert und
-installiert — und einfach nie erscheint. Dieser Fehler wäre schwer zu finden.
-Die Vorlage macht es in 30 Sekunden garantiert richtig.
+Apple dokumentiert den Extension-Point-Identifier für Capture-Extensions **nicht
+öffentlich** — die offizielle Anleitung sagt ausdrücklich, dass die Xcode-Vorlage
+die Info.plist erzeugt. Ein falscher Wert führt zu einer Extension, die sich
+fehlerfrei baut, signiert und installiert — und einfach nie erscheint.
+
+Inzwischen ist der Wert bekannt (aus der von Xcode erzeugten Info.plist):
+
+```xml
+<key>EXAppExtensionAttributes</key>
+<dict>
+    <key>EXExtensionPointIdentifier</key>
+    <string>com.apple.securecapture</string>
+</dict>
+```
+
+Also `EXAppExtensionAttributes` im ExtensionKit-Stil, **nicht** das ältere
+`NSExtension`/`NSExtensionPointIdentifier`-Schema — Schlüssel *und* Wert wären
+beim Raten danebengegangen. Genau deshalb kam der Schritt aus der Vorlage.
 
 ## Schritt 1 — Target anlegen
 
@@ -59,15 +71,11 @@ Membership* → **KeepCapture** ✓
 
 ## Schritt 4 — Berechtigungen
 
-Die Capture-Extension **erbt die Kamera-Berechtigung der App**, es ist also
-keine neue Abfrage nötig. Prüfe nur, dass in der Extension-Info.plist steht:
-
-```
-NSCameraUsageDescription
-NSMicrophoneUsageDescription
-```
-
-Falls nicht: dieselben Texte wie in der App-Info.plist eintragen.
+**Nichts zu tun.** Die Capture-Extension erbt Kamera- und Mikrofon-Berechtigung
+von der App; die von Xcode erzeugte Info.plist enthält bewusst *keine*
+Usage-Descriptions, und das ist korrekt so. (Eine frühere Fassung dieser Anleitung
+sagte, man solle sie nachtragen — das war falsch geraten, bevor die echte
+Info.plist vorlag.)
 
 ## Schritt 5 — testen
 
