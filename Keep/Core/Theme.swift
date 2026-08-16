@@ -155,8 +155,28 @@ enum Layout {
 /// stays only as a safety net for whatever the next long title turns out to be.
 struct ScreenHeader<Trailing: View>: View {
     let eyebrow: Text
-    let title: LocalizedStringKey
+    /// `LocalizedStringResource`, not `LocalizedStringKey`, so the title can be
+    /// resolved to a `String` and composed into an `AttributedString` below.
+    /// Both are `ExpressibleByStringLiteral`, so every existing call site —
+    /// `title: "Chronicle"` — is unchanged.
+    let title: LocalizedStringResource
     @ViewBuilder var trailing: Trailing
+
+    /// Title plus the amber full stop, as one `Text`.
+    ///
+    /// Was `Text(title) + Text(".")`, which iOS 26 deprecates. It also has to
+    /// stay a *single* `Text` rather than two views in an `HStack`: the title
+    /// carries `minimumScaleFactor`, and side-by-side `Text`s scale
+    /// independently — a long title would shrink while the dot stayed full
+    /// size. One attributed string keeps the run uniform.
+    private var titleText: Text {
+        var composed = AttributedString(String(localized: title))
+        composed.foregroundColor = .white
+        var dot = AttributedString(".")
+        dot.foregroundColor = Theme.amber
+        composed.append(dot)
+        return Text(composed)
+    }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 10) {
@@ -165,8 +185,7 @@ struct ScreenHeader<Trailing: View>: View {
                     .font(.eyebrow)
                     .tracking(2.5)
                     .foregroundStyle(.white.opacity(0.35))
-                (Text(title).foregroundStyle(.white)
-                 + Text(".").foregroundStyle(Theme.amber))
+                titleText
                     .font(.pageTitle)
                     .tracking(Font.handTracking(for: 28))
                     .lineLimit(1)
@@ -179,7 +198,7 @@ struct ScreenHeader<Trailing: View>: View {
 }
 
 extension ScreenHeader where Trailing == EmptyView {
-    init(eyebrow: Text, title: LocalizedStringKey) {
+    init(eyebrow: Text, title: LocalizedStringResource) {
         self.init(eyebrow: eyebrow, title: title) { EmptyView() }
     }
 }

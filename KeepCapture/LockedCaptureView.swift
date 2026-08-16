@@ -34,7 +34,14 @@ struct LockedCaptureView: View {
     /// app context — the only channel that crosses this sandbox boundary.
     @State private var context = KeepCaptureContext.fallback
     @State private var elapsed: Double = 0
-    @State private var timer: Timer?
+    /// Drives the shutter ring and stops the clip at its length.
+    ///
+    /// A `Task`, not a `Timer`: a Timer's callback is `@Sendable`, and stopping
+    /// it from inside itself means capturing the non-Sendable `Timer` in that
+    /// closure — which Swift 6 rejects outright. A cancellable task expresses
+    /// the same thing without smuggling a reference type across an isolation
+    /// boundary, and cancels cleanly when the view goes away.
+    @State private var ticker: Task<Void, Never>?
     @State private var didCapture = false
     @State private var isOpeningApp = false
 
@@ -89,7 +96,8 @@ struct LockedCaptureView: View {
             try? await camera.startSession()
         }
         .onDisappear {
-            timer?.invalidate()
+            ticker?.cancel()
+            ticker = nil
             camera.stopSession()
         }
         .statusBarHidden(true)
@@ -198,6 +206,7 @@ struct LockedCaptureView: View {
 
     // MARK: Recording
 
+    @MainActor
     private func record() async {
         guard camera.isRunning, !camera.isRecording, !didCapture else { return }
         startHaptic.impactOccurred(intensity: 1.0)
@@ -205,26 +214,28 @@ struct LockedCaptureView: View {
 
         elapsed = 0
         let limit = context.duration
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { t in
-            Task { @MainActor in
-                elapsed += 1.0 / 30
-                if elapsed >= limit {
-                    t.invalidate()
-                    stopHaptic.impactOccurred(intensity: 0.9)
-                    camera.stopRecording()
-                }
+        ticker?.cancel()
+        ticker = Task { @MainActor in
+            let step = 1.0 / 30
+            while !Task.isCancelled, elapsed < limit {
+                try? await Task.sleep(nanoseconds: UInt64(step * 1_000_000_000))
+                elapsed = min(limit, elapsed + step)
             }
+            guard !Task.isCancelled else { return }
+            stopHaptic.impactOccurred(intensity: 0.9)
+            camera.stopRecording()
         }
 
         // Resolves once AVFoundation has finished writing and closing the file,
         // so by the time this returns the clip really is on disk in the session
         // directory — which is the only thing that makes it survivable.
         _ = try? await camera.startRecording()
-        timer?.invalidate()
+        ticker?.cancel()
+        ticker = nil
         withAnimation(.easeOut(duration: 0.25)) { didCapture = true }
     }
 
+    @MainActor
     private func openApp() async {
         let activity = NSUserActivity(activityType: NSUserActivityTypeLockedCameraCapture)
         try? await session.openApplication(for: activity)
