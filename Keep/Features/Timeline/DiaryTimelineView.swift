@@ -206,17 +206,18 @@ struct DiaryTimelineView: View {
     var body: some View {
         // Backgrounds sit OUTSIDE the GeometryReader: nested inside it their
         // ignoresSafeArea() didn't reach past the reader's own frame, which left
-        // a hard-edged band across the top of this tab.
+        // a hard-edged band across the top of this tab. Turns out that reader
+        // itself sits inside ANOTHER one, one level up in ContentView, that
+        // isn't safe-area-ignoring either — so even this correctly-placed
+        // background could only ever reach ContentView's own safe-area box,
+        // not the true screen edge. ContentView now draws the amber glow
+        // itself, outside *its* reader, for exactly the reach this couldn't
+        // get — drawing it again here would double it up wherever the two
+        // overlap, so it's gone from here. The plain background stays: it's
+        // still this view's own fallback if it's ever shown outside
+        // ContentView's tab strip.
         ZStack(alignment: .top) {
             Theme.background.ignoresSafeArea()
-            // Already reached the true top edge geometrically (ignoresSafeArea,
-            // sitting outside the GeometryReader — see above) — but at 6%
-            // opacity it read as flat background rather than a deliberate
-            // glow, which is what actually looked like a hard seam at the top
-            // of this tab. Strengthened, not repositioned.
-            RadialGradient(colors: [Theme.amber.opacity(0.13), .clear],
-                           center: .init(x: 0.5, y: 0.02), startRadius: 0, endRadius: 420)
-                .ignoresSafeArea()
 
             GeometryReader { geo in
                 let cx = geo.size.width / 2

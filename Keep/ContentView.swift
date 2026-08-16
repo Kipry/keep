@@ -24,27 +24,51 @@ struct ContentView: View {
     // approach recreated the heavy Diary view during the transition, causing
     // visible hitches) — and every page keeps its scroll/scrub state.
     var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            ZStack {
-                Theme.background.ignoresSafeArea()
-                HStack(spacing: 0) {
-                    ProjectListView().frame(width: w)
-                    DiaryTimelineView(isActive: selectedTab == .timeline).frame(width: w)
-                    OnThisDayView(isActive: selectedTab == .today).frame(width: w)
-                }
-                .offset(x: -CGFloat(tabIndex) * w + dragOffset)
-                // Pin the 3-page strip's leading edge at x = 0 — a bare 3w-wide
-                // HStack would be centered by the ZStack (leading edge at -w).
-                .frame(width: w, alignment: .leading)
-                // Confine rendering AND hit-testing to the visible window so the
-                // off-screen pages can't receive stray touches.
-                .clipped()
+        ZStack {
+            // Sits OUTSIDE the GeometryReader below on purpose. A
+            // GeometryReader that doesn't ignore the safe area confines its
+            // *content* to that same safe area too — no .ignoresSafeArea()
+            // a child makes further down can ever paint past the reader's
+            // own bounds. That reader has to stay safe-area-aware (each
+            // page's own header positioning depends on it), so the only way
+            // for a background to actually reach the true top edge is to
+            // sit outside it entirely. DiaryTimelineView hit this exact
+            // pattern one level down already; this was the same bug one
+            // level up, hiding behind it.
+            Theme.background.ignoresSafeArea()
+            // The warm glow Diary wants reaching the top edge, mirrored here
+            // for the same reason — DiaryTimelineView's own copy is real and
+            // still there, but it's inside the clipped reader below, so it
+            // can only ever cover its own safe-area-constrained box.
+            if selectedTab == .timeline {
+                RadialGradient(colors: [Theme.amber.opacity(0.13), .clear],
+                               center: .init(x: 0.5, y: 0.0), startRadius: 0, endRadius: 420)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
             }
-            .contentShape(Rectangle())
-            // Edge-swipe between the main pages. Starting near a screen edge keeps
-            // this from clashing with the timeline scrubber and horizontal carousels.
-            .simultaneousGesture(edgeSwipe(width: w))
+
+            GeometryReader { geo in
+                let w = geo.size.width
+                ZStack {
+                    HStack(spacing: 0) {
+                        ProjectListView().frame(width: w)
+                        DiaryTimelineView(isActive: selectedTab == .timeline).frame(width: w)
+                        OnThisDayView(isActive: selectedTab == .today).frame(width: w)
+                    }
+                    .offset(x: -CGFloat(tabIndex) * w + dragOffset)
+                    // Pin the 3-page strip's leading edge at x = 0 — a bare 3w-wide
+                    // HStack would be centered by the ZStack (leading edge at -w).
+                    .frame(width: w, alignment: .leading)
+                    // Confine rendering AND hit-testing to the visible window so the
+                    // off-screen pages can't receive stray touches.
+                    .clipped()
+                }
+                .contentShape(Rectangle())
+                // Edge-swipe between the main pages. Starting near a screen edge keeps
+                // this from clashing with the timeline scrubber and horizontal carousels.
+                .simultaneousGesture(edgeSwipe(width: w))
+            }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             AppTabBar(selectedTab: selectedTab, onSelect: switchTab)
