@@ -209,8 +209,13 @@ struct DiaryTimelineView: View {
         // a hard-edged band across the top of this tab.
         ZStack(alignment: .top) {
             Theme.background.ignoresSafeArea()
-            RadialGradient(colors: [Theme.amber.opacity(0.06), .clear],
-                           center: .init(x: 0.5, y: 0.04), startRadius: 0, endRadius: 320)
+            // Already reached the true top edge geometrically (ignoresSafeArea,
+            // sitting outside the GeometryReader — see above) — but at 6%
+            // opacity it read as flat background rather than a deliberate
+            // glow, which is what actually looked like a hard seam at the top
+            // of this tab. Strengthened, not repositioned.
+            RadialGradient(colors: [Theme.amber.opacity(0.13), .clear],
+                           center: .init(x: 0.5, y: 0.02), startRadius: 0, endRadius: 420)
                 .ignoresSafeArea()
 
             GeometryReader { geo in
