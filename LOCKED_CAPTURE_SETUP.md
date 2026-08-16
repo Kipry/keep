@@ -71,11 +71,24 @@ Membership* → **KeepCapture** ✓
 
 ## Schritt 4 — Berechtigungen
 
-**Nichts zu tun.** Die Capture-Extension erbt Kamera- und Mikrofon-Berechtigung
-von der App; die von Xcode erzeugte Info.plist enthält bewusst *keine*
-Usage-Descriptions, und das ist korrekt so. (Eine frühere Fassung dieser Anleitung
-sagte, man solle sie nachtragen — das war falsch geraten, bevor die echte
-Info.plist vorlag.)
+`KeepCapture/Info.plist` **muss** `NSCameraUsageDescription` enthalten (und, weil
+keep. mit Ton aufnimmt, `NSMicrophoneUsageDescription`). Steht schon drin — hier
+nur, damit klar ist, warum sie da sind und nicht gelöscht werden dürfen.
+
+Das ist keine Formalie: iOS prüft die Usage-Descriptions der Extension, *bevor*
+es entscheidet, ob es die Capture-Extension überhaupt startet. Fehlen sie, wird
+sie nie gestartet — stattdessen verlangt das System Entsperren und öffnet die
+App. Von außen sieht das aus, als gäbe es die Funktion gar nicht.
+(WWDC24 „Build a great Lock Screen camera capture experience": *„your extension
+and application should both include privacy usage descriptions for the Camera".*)
+
+Die *erteilte* Berechtigung erbt die Extension weiterhin von der App — die App
+muss also mindestens einmal gelaufen sein und Kamerazugriff bekommen haben.
+Solange das nicht passiert ist, öffnet iOS ebenfalls die App statt der Extension.
+Das ist dokumentiertes Verhalten, kein Fehler.
+
+Kein Entitlement, keine Capability im Developer-Portal. `com.apple.developer.locked-camera-capture`
+existiert nicht — wer das einträgt, zerschießt sich nur die Signatur.
 
 ## Schritt 5 — testen
 
@@ -91,6 +104,28 @@ nachstellen.
 5. Aufnehmen → „Clip gesichert" muss erscheinen
 6. Entsperren, App öffnen → der Clip liegt im zuletzt benutzten Projekt, **mit
    der Uhrzeit der Aufnahme**, nicht der des Entsperrens
+
+### Wenn stattdessen die App aufgeht
+
+Es gibt genau einen Fehlerfall, und der sieht immer gleich aus: iOS verlangt
+Entsperren und öffnet danach die App. Das ist der dokumentierte Fallback für
+„Capture-Extension nicht startbar". In dieser Reihenfolge prüfen:
+
+1. **Usage-Descriptions im *gebauten* Produkt**, nicht in der Quelldatei:
+   `plutil -p <DerivedData>/…/Keep.app/Extensions/KeepCapture.appex/Info.plist`
+   muss `NSCameraUsageDescription` und `com.apple.securecapture` zeigen.
+2. **Kamerazugriff erteilt?** Einstellungen → keep. → Kamera muss an sein.
+   Ohne erteilte Berechtigung startet die Extension grundsätzlich nicht.
+3. **Liegt die Extension am richtigen Ort?** `ls Keep.app/Extensions/` —
+   dort, nicht in `PlugIns/`. (Das ist der Unterschied zwischen *Embed
+   ExtensionKit Extensions* und *Embed Foundation Extensions*; das Widget
+   gehört nach `PlugIns/`, die Capture-Extension nach `Extensions/`.)
+4. **Wirklich gesperrt getestet?** Vom Homescreen oder aus dem
+   Kontrollzentrum im entsperrten Zustand öffnet das Control korrekterweise
+   die App — das ist kein Fehler.
+5. **Registrierung hängt.** App löschen, Gerät neu starten, neu installieren,
+   einmal öffnen, Kamera erlauben, sperren, testen. Bekanntes Problem seit
+   iOS 18 Beta.
 
 ## Was bewusst *nicht* geht
 

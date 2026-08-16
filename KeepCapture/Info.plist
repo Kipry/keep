@@ -7,5 +7,30 @@
 		<key>EXExtensionPointIdentifier</key>
 		<string>com.apple.securecapture</string>
 	</dict>
+
+	<!-- Required for the extension to launch at all — not just to use the
+	     camera once it has. The system checks these before it decides whether
+	     to start the capture extension or to fall back to unlocking the device
+	     and opening the app instead; without them the Lock Screen control only
+	     ever does the latter, which looks exactly like the feature not
+	     existing. The extension inherits the *granted permission* from the
+	     app, but it still has to declare its own usage strings.
+
+	     Audio matters here too: a keep. clip is recorded with sound, so the
+	     capture session attaches a microphone input the same way the in-app
+	     camera does. -->
+	<key>NSCameraUsageDescription</key>
+	<string>keep. needs camera access to record your daily moments.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>keep. needs microphone access to capture audio with your clips.</string>
+
+	<!-- Pinned, because a capture extension cannot change its supported
+	     orientations at runtime the way the app can — and the app itself is
+	     portrait-only, so a landscape locked viewfinder would be the one place
+	     in keep. that rotates. -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
 </dict>
 </plist>
