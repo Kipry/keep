@@ -1,3 +1,8 @@
+// AppIntents is needed for `KeepCaptureIntent.updateAppContext(_:)` — that
+// member is declared on the CameraCaptureIntent protocol, and this project
+// enables MEMBER_IMPORT_VISIBILITY, so the defining module must be imported
+// even though the intent type itself lives in this module.
+import AppIntents
 import AVFoundation
 import Foundation
 import LockedCameraCapture
