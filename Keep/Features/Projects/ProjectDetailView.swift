@@ -692,6 +692,16 @@ struct ProjectDetailView: View {
             }
             .padding(.top, showsPoster ? 0 : 4)
         }
+        // A ScrollView adds a top content inset matching the safe area by
+        // default, so at rest the poster started below the status bar with a
+        // visible gap above it — only once scrolled past that inset did the
+        // poster's own image reach the true screen edge. Ignoring the safe
+        // area here removes that inset outright, so the poster (and the play
+        // button/title riding on it) starts flush with the top edge from the
+        // very first frame. `floatingTopBar` is a sibling overlay outside this
+        // ScrollView, not affected — it keeps its own safe-area-respecting
+        // position for the back/select/import buttons.
+        .ignoresSafeArea(edges: .top)
         .onScrollGeometryChange(for: CGFloat.self) { geo in
             geo.contentOffset.y + geo.contentInsets.top
         } action: { _, offset in

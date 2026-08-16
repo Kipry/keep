@@ -10,6 +10,10 @@ Zum Kopieren in App Store Connect → TestFlight → Build 1.0 (4):
 NEU IN DIESEM BUILD — letzter Test vor dem echten Store-Release!
 
 Behoben
+• SCHWARZES KAMERABILD beim Öffnen der Aufnahme (auf der Rückkamera). Der
+  Zoom-Wechsel, der beim Start automatisch das richtige Objektiv wählt,
+  lief zu früh – bevor die Kamera-Session wirklich aktiv war. Deshalb
+  half bisher nur der Wechsel zur Frontkamera.
 • Der Hinweis „Richte dein Widget ein" in der Bibliothek ließ sich nicht
   wegtippen – das x öffnete stattdessen die Anleitung, und die Meldung
   blieb einfach stehen.
@@ -41,16 +45,19 @@ Neu
 
 WORAUF ICH BESONDERS SCHAUE
 
-1. Der erste Eindruck: App-Icon, Launch Screen, die neue Schrift auf
+1. Die Aufnahme öffnen – mehrfach hintereinander, App auch mal ganz
+   schließen und neu starten. Zeigt die Rückkamera direkt ein echtes
+   Bild, nie mehr schwarz?
+2. Der erste Eindruck: App-Icon, Launch Screen, die neue Schrift auf
    allen Seiten – wirkt das wie aus einem Guss?
-2. Rand-Wischgesten: fühlt sich der Tab-Wechsel und der Zurück-Wisch aus
+3. Rand-Wischgesten: fühlt sich der Tab-Wechsel und der Zurück-Wisch aus
    einem Projekt jetzt zuverlässig an, auch wenn du nicht exakt am
    Rand ansetzt?
-3. Ein Projekt mit z. B. 1, 3, 5 und 9 Clips anlegen – landet die
+4. Ein Projekt mit z. B. 1, 3, 5 und 9 Clips anlegen – landet die
    „nächster Clip"-Markierung immer richtig in der letzten Zeile?
-4. Einen einzelnen Clip exportieren – einmal ein Video, einmal ein
+5. Einen einzelnen Clip exportieren – einmal ein Video, einmal ein
    importiertes Foto. Kommt jeweils das Richtige im Teilen-Menü an?
-5. Ein Projekt mit einem breiten/importierten Bild als erstem Clip
+6. Ein Projekt mit einem breiten/importierten Bild als erstem Clip
    anlegen – sieht das Cover in der Bibliothek jetzt richtig aus?
 
 Das ist der letzte geplante Beta-Build – wenn hier nichts Größeres

@@ -202,12 +202,24 @@ final class CameraService: NSObject, ObservableObject {
 
         s.commitConfiguration()
         session = s
-        setDefaultZoom(on: videoInput.device)
 
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
             DispatchQueue.global(qos: .userInitiated).async { s.startRunning(); c.resume() }
         }
         isRunning = true
+
+        // Root cause of the black-preview-on-open bug some testers hit: for a
+        // virtual multi-lens device (.builtInTripleCamera / .builtInDualWideCamera
+        // — the back camera's default candidates), this switches the active
+        // physical lens by changing videoZoomFactor. Doing that before the
+        // session is running doesn't reliably take, and the preview connection
+        // is left pointed at a lens that never actually starts delivering
+        // frames — black, until something forces a fresh reconfiguration.
+        // switchCamera() already calls this after the session is running,
+        // which is exactly why flipping to the front camera "fixed" it: the
+        // front camera has no virtual lens to switch (this is a no-op there),
+        // and the flip itself reconfigures the session while it's live.
+        setDefaultZoom(on: videoInput.device)
     }
 
     func stopSession() {
