@@ -1,160 +1,188 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "ACTIVE": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AKTIV"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld" : {
+
+    },
+    "%lld CLIPS · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld CLIPS · %2$@"
           }
         }
       }
     },
-    "DAYS": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TAGE"
+    "ACTIVE" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AKTIV"
           }
         }
       }
     },
-    "DAY IN A ROW": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TAG IN FOLGE"
+    "DAY IN A ROW" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TAG IN FOLGE"
           }
         }
       }
     },
-    "DAYS IN A ROW": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TAGE IN FOLGE"
+    "DAYS" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TAGE"
           }
         }
       }
     },
-    "ENDED": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ERLOSCHEN"
+    "DAYS IN A ROW" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TAGE IN FOLGE"
           }
         }
       }
     },
-    "THIS WEEK": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DIESE WOCHE"
+    "ENDED" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ERLOSCHEN"
           }
         }
       }
     },
-    "New project": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neues Projekt"
+    "keep." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "keep."
           }
         }
       }
     },
-    "Three seconds, and today is in.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drei Sekunden, und heute ist drin."
+    "keep. · REC" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "keep. · REC"
           }
         }
       }
     },
-    "REC": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "REC"
+    "keep. · Record" : {
+
+    },
+    "New project" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neues Projekt"
           }
         }
       }
     },
-    "No project": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kein Projekt"
+    "No project" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Projekt"
           }
         }
       }
     },
-    "keep.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "keep."
+    "Quick-record into your latest project from the Lock Screen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vom Sperrbildschirm direkt ins zuletzt genutzte Projekt aufnehmen."
           }
         }
       }
     },
-    "keep. · REC": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "keep. · REC"
+    "REC" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "REC"
           }
         }
       }
     },
-    "Your running project — and this week at a glance.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dein laufendes Projekt – und diese Woche auf einen Blick."
+    "Record" : {
+
+    },
+    "Record a Clip" : {
+
+    },
+    "Record a clip without unlocking." : {
+
+    },
+    "Records a short clip for keep. — straight from the Lock Screen, without unlocking." : {
+
+    },
+    "THIS WEEK" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DIESE WOCHE"
           }
         }
       }
     },
-    "Quick-record into your latest project from the Lock Screen.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vom Sperrbildschirm direkt ins zuletzt genutzte Projekt aufnehmen."
+    "Three seconds, and today is in." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drei Sekunden, und heute ist drin."
+          }
+        }
+      }
+    },
+    "Your running project — and this week at a glance." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein laufendes Projekt – und diese Woche auf einen Blick."
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

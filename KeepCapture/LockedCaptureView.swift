@@ -1,4 +1,12 @@
+// AppIntents: `KeepCaptureIntent.appContext` is declared on the
+// `CameraCaptureIntent` protocol, and this project enables
+// MEMBER_IMPORT_VISIBILITY — so the module defining a member has to be
+// imported explicitly, even though the intent type itself is in this module.
+// AVKit, not AVFoundation: AVCaptureEventInteraction lives there (same as the
+// in-app CameraView's volume-button bridge).
+import AppIntents
 import AVFoundation
+import AVKit
 import LockedCameraCapture
 import SwiftUI
 import UIKit
