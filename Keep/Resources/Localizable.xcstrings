@@ -2948,6 +2948,105 @@
           }
         }
       }
+    },
+    "Filed when you unlock": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird beim Entsperren einsortiert"
+          }
+        }
+      }
+    },
+    "Clip saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clip gesichert"
+          }
+        }
+      }
+    },
+    "It lands in your project as soon as you unlock.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er landet in deinem Projekt, sobald du entsperrst."
+          }
+        }
+      }
+    },
+    "Open keep.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "keep. öffnen"
+          }
+        }
+      }
+    },
+    "My Clips": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meine Clips"
+          }
+        }
+      }
+    },
+    "Record a Clip": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clip aufnehmen"
+          }
+        }
+      }
+    },
+    "Records a short clip for keep. — straight from the Lock Screen, without unlocking.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimmt einen kurzen Clip für keep. auf – direkt vom Sperrbildschirm, ohne Entsperren."
+          }
+        }
+      }
+    },
+    "keep. · Record": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "keep. · Aufnehmen"
+          }
+        }
+      }
+    },
+    "Record a clip without unlocking.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einen Clip aufnehmen, ohne zu entsperren."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

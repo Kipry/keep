@@ -573,11 +573,17 @@ struct KeepLockWidget: Widget {
     }
 }
 
-// Bundle — registers both widgets
+// Bundle — registers the widgets and the locked-capture control
 @main
 struct KeepWidgetBundle: WidgetBundle {
     var body: some Widget {
         KeepHomeWidget()
         KeepLockWidget()
+        // Control Centre / Lock Screen / Action button entry point for
+        // recording without unlocking. iOS 18+ only, hence the availability
+        // check — the widgets above still ship to anything the app supports.
+        if #available(iOS 18.0, *) {
+            KeepCaptureControl()
+        }
     }
 }
