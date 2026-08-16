@@ -69,6 +69,11 @@ struct ProjectListView: View {
                                             Label("Rename", systemImage: "pencil")
                                         }
                                         Button {
+                                            duplicateProject(project)
+                                        } label: {
+                                            Label("Duplicate", systemImage: "plus.square.on.square")
+                                        }
+                                        Button {
                                             project.archive()
                                         } label: {
                                             Label("Archive", systemImage: "archivebox")
@@ -235,6 +240,14 @@ struct ProjectListView: View {
         project.name = name
         project.updatedAt = Date()
         projectToRename = nil
+    }
+
+    /// Saved immediately: the copy owns new files on disk from the moment
+    /// `duplicate` returns, so leaving the records unsaved would strand them
+    /// if the app were killed before the next autosave.
+    private func duplicateProject(_ project: Project) {
+        project.duplicate(context: modelContext)
+        try? modelContext.save()
     }
 
     private func createProject() {

@@ -51,6 +51,39 @@ final class Project {
         activeClips.reduce(0) { $0 + $1.effectiveDuration }
     }
 
+    /// A full, independent copy of this project.
+    ///
+    /// Independent is the point: `Clip.copy(into:context:)` duplicates the
+    /// video file on disk as well as the record, so trimming, reordering or
+    /// deleting in one project never reaches the other. That costs storage —
+    /// the alternative (sharing files between projects) would mean deleting a
+    /// clip in the copy silently breaking the original.
+    @discardableResult
+    func duplicate(context: ModelContext) -> Project {
+        let clone = Project(name: String(localized: "\(name) Copy"))
+        context.insert(clone)
+
+        // In `activeClips` order, so the copy's filmstrip reads exactly like
+        // this one's. A clip whose file has gone missing is skipped rather
+        // than carried over as an unplayable row.
+        var newCoverID: UUID?
+        for clip in activeClips where clip.copy(into: clone, context: context) {
+            if clip.id == coverClipID { newCoverID = clone.activeClips.last?.id }
+        }
+
+        // The cover has to point at the *clone's* clip: a `coverClipID` from
+        // another project resolves to nothing, and it is exactly what
+        // `Clip.softDelete` checks to clear a stale cover when the cover clip
+        // is deleted. Projects whose cover predates that field fall back to
+        // the first clip, which is where their cover came from.
+        clone.coverThumbnailData = coverThumbnailData
+        clone.coverClipID = coverThumbnailData == nil
+            ? nil
+            : (newCoverID ?? clone.activeClips.first?.id)
+        clone.updatedAt = Date()
+        return clone
+    }
+
     func softDelete() {
         isTrashed = true
         deletedAt = Date()
