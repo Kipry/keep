@@ -78,6 +78,13 @@ struct ContentView: View {
             ClipFileRepair.run(in: modelContext)
             TrashSweep.run(in: modelContext)
             VideoComposer.purgeExports()
+            // Clips recorded on the Lock Screen: this is the first moment they
+            // can be filed, because until now the store was encrypted. Runs
+            // before the repair pass so a just-imported clip is included in it.
+            if #available(iOS 18.0, *) {
+                await LockedCaptureImporter.importPending(context: modelContext)
+                await LockedCaptureContextWriter.refresh(context: modelContext)
+            }
             // Re-renders covers captured at the old 320 px size. One pass per
             // install: afterwards every cover is already large enough.
             await CoverThumbnailRepair.run(in: modelContext)
@@ -88,7 +95,19 @@ struct ContentView: View {
         // Adding a widget means leaving the app and coming back, so this is the
         // moment the hint should disappear.
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { WidgetInstallation.shared.refresh() }
+            guard phase == .active else { return }
+            WidgetInstallation.shared.refresh()
+            // Every return to the foreground is a possible "just unlocked
+            // after recording from the Lock Screen" — the .task above only
+            // covers a cold launch. Refreshing the app context here too keeps
+            // the destination the Lock Screen shows in step with a project
+            // renamed or created since.
+            if #available(iOS 18.0, *) {
+                Task {
+                    await LockedCaptureImporter.importPending(context: modelContext)
+                    await LockedCaptureContextWriter.refresh(context: modelContext)
+                }
+            }
         }
         .onChange(of: deepLink.pendingTab) { _, _ in consumePendingTab() }
     }
