@@ -7,9 +7,10 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 |---|---|
 | App-Bundle-ID | `com.kipry.keep.app` |
 | Widget-Bundle-ID | `com.kipry.keep.app.widget` |
+| Capture-Extension-Bundle-ID | `com.kipry.keep.app.KeepCapture` |
 | App-Gruppe | `group.com.kipry.keep.app` |
 | Team-ID | `3832YDF43A` |
-| Version / Build | `1.0` / `3` |
+| Version / Build | `1.0` / `5` |
 | Mindest-iOS | 18.0 |
 | Kategorie | Lifestyle |
 | Signing | Automatic |
@@ -25,6 +26,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 - [ ] **App Group** `group.com.kipry.keep.app` anlegen (falls noch nicht vorhanden).
 - [ ] App-ID `com.kipry.keep.app` registrieren, Capability **App Groups** aktivieren und die Gruppe zuweisen.
 - [ ] Widget-App-ID `com.kipry.keep.app.widget` registrieren, ebenfalls **App Groups** + Gruppe zuweisen.
+- [ ] Capture-Extension-App-ID `com.kipry.keep.app.KeepCapture` registrieren. **Ohne** App Groups — eine Capture-Extension darf den geteilten Container ohnehin nicht lesen, und sie braucht kein eigenes Entitlement. `com.apple.developer.locked-camera-capture` existiert nicht; wer es einträgt, zerschießt nur die Signatur.
 > Bei Automatic Signing legt Xcode die IDs meist selbst an — dann hier nur prüfen, dass die App-Gruppe bei **beiden** IDs gesetzt ist. Ohne das schlägt das Signing fehl.
 
 ## 2. Datenschutz- & Support-Seite hosten (GitHub Pages)
