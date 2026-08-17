@@ -24,6 +24,14 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>keep. needs microphone access to capture audio with your clips.</string>
 
+	<!-- Same rule as the camera: the extension inherits the *granted*
+	     permission from the app, but it has to declare its own usage string or
+	     Core Location refuses it. The extension never prompts — it only uses
+	     access the app already has, and only when the app has told it, through
+	     the intent's app context, that location logging is switched on. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>keep. uses your location to remember where each moment was captured.</string>
+
 	<!-- Pinned, because a capture extension cannot change its supported
 	     orientations at runtime the way the app can — and the app itself is
 	     portrait-only, so a landscape locked viewfinder would be the one place

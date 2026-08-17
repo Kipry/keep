@@ -48,6 +48,8 @@
 		A10000000000000000001001B /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000001001A /* OnboardingView.swift */; };
 		A10000000000000000001101B /* DiaryTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000001101A /* DiaryTimelineView.swift */; };
 		A407405FED9C35D616ACFF85 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9F151E83C53BBFA749E340 /* LocationService.swift */; };
+		C4A10CA10000000000000002 /* LocationGranularity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A10CA10000000000000001 /* LocationGranularity.swift */; };
+		C4A10CA10000000000000003 /* LocationGranularity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A10CA10000000000000001 /* LocationGranularity.swift */; };
 		A63F80D2519E4C7B02A1FD65 /* YearSpiral.swift in Sources */ = {isa = PBXBuildFile; fileRef = C41A75E68B03D29F14E7A0B3 /* YearSpiral.swift */; };
 		AE435650A6DD218729E32302 /* MemoriesStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FEF1B8A70C659C2355B054E /* MemoriesStats.swift */; };
 		AFB2CB2406C296FD556FC669 /* ClipViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1C91A588EE9E83B3832F68 /* ClipViewer.swift */; };
@@ -173,6 +175,7 @@
 		C348BF8B30325836001A0218 /* KeepCapture.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = KeepCapture.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C41A75E68B03D29F14E7A0B3 /* YearSpiral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YearSpiral.swift; sourceTree = "<group>"; };
 		DA9F151E83C53BBFA749E340 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		C4A10CA10000000000000001 /* LocationGranularity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationGranularity.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -315,6 +318,7 @@
 				9B9F0912359A48A4B3CF4F21 /* LockedCaptureImporter.swift */,
 				1FEF1B8A70C659C2355B054E /* MemoriesStats.swift */,
 				DA9F151E83C53BBFA749E340 /* LocationService.swift */,
+				C4A10CA10000000000000001 /* LocationGranularity.swift */,
 				A1000000000000000000006A /* VideoComposer.swift */,
 			);
 			path = Services;
@@ -658,6 +662,7 @@
 				A10000000000000000001001B /* OnboardingView.swift in Sources */,
 				A10000000000000000001101B /* DiaryTimelineView.swift in Sources */,
 				A407405FED9C35D616ACFF85 /* LocationService.swift in Sources */,
+				C4A10CA10000000000000002 /* LocationGranularity.swift in Sources */,
 				855D8D4958D1BC1DE4460B24 /* PlacesData.swift in Sources */,
 				E07254987DE2B3065FE091BF /* PlacesMapView.swift in Sources */,
 				8884B4F67DEE3500CEE77622 /* PlacesScrubberView.swift in Sources */,
@@ -683,6 +688,7 @@
 				C348BFA030325855001A0218 /* RecordingDuration.swift in Sources */,
 				C348BFA130325855001A0218 /* CameraPreviewView.swift in Sources */,
 				C4A1C7A10000000000000003 /* CameraControls.swift in Sources */,
+				C4A10CA10000000000000003 /* LocationGranularity.swift in Sources */,
 				C348BFA230325855001A0218 /* CameraService.swift in Sources */,
 				C348BFA330325855001A0218 /* KeepCaptureIntent.swift in Sources */,
 				C348BFA430325855001A0218 /* Theme.swift in Sources */,

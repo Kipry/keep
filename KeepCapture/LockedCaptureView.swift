@@ -38,6 +38,7 @@ struct LockedCaptureView: View {
     let session: LockedCameraCaptureSession
 
     @StateObject private var camera = CameraService()
+    @StateObject private var location = LockedCaptureLocation()
 
     /// Display/behaviour hints handed over by the app through the intent's
     /// app context — the only channel that crosses this sandbox boundary.
@@ -180,6 +181,9 @@ struct LockedCaptureView: View {
             // Starts on the length the user chose in the app, and can be
             // changed from here for this clip only.
             durationLimit = RecordingDuration.resolve(context.duration)
+            // Warmed up now so the fix has arrived by the time a clip is
+            // written seconds later — the same trick the in-app camera plays.
+            location.prime(granularity: LocationGranularity(rawValue: context.locationGranularity ?? "") ?? .off)
             startHaptic.prepare()
             try? await camera.startSession()
         }
@@ -194,7 +198,12 @@ struct LockedCaptureView: View {
             camera.stopSession()
         }
         .onChange(of: camera.lastRecordedURL) { _, url in
-            guard url != nil else { return }
+            guard let url else { return }
+            // Before anything else: the clip is on disk, the session directory
+            // is the app's only channel, and a mid-recording camera flip means
+            // this can fire more than once per session — each clip gets its
+            // own sidecar.
+            location.writeSidecar(for: url)
             finishRecording()
         }
         .onChange(of: camera.isRecording) { _, recording in

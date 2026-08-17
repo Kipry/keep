@@ -63,6 +63,8 @@ Membership* → **KeepCapture** ✓
 | `Keep/Core/Services/RecordingDuration.swift` | Clip-Länge |
 | `Keep/Core/Services/KeepCaptureIntent.swift` | der geteilte Intent |
 | `Keep/Features/Camera/CameraPreviewView.swift` | Kamera-Vorschau |
+| `Keep/Features/Camera/CameraControls.swift` | Auslöser, Dauer-Pills, Belichtung, Fokusring |
+| `Keep/Core/Services/LocationGranularity.swift` | Genauigkeit für den Standort-Vermerk |
 | `Keep/Core/Theme.swift` | Farben |
 | `Keep/Resources/Localizable.xcstrings` | deutsche Texte (sonst englisch) |
 

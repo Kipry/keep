@@ -148,13 +148,35 @@ enum LockedCaptureImporter {
         project.updatedAt = Date()
         context.insert(clip)
 
-        // No location: the phone may have travelled between recording and
-        // unlocking, and the extension can't capture one. A wrong pin on the
-        // map is worse than no pin.
+        // From the sidecar the extension wrote at capture time, never from a
+        // fix taken now: the phone may have travelled a long way between
+        // recording and unlocking, and a wrong pin is worse than no pin. No
+        // sidecar simply means no coordinate — location off, permission never
+        // granted, or no fix in time.
+        applyLocation(from: source, to: clip)
+
         await attachArtwork(to: clip, in: project, url: destination)
         await ClipAudioLevels.analyzeIfNeeded(clip)
         ClipTone.analyzeIfNeeded(clip)
         return true
+    }
+
+    /// Puts a locked clip on the map.
+    ///
+    /// `geocodeIfNeeded` is what makes it indistinguishable from an in-app
+    /// clip once it lands — same cache, same rate limiting, same place names.
+    /// It also re-checks the *current* setting before geocoding, so a
+    /// coordinate captured before the user switched location off never
+    /// reaches Apple.
+    @MainActor
+    private static func applyLocation(from source: URL, to clip: Clip) {
+        let sidecar = LockedClipMetadata.url(for: source)
+        guard let data = try? Data(contentsOf: sidecar),
+              let metadata = try? JSONDecoder().decode(LockedClipMetadata.self, from: data)
+        else { return }
+        clip.latitude = metadata.latitude
+        clip.longitude = metadata.longitude
+        LocationService.shared.geocodeIfNeeded(clip)
     }
 
     private static func copyIntoClipsDirectory(_ source: URL) -> URL? {
@@ -238,7 +260,9 @@ enum LockedCaptureContextWriter {
         let stored = UserDefaults.standard.object(forKey: "defaultRecordingDuration") as? Double
         let duration = RecordingDuration.resolve(stored ?? RecordingDuration.standard)
         try? await KeepCaptureIntent.updateAppContext(
-            KeepCaptureContext(projectName: name, duration: duration)
+            KeepCaptureContext(projectName: name,
+                               duration: duration,
+                               locationGranularity: LocationGranularity.current.rawValue)
         )
     }
 }

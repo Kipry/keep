@@ -1,4 +1,5 @@
 import AppIntents
+import Foundation
 
 // MARK: - Locked capture intent
 
@@ -50,6 +51,42 @@ struct KeepCaptureContext: Codable, Sendable {
     /// as one recorded inside the app. Falls back to the standard duration.
     var duration: Double
 
+    /// `LocationGranularity.rawValue` — precise, place, or off.
+    ///
+    /// Carried over because the extension has no way to read the setting
+    /// itself, and recording a location the user has switched off would be a
+    /// straightforward betrayal of what the app promises. Optional, and nil
+    /// means *don't*: an app context written before this field existed decodes
+    /// with no value, and the safe reading of "I don't know what they chose"
+    /// is to record nothing.
+    var locationGranularity: String?
+
     static let fallback = KeepCaptureContext(projectName: nil,
-                                             duration: RecordingDuration.standard)
+                                             duration: RecordingDuration.standard,
+                                             locationGranularity: nil)
+}
+
+// MARK: - Clip sidecar
+
+/// What the capture extension knows about a clip that the file itself can't
+/// carry — today just where it was taken.
+///
+/// Written next to the `.mov` in the session directory, because that is the
+/// one place both processes can reach: the extension is denied the App Group
+/// container, and its own container is erased when the system suspends it.
+/// The app reads it during import and then the directory goes away with
+/// everything in it.
+///
+/// It exists at all because the location has to be captured *when the clip is
+/// recorded*. Import happens later — after an unlock that might come hours
+/// later and a hundred kilometres away — so a fix taken then wouldn't be
+/// imprecise, it would be wrong.
+struct LockedClipMetadata: Codable, Sendable {
+    var latitude: Double
+    var longitude: Double
+
+    /// The sidecar that belongs to a given movie: same name, `.json` instead.
+    static func url(for movie: URL) -> URL {
+        movie.deletingPathExtension().appendingPathExtension("json")
+    }
 }

@@ -2,34 +2,6 @@ import CoreLocation
 import Foundation
 import MapKit
 
-// MARK: - Location granularity
-
-/// How precisely capture locations are stored. Raw values are persisted in
-/// UserDefaults under "locationGranularity" (default: .place).
-enum LocationGranularity: String {
-    case precise = "precise"
-    case place   = "place"    // rounded to ~1.1 km — enough for "which town/quarter"
-    case off     = "off"
-
-    static var current: LocationGranularity {
-        LocationGranularity(rawValue: UserDefaults.standard.string(forKey: "locationGranularity") ?? "") ?? .place
-    }
-
-    /// Applies this granularity to a raw coordinate. Returns nil for .off.
-    func apply(to coordinate: CLLocationCoordinate2D) -> CLLocationCoordinate2D? {
-        switch self {
-        case .off:     return nil
-        case .precise: return coordinate
-        case .place:
-            // 2 decimal places ≈ 1.1 km — a real privacy reduction.
-            return CLLocationCoordinate2D(
-                latitude: (coordinate.latitude * 100).rounded() / 100,
-                longitude: (coordinate.longitude * 100).rounded() / 100
-            )
-        }
-    }
-}
-
 // MARK: - LocationService
 
 /// One-shot location capture for clip saves plus cached reverse geocoding.
