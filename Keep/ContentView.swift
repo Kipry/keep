@@ -89,6 +89,16 @@ struct ContentView: View {
             // install: afterwards every cover is already large enough.
             await CoverThumbnailRepair.run(in: modelContext)
         }
+        // Runs for the lifetime of the app rather than once at launch. Coming
+        // back from the Lock Screen camera, the session directory is often
+        // handed over a moment *after* the app is already on screen — read
+        // once, it is still empty, and the clip only appeared on the next
+        // launch. This waits for it instead.
+        .task {
+            if #available(iOS 18.0, *) {
+                await LockedCaptureImporter.observeUpdates(context: modelContext)
+            }
+        }
         // Widget deep link (keep://diary). Handled here rather than in a page,
         // because switching tabs is this view's responsibility.
         .onAppear { consumePendingTab() }

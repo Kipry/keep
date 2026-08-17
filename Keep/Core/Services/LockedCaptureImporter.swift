@@ -25,20 +25,63 @@ import UIKit
 @available(iOS 18.0, *)
 enum LockedCaptureImporter {
 
+    /// Watches for session content for as long as the app is alive.
+    ///
+    /// This, not a one-shot read, is the reliable path — and the fix for clips
+    /// that only turned up on the *second* launch. Tapping "Open keep." in the
+    /// extension hands the app over while the system is still finishing the
+    /// handover of the session directory, so `sessionContentURLs` read once at
+    /// launch is frequently still empty at that instant. The next launch found
+    /// it, which is exactly the "it shows up if I reopen the app" symptom.
+    ///
+    /// The sequence closes that window: `.initial` covers whatever was already
+    /// waiting, `.added` covers anything that lands afterwards, however late.
+    @MainActor
+    static func observeUpdates(context: ModelContext) async {
+        for await update in LockedCameraCaptureManager.shared.sessionContentUpdates {
+            switch update {
+            case .initial(let urls): await importSessions(urls, context: context)
+            case .added(let url):    await importSessions([url], context: context)
+            default: break            // `.removed` is the system reclaiming a
+                                      // directory we already invalidated.
+            }
+        }
+    }
+
     /// Drains everything the extension has recorded since the last run.
     ///
-    /// Safe to call on every foreground: with nothing pending it does no work
-    /// and touches no state. Each session directory is invalidated once its
-    /// clips are safely copied and saved, which is what lets the system reclaim
-    /// it — skipping that would leave the same clips re-importing forever.
+    /// Kept alongside the observer as a belt-and-braces pass on launch and on
+    /// every foreground: if the sequence never starts for any reason, clips
+    /// still arrive, just a beat later. Double-importing is prevented by
+    /// `claimed`, not by the two paths staying out of each other's way.
     @MainActor
     static func importPending(context: ModelContext) async {
-        let manager = LockedCameraCaptureManager.shared
-        let sessions = manager.sessionContentURLs
-        guard !sessions.isEmpty else { return }
+        await importSessions(LockedCameraCaptureManager.shared.sessionContentURLs,
+                             context: context)
+    }
 
+    // MARK: Pieces
+
+    /// Session directories already handed to `importSessions`.
+    ///
+    /// Two callers can now reach the same directory — the observer's `.initial`
+    /// and the launch-time drain, at practically the same moment — and every
+    /// step in between is `await`, so they would happily interleave and import
+    /// the same clip twice. Claiming is the first thing that happens and it is
+    /// synchronous, which is what makes it a real guard rather than a smaller
+    /// race. Entries are never released: a directory is invalidated once, and
+    /// the system does not hand the same one back.
+    @MainActor
+    private static var claimed: Set<URL> = []
+
+    @MainActor
+    private static func importSessions(_ sessions: [URL], context: ModelContext) async {
+        let fresh = sessions.filter { claimed.insert($0).inserted }
+        guard !fresh.isEmpty else { return }
+
+        let manager = LockedCameraCaptureManager.shared
         var importedAny = false
-        for sessionURL in sessions {
+        for sessionURL in fresh {
             let movies = movieFiles(in: sessionURL)
             for movie in movies {
                 if await importClip(from: movie, context: context) { importedAny = true }
@@ -53,8 +96,6 @@ enum LockedCaptureImporter {
         do { try context.save() } catch { return }
         WidgetDataStore.refresh(context: context)
     }
-
-    // MARK: Pieces
 
     private static func movieFiles(in directory: URL) -> [URL] {
         let contents = (try? FileManager.default.contentsOfDirectory(
