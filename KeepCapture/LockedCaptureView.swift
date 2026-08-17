@@ -53,6 +53,7 @@ struct LockedCaptureView: View {
     @State private var isHoldRecording = false
     @State private var holdStartTask: Task<Void, Never>?
     @State private var holdZoomStart: CGFloat = 1.0
+    @State private var pendingCameraFlip = false
     @State private var isLocked = false
     @State private var lockArmed = false
 
@@ -67,6 +68,9 @@ struct LockedCaptureView: View {
     @State private var showExposureControl = false
     @State private var exposureHideTask: Task<Void, Never>?
     @State private var dragStartBias: Float = 0
+    @State private var torchOn = false
+    @State private var screenFlashOn = false
+    @State private var savedBrightness: CGFloat = UIScreen.main.brightness
 
     @State private var didCapture = false
     @State private var isOpeningApp = false
@@ -116,6 +120,29 @@ struct LockedCaptureView: View {
                         .transition(.opacity)
                 }
 
+                // Screen flash: bright white border fill-light for the front
+                // camera, which has no torch. Edge gradients glow while the
+                // preview stays visible in the centre.
+                if screenFlashOn {
+                    ZStack {
+                        LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom)
+                            .frame(height: geo.size.height * 0.4)
+                            .frame(maxHeight: .infinity, alignment: .top)
+                        LinearGradient(colors: [.white, .clear], startPoint: .bottom, endPoint: .top)
+                            .frame(height: geo.size.height * 0.4)
+                            .frame(maxHeight: .infinity, alignment: .bottom)
+                        LinearGradient(colors: [.white, .clear], startPoint: .leading, endPoint: .trailing)
+                            .frame(width: geo.size.width * 0.28)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        LinearGradient(colors: [.white, .clear], startPoint: .trailing, endPoint: .leading)
+                            .frame(width: geo.size.width * 0.28)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+                }
+
                 if didCapture {
                     savedOverlay
                 } else {
@@ -161,6 +188,8 @@ struct LockedCaptureView: View {
             zoomLabelTask?.cancel()
             exposureHideTask?.cancel()
             stopTimer()
+            if screenFlashOn { deactivateScreenFlash() }
+            camera.setTorch(false)
             camera.setExposureBias(0)
             camera.stopSession()
         }
@@ -182,21 +211,50 @@ struct LockedCaptureView: View {
     // MARK: Top bar
 
     private var topBar: some View {
-        VStack(spacing: 10) {
-            destinationChip
-            if camera.isRecording {
-                HStack(spacing: 7) {
-                    Circle().fill(Theme.amber).frame(width: 8, height: 8)
-                    Text(String(format: "%.1fs", elapsed))
-                        .font(.system(size: 13, weight: .medium).monospacedDigit())
-                        .foregroundStyle(.white)
+        // The leading spacer is the torch button's twin, so the chip stays
+        // optically centred rather than pushed left by the button's width.
+        HStack(alignment: .top, spacing: 8) {
+            Color.clear.frame(width: 43, height: 43)
+
+            Spacer(minLength: 0)
+
+            VStack(spacing: 10) {
+                destinationChip
+                if camera.isRecording {
+                    HStack(spacing: 7) {
+                        Circle().fill(Theme.amber).frame(width: 8, height: 8)
+                        Text(String(format: "%.1fs", elapsed))
+                            .font(.system(size: 13, weight: .medium).monospacedDigit())
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.black.opacity(0.55), in: Capsule())
+                    .transition(.scale.combined(with: .opacity))
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(.black.opacity(0.55), in: Capsule())
-                .transition(.scale.combined(with: .opacity))
             }
+
+            Spacer(minLength: 0)
+
+            Button {
+                torchOn.toggle()
+                if camera.cameraPosition == .front {
+                    torchOn ? activateScreenFlash() : deactivateScreenFlash()
+                } else {
+                    camera.setTorch(torchOn)
+                }
+            } label: {
+                Image(systemName: torchOn ? "bolt.fill" : "bolt.slash")
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(torchOn ? Theme.amber : .white)
+                    .frame(width: 43, height: 43)
+                    .background(.black.opacity(0.4), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Light")
+            .accessibilityValue(torchOn ? "On" : "Off")
         }
+        .padding(.horizontal, 20)
         .animation(.easeInOut(duration: 0.2), value: camera.isRecording)
     }
 
@@ -253,9 +311,15 @@ struct LockedCaptureView: View {
 
                 Spacer()
 
-                // Balances the lock slot so the shutter sits dead centre. The
-                // app puts the camera flip here; this screen has no flip.
-                Color.clear.frame(width: 52, height: 52)
+                Button { handleCameraFlip() } label: {
+                    Image(systemName: "arrow.triangle.2.circlepath.camera")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.white)
+                        .frame(width: 52, height: 52)
+                        .background(.black.opacity(0.4), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Switch camera")
             }
             .padding(.horizontal, 36)
         }
@@ -346,6 +410,45 @@ struct LockedCaptureView: View {
         }
     }
 
+    // MARK: Light and camera
+
+    /// Raises the display to full brightness behind the white edge gradients.
+    ///
+    /// Restored on every path out of here — the flip button, the toggle, and
+    /// `onDisappear`. That matters more in this process than it does in the
+    /// app: the system can suspend a capture extension without warning, and a
+    /// phone left at full brightness on the Lock Screen would be a nasty
+    /// parting gift.
+    private func activateScreenFlash() {
+        savedBrightness = UIScreen.main.brightness
+        UIScreen.main.brightness = 1.0
+        withAnimation(.easeIn(duration: 0.1)) { screenFlashOn = true }
+    }
+
+    private func deactivateScreenFlash() {
+        UIScreen.main.brightness = savedBrightness
+        withAnimation(.easeOut(duration: 0.2)) { screenFlashOn = false }
+    }
+
+    private func handleCameraFlip() {
+        if screenFlashOn { torchOn = false; deactivateScreenFlash() }
+        showExposureControl = false
+        exposureHideTask?.cancel()
+        if camera.isRecording {
+            // AVCaptureMovieFileOutput can't switch inputs mid-recording, so
+            // the current clip is closed out and `finishRecording` picks the
+            // flip back up once the file is written.
+            pendingCameraFlip = true
+            camera.stopRecording()
+            stopTimer()
+        } else {
+            Task {
+                try? await camera.switchCamera()
+                if isHoldRecording { holdZoomStart = camera.currentZoomFactor }
+            }
+        }
+    }
+
     // MARK: Recording
 
     /// Finger down on the shutter: arm hold mode, which a quick release cancels.
@@ -433,10 +536,30 @@ struct LockedCaptureView: View {
 
     private func finishRecording() {
         stopTimer()
-        isHoldRecording = false
-        isLocked = false
-        lockArmed = false
-        withAnimation(.easeOut(duration: 0.25)) { didCapture = true }
+        guard pendingCameraFlip else {
+            isHoldRecording = false
+            isLocked = false
+            lockArmed = false
+            // The light goes out with the viewfinder. In the app this happens
+            // by dismissing the camera screen; here the confirmation stays up,
+            // so nothing else would turn it off.
+            if screenFlashOn { deactivateScreenFlash() }
+            camera.setTorch(false)
+            torchOn = false
+            withAnimation(.easeOut(duration: 0.25)) { didCapture = true }
+            return
+        }
+        // A flip was asked for mid-recording: the clip just closed is kept —
+        // it gets imported like any other — and recording resumes on the other
+        // camera if the finger is still down.
+        pendingCameraFlip = false
+        Task {
+            try? await camera.switchCamera()
+            holdZoomStart = camera.currentZoomFactor
+            guard isHoldRecording else { return }
+            startTimer()
+            _ = try? await camera.startRecording()
+        }
     }
 
     // MARK: Timer
