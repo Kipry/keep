@@ -644,12 +644,21 @@ struct LockedCaptureView: View {
                 isOpeningApp = true
                 Task { await openApp() }
             } label: {
-                Text("Open keep.")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Theme.ink)
-                    .frame(height: 46)
-                    .frame(maxWidth: .infinity)
-                    .background(Capsule().fill(Theme.paper))
+                // The spinner is not decoration: this button can wait on the
+                // location write finishing, and a button that looks idle while
+                // it waits reads as one that didn't register the tap.
+                ZStack {
+                    Text("Open keep.")
+                        .font(.system(size: 16, weight: .semibold))
+                        .opacity(isOpeningApp ? 0 : 1)
+                    if isOpeningApp {
+                        ProgressView().tint(Theme.ink)
+                    }
+                }
+                .foregroundStyle(Theme.ink)
+                .frame(height: 46)
+                .frame(maxWidth: .infinity)
+                .background(Capsule().fill(Theme.paper))
             }
             .buttonStyle(.plain)
             .disabled(isOpeningApp)

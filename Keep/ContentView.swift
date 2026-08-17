@@ -80,24 +80,25 @@ struct ContentView: View {
             ClipFileRepair.run(in: modelContext)
             TrashSweep.run(in: modelContext)
             VideoComposer.purgeExports()
-            // Clips recorded on the Lock Screen: this is the first moment they
-            // can be filed, because until now the store was encrypted. Runs
-            // before the repair pass so a just-imported clip is included in it.
-            if #available(iOS 18.0, *) {
-                await LockedCaptureImporter.importPending(context: modelContext)
-                await LockedCaptureContextWriter.refresh(context: modelContext)
-            }
             // Re-renders covers captured at the old 320 px size. One pass per
             // install: afterwards every cover is already large enough.
             await CoverThumbnailRepair.run(in: modelContext)
         }
-        // Runs for the lifetime of the app rather than once at launch. Coming
-        // back from the Lock Screen camera, the session directory is often
-        // handed over a moment *after* the app is already on screen — read
-        // once, it is still empty, and the clip only appeared on the next
-        // launch. This waits for it instead.
+        // Deliberately its own task, and no longer part of the startup chain
+        // above. A launch coming straight out of the Lock Screen camera is the
+        // one launch where this has real work to do — copying a file, reading a
+        // duration, rendering a thumbnail — and sitting in the middle of the
+        // startup sequence it held everything after it, on the launch least
+        // able to afford it. Nothing else here depends on its result.
+        //
+        // It runs for the lifetime of the app rather than once: the session
+        // directory is often handed over a moment *after* the app is already on
+        // screen, so a single read finds nothing and the clip only turns up on
+        // the next launch. `.initial` covers whatever was already waiting,
+        // `.added` covers whatever lands later.
         .task {
             if #available(iOS 18.0, *) {
+                await LockedCaptureContextWriter.refresh(context: modelContext)
                 await LockedCaptureImporter.observeUpdates(context: modelContext)
             }
         }

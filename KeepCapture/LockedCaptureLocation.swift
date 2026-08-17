@@ -96,7 +96,7 @@ final class LockedCaptureLocation: NSObject, ObservableObject, CLLocationManager
     /// one, which is the behaviour this replaced.
     func writeSidecar(for movie: URL) async {
         guard granularity != .off else { return }
-        if take() == nil { await waitForFirstFix(upTo: 4) }
+        if take() == nil { await waitForFirstFix(upTo: 2.5) }
         guard let coordinate = take() else { return }
         let metadata = LockedClipMetadata(latitude: coordinate.latitude,
                                           longitude: coordinate.longitude)

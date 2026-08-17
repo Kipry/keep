@@ -79,7 +79,6 @@ enum LockedCaptureImporter {
         let fresh = sessions.filter { claimed.insert($0).inserted }
         guard !fresh.isEmpty else { return }
 
-        let manager = LockedCameraCaptureManager.shared
         var importedAny = false
         for sessionURL in fresh {
             let movies = movieFiles(in: sessionURL)
@@ -89,7 +88,22 @@ enum LockedCaptureImporter {
             // Invalidate whether or not anything was found: an empty or
             // unreadable session directory is finished business either way, and
             // leaving it behind means walking it again on every launch.
-            try? await manager.invalidateSessionContent(at: sessionURL)
+            //
+            // Not awaited. This hands a directory back to the system at the one
+            // moment the extension it came from may still be winding down, and
+            // how long that takes is not ours to bound. Awaited inline it sat
+            // on the main actor mid-launch, holding up the very frames the
+            // system was asking for — which is what a launch that comes out of
+            // the Lock Screen and then doesn't paint looks like. The clips are
+            // already copied and saved by then; nothing after this needs it to
+            // have finished.
+            Task.detached {
+                try? await LockedCameraCaptureManager.shared.invalidateSessionContent(at: sessionURL)
+            }
+            // Let the run loop draw between clips. A burst of locked captures
+            // is several file copies and thumbnail renders back to back, all on
+            // the main actor because SwiftData lives there.
+            await Task.yield()
         }
 
         guard importedAny else { return }
