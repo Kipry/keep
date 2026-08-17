@@ -205,29 +205,6 @@ struct PlacesMapView: View {
                     }
                 }
                 .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
-                // MapKit's dark standard style is a cold slate green, which is
-                // the one surface in the app that looks like it belongs to a
-                // different one. Lifted out of near-black and pushed warm, it
-                // reads as the same paper-and-amber world as everything else.
-                //
-                // Order matters: the lift happens on the raw tiles, then the
-                // tint colours what was lifted. Multiplying first and adding
-                // brightness after would pour neutral grey back over the
-                // warmth. Two filters and no more — this is a live map, and
-                // every one of them is a full-frame pass while panning.
-                //
-                // The annotations sit inside the Map, so they take the same
-                // treatment. On the paper-framed pins and the amber clusters
-                // that's invisible; on the clip thumbnails it lands as a mild
-                // warm cast, which in a film journal is a look rather than a
-                // defect. The preview card below the map shows them untouched.
-                .brightness(0.06)
-                .colorMultiply(Color(red: 1.0, green: 0.91, blue: 0.78))
-                // No zoom stepper, no compass, no scale bar. Pinch and
-                // double-tap already do this, more precisely and without
-                // covering the map with chrome — and the buttons MapKit puts
-                // there by default sit exactly where the northern pins are.
-                .mapControls { }
                 .onMapCameraChange(frequency: .onEnd) { ctx in
                     visibleRect = ctx.rect   // clustering input only
                     // Remember the altitude the user settles on. Only while
