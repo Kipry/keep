@@ -13,13 +13,22 @@ import UIKit
 
 // MARK: - Locked capture UI
 
-/// The whole locked-camera experience: preview, one shutter, one confirmation.
+/// The whole locked-camera experience: viewfinder, shutter, one confirmation.
 ///
-/// Deliberately smaller than the in-app camera. There is no zoom pill, no
-/// exposure slider, no torch, no flip-to-front memory — every one of those
-/// reads a preference this sandbox cannot see, and none of them is what
-/// someone reaching for a locked phone is trying to do. The whole point is
-/// that this is over in about a second.
+/// Everything here that touches the *camera* is the same as inside the app,
+/// and deliberately so — the shutter, the duration pills, the exposure slider
+/// and the focus ring are literally the same views (`CameraControls.swift`),
+/// driven by the same `CameraService`. None of that needs the user's data, so
+/// none of it is blocked by the locked sandbox. An earlier version of this
+/// screen cut all of it on the assumption that a locked capture should be
+/// minimal; the assumption was wrong, and someone recording a one-second clip
+/// at arm's length needs the exposure control *more* than they do in the app,
+/// not less.
+///
+/// What genuinely can't cross the boundary is data: the project list, and any
+/// preference written back. So a duration picked here applies to this clip and
+/// is forgotten, and the destination is whatever the app last told us through
+/// the intent's app context.
 ///
 /// Fonts are system fonts on purpose: the app registers JetBrains Mono at
 /// launch, and that registration has not happened in this process, so the
@@ -33,57 +42,106 @@ struct LockedCaptureView: View {
     /// Display/behaviour hints handed over by the app through the intent's
     /// app context — the only channel that crosses this sandbox boundary.
     @State private var context = KeepCaptureContext.fallback
-    @State private var elapsed: Double = 0
-    /// Drives the shutter ring and stops the clip at its length.
-    ///
-    /// A `Task`, not a `Timer`: a Timer's callback is `@Sendable`, and stopping
-    /// it from inside itself means capturing the non-Sendable `Timer` in that
-    /// closure — which Swift 6 rejects outright. A cancellable task expresses
-    /// the same thing without smuggling a reference type across an isolation
-    /// boundary, and cancels cleanly when the view goes away.
-    @State private var ticker: Task<Void, Never>?
-    @State private var didCapture = false
-    @State private var isOpeningApp = false
 
     private let startHaptic = UIImpactFeedbackGenerator(style: .heavy)
     private let stopHaptic  = UIImpactFeedbackGenerator(style: .rigid)
 
+    @State private var recordingStart: Date?
+    @State private var elapsed: Double = 0
+    @State private var timer: Timer?
+    @State private var durationLimit = RecordingDuration.standard
+    @State private var isHoldRecording = false
+    @State private var holdStartTask: Task<Void, Never>?
+    @State private var holdZoomStart: CGFloat = 1.0
+    @State private var isLocked = false
+    @State private var lockArmed = false
+
+    private let lockSlideThreshold: CGFloat = 80
+    private let holdThreshold: TimeInterval = 0.25
+
+    @State private var focusPoint: CGPoint?
+    @State private var showFocusRing = false
+    @State private var lastZoom: CGFloat = 1.0
+    @State private var showZoomLabel = false
+    @State private var zoomLabelTask: Task<Void, Never>?
+    @State private var showExposureControl = false
+    @State private var exposureHideTask: Task<Void, Never>?
+    @State private var dragStartBias: Float = 0
+
+    @State private var didCapture = false
+    @State private var isOpeningApp = false
+
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        // GeometryReader rather than `UIScreen.main.bounds`: this scene is the
+        // system's to size, not ours, and the focus point has to be normalised
+        // against the view that was actually tapped.
+        GeometryReader { geo in
+            ZStack {
+                Color.black.ignoresSafeArea()
 
-            if let avSession = camera.session {
-                CameraPreviewView(session: avSession)
-                    .ignoresSafeArea()
-            }
-
-            if didCapture {
-                savedOverlay
-            } else {
-                VStack {
-                    destinationChip
-                        .padding(.top, 14)
-                    Spacer()
-                    shutter
-                        .padding(.bottom, 44)
+                if let avSession = camera.session {
+                    CameraPreviewView(session: avSession)
+                        .ignoresSafeArea()
+                        .gesture(tapToFocusGesture(in: geo.size))
+                        .gesture(pinchToZoomGesture)
                 }
-            }
 
-            if let error = camera.cameraError?.localizedDescription {
-                Text(verbatim: error)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(14)
-                    .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal, 28)
+                if showFocusRing, let pt = focusPoint {
+                    FocusRingView().position(pt)
+                }
+
+                if showExposureControl, let pt = focusPoint {
+                    ExposureSliderView(
+                        bias: camera.exposureBias,
+                        onDragStart: { dragStartBias = camera.exposureBias },
+                        onDragChanged: { translation in
+                            camera.setExposureBias(dragStartBias + Float(-translation) * (3.5 / 104))
+                            scheduleHideExposureControl()
+                        }
+                    )
+                    .position(
+                        x: min(pt.x + 62, geo.size.width - 26),
+                        y: max(min(pt.y, geo.size.height - 90), 90)
+                    )
+                    .transition(.opacity)
+                }
+
+                if showZoomLabel {
+                    Text(String(format: "%.1f×", camera.displayZoomFactor))
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .background(.black.opacity(0.55), in: Capsule())
+                        .transition(.opacity)
+                }
+
+                if didCapture {
+                    savedOverlay
+                } else {
+                    VStack {
+                        topBar.padding(.top, 14)
+                        Spacer()
+                        bottomBar
+                    }
+                }
+
+                if let error = camera.cameraError?.localizedDescription {
+                    Text(verbatim: error)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(14)
+                        .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal, 28)
+                }
             }
         }
         // Keeps the hardware capture button (and Camera Control) working — and,
         // just as importantly, tells the system this extension is an active
         // camera experience. Without an AVCaptureEventInteraction the system
         // suspends a locked capture extension after a few idle seconds.
-        .background(CaptureEventCatcher { Task { await record() } })
+        .background(CaptureEventCatcher { handleRecordTap() })
         .task {
             // Session content, not Documents: this extension's own container is
             // wiped on suspension, so anything written there would be gone
@@ -92,19 +150,55 @@ struct LockedCaptureView: View {
             if let handed = try? await KeepCaptureIntent.appContext {
                 context = handed
             }
+            // Starts on the length the user chose in the app, and can be
+            // changed from here for this clip only.
+            durationLimit = RecordingDuration.resolve(context.duration)
             startHaptic.prepare()
             try? await camera.startSession()
         }
         .onDisappear {
-            ticker?.cancel()
-            ticker = nil
+            holdStartTask?.cancel()
+            zoomLabelTask?.cancel()
+            exposureHideTask?.cancel()
+            stopTimer()
+            camera.setExposureBias(0)
             camera.stopSession()
+        }
+        .onChange(of: camera.lastRecordedURL) { _, url in
+            guard url != nil else { return }
+            finishRecording()
+        }
+        .onChange(of: camera.isRecording) { _, recording in
+            guard recording else { return }
+            startHaptic.impactOccurred(intensity: 1.0)
+            stopHaptic.prepare()
         }
         .statusBarHidden(true)
         .preferredColorScheme(.dark)
+        .animation(.easeInOut(duration: 0.25), value: showZoomLabel)
+        .animation(.easeInOut(duration: 0.2), value: showExposureControl)
     }
 
-    // MARK: Destination
+    // MARK: Top bar
+
+    private var topBar: some View {
+        VStack(spacing: 10) {
+            destinationChip
+            if camera.isRecording {
+                HStack(spacing: 7) {
+                    Circle().fill(Theme.amber).frame(width: 8, height: 8)
+                    Text(String(format: "%.1fs", elapsed))
+                        .font(.system(size: 13, weight: .medium).monospacedDigit())
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.black.opacity(0.55), in: Capsule())
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: camera.isRecording)
+    }
 
     /// Names the project the clip is headed for, when the app has told us one.
     /// Says so plainly when it hasn't, rather than inventing a destination —
@@ -125,39 +219,247 @@ struct LockedCaptureView: View {
         .overlay(Capsule().stroke(.white.opacity(0.15), lineWidth: 1))
     }
 
-    // MARK: Shutter
+    // MARK: Bottom bar
 
-    private var shutter: some View {
-        Button { Task { await record() } } label: {
-            ZStack {
-                Circle()
-                    .stroke(.white.opacity(0.32), lineWidth: 4)
-                    .frame(width: 78, height: 78)
+    private var bottomBar: some View {
+        VStack(spacing: 16) {
+            if !camera.isRecording {
+                DurationPicker(selection: $durationLimit).transition(.opacity)
+            }
 
-                // Sweeps shut over the clip's own length, so the wait has a
-                // visible end — same read as the in-app shutter.
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(Theme.amber, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                    .frame(width: 78, height: 78)
-                    .rotationEffect(.degrees(-90))
+            if isLocked {
+                lockHint("lock.fill", "Tap the shutter to stop")
+            } else if isHoldRecording {
+                lockHint("arrow.left", "Slide to lock")
+            }
 
-                Circle()
-                    .fill(camera.isRecording ? Theme.amber : .white)
-                    .frame(width: camera.isRecording ? 34 : 62,
-                           height: camera.isRecording ? 34 : 62)
-                    .animation(.easeInOut(duration: 0.18), value: camera.isRecording)
+            HStack {
+                lockSlot
+
+                Spacer()
+
+                RecordButton(
+                    isRecording: camera.isRecording,
+                    progress: (isHoldRecording || isLocked) ? 0
+                        : (durationLimit > 0 ? CGFloat(min(elapsed / durationLimit, 1.0)) : 0),
+                    onPressDown: { handlePressDown() },
+                    onRelease:   { handleRelease() },
+                    onDrag:      { handleDrag($0) }
+                )
+                .accessibilityElement(children: .ignore)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(camera.isRecording ? "Stop recording" : "Record")
+                .accessibilityAction { handleRecordTap() }
+
+                Spacer()
+
+                // Balances the lock slot so the shutter sits dead centre. The
+                // app puts the camera flip here; this screen has no flip.
+                Color.clear.frame(width: 52, height: 52)
+            }
+            .padding(.horizontal, 36)
+        }
+        .padding(.bottom, 44)
+        .animation(.easeInOut(duration: 0.2), value: camera.isRecording)
+        .animation(.easeInOut(duration: 0.2), value: isHoldRecording)
+        .animation(.easeInOut(duration: 0.2), value: isLocked)
+    }
+
+    private var lockSlot: some View {
+        ZStack {
+            if isLocked {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+                    .frame(width: 48, height: 48)
+                    .background(Theme.amber, in: Circle())
+                    .shadow(color: Theme.amber.opacity(0.5), radius: 8)
+            } else if isHoldRecording {
+                Image(systemName: "lock.open")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(.black.opacity(0.45), in: Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.5), lineWidth: 1))
+            } else {
+                Color.clear
             }
         }
-        .buttonStyle(.plain)
-        .disabled(!camera.isRunning || camera.isRecording)
-        .accessibilityLabel("Record")
+        .frame(width: 52, height: 52)
     }
 
-    private var progress: CGFloat {
-        guard context.duration > 0 else { return 0 }
-        return min(1, CGFloat(elapsed / context.duration))
+    private func lockHint(_ icon: String, _ text: LocalizedStringKey) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon).font(.system(size: 12, weight: .bold))
+            Text(text).font(.system(size: 12, weight: .medium))
+        }
+        .foregroundStyle(.white.opacity(0.9))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.black.opacity(0.5), in: Capsule())
+        .transition(.opacity)
     }
+
+    // MARK: Gestures
+
+    private func tapToFocusGesture(in size: CGSize) -> some Gesture {
+        SpatialTapGesture().onEnded { value in
+            guard !didCapture else { return }
+            camera.focusAt(CGPoint(x: value.location.x / size.width,
+                                   y: value.location.y / size.height))
+            focusPoint = value.location
+            showFocusRing = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { showFocusRing = false }
+            withAnimation { showExposureControl = true }
+            scheduleHideExposureControl()
+        }
+    }
+
+    private var pinchToZoomGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { scale in
+                camera.setZoom(lastZoom * scale)
+                showZoomLabel = true
+                zoomLabelTask?.cancel()
+            }
+            .onEnded { _ in
+                lastZoom = camera.currentZoomFactor
+                hideZoomLabelSoon()
+            }
+    }
+
+    private func hideZoomLabelSoon() {
+        zoomLabelTask?.cancel()
+        zoomLabelTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation { showZoomLabel = false }
+        }
+    }
+
+    private func scheduleHideExposureControl() {
+        exposureHideTask?.cancel()
+        exposureHideTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.25)) { showExposureControl = false }
+        }
+    }
+
+    // MARK: Recording
+
+    /// Finger down on the shutter: arm hold mode, which a quick release cancels.
+    private func handlePressDown() {
+        guard holdStartTask == nil, !camera.isRecording, !didCapture else { return }
+        holdStartTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(holdThreshold * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            holdZoomStart = camera.currentZoomFactor
+            isHoldRecording = true
+            startTimer()
+            _ = try? await camera.startRecording()
+        }
+    }
+
+    /// Finger up: tap or hold, decided by whether hold mode had time to engage.
+    private func handleRelease() {
+        // The slide-to-lock just engaged — keep recording hands-free and ignore
+        // the lift entirely.
+        if lockArmed {
+            lockArmed = false
+            holdStartTask = nil
+            return
+        }
+        // A later tap while locked is what stops the hands-free recording.
+        if isLocked {
+            isLocked = false
+            isHoldRecording = false
+            endRecording()
+            return
+        }
+        if let task = holdStartTask {
+            task.cancel()
+            holdStartTask = nil
+            if isHoldRecording {
+                isHoldRecording = false
+                endRecording()
+                lastZoom = camera.currentZoomFactor
+                hideZoomLabelSoon()
+            } else {
+                handleRecordTap()
+            }
+        } else if camera.isRecording {
+            handleRecordTap()
+        }
+    }
+
+    /// Held and dragged: left toward the lock icon locks hands-free, otherwise
+    /// up/down zooms — the same mapping as the in-app shutter.
+    private func handleDrag(_ translation: CGSize) {
+        guard isHoldRecording, !isLocked else { return }
+        if translation.width < -lockSlideThreshold, abs(translation.width) > abs(translation.height) {
+            isLocked = true
+            lockArmed = true
+            withAnimation { showZoomLabel = false }
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            return
+        }
+        camera.setZoom(holdZoomStart - translation.height * 0.013)
+        zoomLabelTask?.cancel()
+        showZoomLabel = true
+    }
+
+    private func handleRecordTap() {
+        guard !didCapture else { return }
+        if camera.isRecording {
+            endRecording()
+        } else {
+            startTimer()
+            Task { _ = try? await camera.startRecording() }
+        }
+    }
+
+    /// Every user-facing way to end a recording goes through here. The stop
+    /// tick fires first, synchronously, so it lands on the moment the user
+    /// acted rather than the moment AVFoundation finished closing the file.
+    private func endRecording() {
+        stopHaptic.impactOccurred(intensity: 1.0)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.09) {
+            stopHaptic.impactOccurred(intensity: 0.7)
+        }
+        camera.stopRecording()
+        stopTimer()
+    }
+
+    private func finishRecording() {
+        stopTimer()
+        isHoldRecording = false
+        isLocked = false
+        lockArmed = false
+        withAnimation(.easeOut(duration: 0.25)) { didCapture = true }
+    }
+
+    // MARK: Timer
+
+    private func startTimer() {
+        elapsed = 0
+        recordingStart = Date()
+        timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+            // Scheduled on the main run loop, so this body always runs on the
+            // main actor — the compiler just can't see that through the
+            // nonisolated closure. Asserting it keeps the stop synchronous;
+            // hopping via Task would overshoot the duration limit.
+            MainActor.assumeIsolated {
+                guard let start = recordingStart else { return }
+                elapsed = Date().timeIntervalSince(start)
+                if !isHoldRecording, !isLocked, elapsed >= durationLimit {
+                    endRecording()
+                }
+            }
+        }
+    }
+
+    private func stopTimer() { timer?.invalidate(); timer = nil }
 
     // MARK: Saved state
 
@@ -202,37 +504,6 @@ struct LockedCaptureView: View {
         .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 24))
         .padding(.horizontal, 24)
         .transition(.opacity)
-    }
-
-    // MARK: Recording
-
-    @MainActor
-    private func record() async {
-        guard camera.isRunning, !camera.isRecording, !didCapture else { return }
-        startHaptic.impactOccurred(intensity: 1.0)
-        stopHaptic.prepare()
-
-        elapsed = 0
-        let limit = context.duration
-        ticker?.cancel()
-        ticker = Task { @MainActor in
-            let step = 1.0 / 30
-            while !Task.isCancelled, elapsed < limit {
-                try? await Task.sleep(nanoseconds: UInt64(step * 1_000_000_000))
-                elapsed = min(limit, elapsed + step)
-            }
-            guard !Task.isCancelled else { return }
-            stopHaptic.impactOccurred(intensity: 0.9)
-            camera.stopRecording()
-        }
-
-        // Resolves once AVFoundation has finished writing and closing the file,
-        // so by the time this returns the clip really is on disk in the session
-        // directory — which is the only thing that makes it survivable.
-        _ = try? await camera.startRecording()
-        ticker?.cancel()
-        ticker = nil
-        withAnimation(.easeOut(duration: 0.25)) { didCapture = true }
     }
 
     @MainActor

@@ -26,6 +26,8 @@
 		A1000000000000000000005B /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000005A /* CameraService.swift */; };
 		A1000000000000000000006B /* VideoComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000006A /* VideoComposer.swift */; };
 		A1000000000000000000007B /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000007A /* CameraView.swift */; };
+		C4A1C7A10000000000000002 /* CameraControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A1C7A10000000000000001 /* CameraControls.swift */; };
+		C4A1C7A10000000000000003 /* CameraControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A1C7A10000000000000001 /* CameraControls.swift */; };
 		A1000000000000000000008B /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000008A /* CameraPreviewView.swift */; };
 		A100000000000000000000AB /* ProjectListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000AA /* ProjectListView.swift */; };
 		A100000000000000000000BB /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000BA /* ProjectDetailView.swift */; };
@@ -137,6 +139,7 @@
 		A1000000000000000000005A /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
 		A1000000000000000000006A /* VideoComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoComposer.swift; sourceTree = "<group>"; };
 		A1000000000000000000007A /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
+		C4A1C7A10000000000000001 /* CameraControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraControls.swift; sourceTree = "<group>"; };
 		A1000000000000000000008A /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
 		A100000000000000000000AA /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
 		A100000000000000000000BA /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
@@ -341,6 +344,7 @@
 			isa = PBXGroup;
 			children = (
 				A1000000000000000000007A /* CameraView.swift */,
+				C4A1C7A10000000000000001 /* CameraControls.swift */,
 				A1000000000000000000008A /* CameraPreviewView.swift */,
 			);
 			path = Camera;
@@ -624,6 +628,7 @@
 				A1000000000000000000005B /* CameraService.swift in Sources */,
 				A1000000000000000000006B /* VideoComposer.swift in Sources */,
 				A1000000000000000000007B /* CameraView.swift in Sources */,
+				C4A1C7A10000000000000002 /* CameraControls.swift in Sources */,
 				C328CD622FB72AD700443F80 /* WidgetDataStore.swift in Sources */,
 				6F64E3A7CA3B974E470EA53A /* ClipFileRepair.swift in Sources */,
 				8DDD0E0E5B6B36CE01C06E0D /* TrashSweep.swift in Sources */,
@@ -677,6 +682,7 @@
 				C348BF9F30325855001A0218 /* ExportQuality.swift in Sources */,
 				C348BFA030325855001A0218 /* RecordingDuration.swift in Sources */,
 				C348BFA130325855001A0218 /* CameraPreviewView.swift in Sources */,
+				C4A1C7A10000000000000003 /* CameraControls.swift in Sources */,
 				C348BFA230325855001A0218 /* CameraService.swift in Sources */,
 				C348BFA330325855001A0218 /* KeepCaptureIntent.swift in Sources */,
 				C348BFA430325855001A0218 /* Theme.swift in Sources */,
