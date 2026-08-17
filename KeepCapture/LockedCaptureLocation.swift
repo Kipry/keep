@@ -25,18 +25,25 @@ import Foundation
 @MainActor
 final class LockedCaptureLocation: NSObject, ObservableObject, CLLocationManagerDelegate {
 
-    private let manager = CLLocationManager()
+    /// Built on first use, not when this object is created.
+    ///
+    /// This object is a `@StateObject` on the capture view, so a stored
+    /// `CLLocationManager` would be constructed during the extension's launch —
+    /// the window in which the system decides whether this process is a camera
+    /// and kills it if it can't tell. Nothing about locating the phone belongs
+    /// in that window; `prime` is called once the session is actually running.
+    private lazy var manager: CLLocationManager = {
+        let manager = CLLocationManager()
+        manager.delegate = self
+        // Coarse on purpose: a street-level fix isn't worth waiting for when
+        // the coordinate gets rounded to ~1.1 km anyway at the default setting.
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        return manager
+    }()
+
     private var granularity: LocationGranularity = .off
     private var lastFix: CLLocation?
     private var isUpdating = false
-
-    override init() {
-        super.init()
-        manager.delegate = self
-        // Coarse on purpose: `requestLocation()` answers in seconds instead of
-        // waiting for GPS to converge, and the coordinate gets rounded anyway.
-        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-    }
 
     /// Starts warming up a fix, if the user's setting allows one at all.
     ///
@@ -69,6 +76,8 @@ final class LockedCaptureLocation: NSObject, ObservableObject, CLLocationManager
         manager.startUpdatingLocation()
     }
 
+    /// Only touches the manager if it was ever built — tearing down a view that
+    /// never located anything shouldn't create a CLLocationManager to stop it.
     func stop() {
         guard isUpdating else { return }
         isUpdating = false

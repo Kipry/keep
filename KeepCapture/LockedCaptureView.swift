@@ -43,6 +43,9 @@ struct LockedCaptureView: View {
     /// Display/behaviour hints handed over by the app through the intent's
     /// app context — the only channel that crosses this sandbox boundary.
     @State private var context = KeepCaptureContext.fallback
+    /// The app's location setting once it has crossed over. `.off` until then,
+    /// which is also the right answer if it never does.
+    @State private var granularity: LocationGranularity = .off
 
     private let startHaptic = UIImpactFeedbackGenerator(style: .heavy)
     private let stopHaptic  = UIImpactFeedbackGenerator(style: .rigid)
@@ -206,10 +209,17 @@ struct LockedCaptureView: View {
             // already in progress.
             guard !camera.isRecording, !didCapture else { return }
             durationLimit = RecordingDuration.resolve(handed.duration)
-            // Warmed up now so the fix has arrived by the time a clip is
-            // written seconds later — the same trick the in-app camera plays.
-            location.prime(granularity: LocationGranularity(rawValue: handed.locationGranularity ?? "") ?? .off)
+            // Remembered, not acted on yet — see `startLocationIfReady`.
+            granularity = LocationGranularity(rawValue: handed.locationGranularity ?? "") ?? .off
+            startLocationIfReady()
         }
+        // Location waits for the camera, always. Not because it depends on it,
+        // but because the launch window is where this extension is fragile: the
+        // system watches for a running capture session and kills the process if
+        // it doesn't find one. Nothing else may compete for that moment — so
+        // Core Location only starts once the session is up, whichever of the
+        // two arrives second.
+        .onChange(of: camera.isRunning) { _, _ in startLocationIfReady() }
         .onDisappear {
             holdStartTask?.cancel()
             zoomLabelTask?.cancel()
@@ -441,6 +451,14 @@ struct LockedCaptureView: View {
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.25)) { showExposureControl = false }
         }
+    }
+
+    /// Starts the one-shot location warm-up once both halves are in: the
+    /// camera running, and the app's setting having made it across. Idempotent
+    /// — whichever arrives last is the one that actually starts it.
+    private func startLocationIfReady() {
+        guard camera.isRunning, granularity != .off else { return }
+        location.prime(granularity: granularity)
     }
 
     // MARK: Light and camera
