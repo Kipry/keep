@@ -71,7 +71,13 @@ struct LockedCaptureView: View {
     @State private var dragStartBias: Float = 0
     @State private var torchOn = false
     @State private var screenFlashOn = false
-    @State private var savedBrightness: CGFloat = UIScreen.main.brightness
+    /// Deliberately not seeded from `UIScreen.main`. A default value on `@State`
+    /// is evaluated every time this view struct is built, which here is during
+    /// the extension's launch — the most fragile moment it has, and `UIScreen`
+    /// is exactly the kind of app-shaped assumption that doesn't hold in a
+    /// capture extension. The real brightness is read in `activateScreenFlash`,
+    /// which is the only thing that can make `deactivate` matter.
+    @State private var savedBrightness: CGFloat = 0.5
 
     @State private var didCapture = false
     @State private var isOpeningApp = false
@@ -170,22 +176,37 @@ struct LockedCaptureView: View {
         // camera experience. Without an AVCaptureEventInteraction the system
         // suspends a locked capture extension after a few idle seconds.
         .background(CaptureEventCatcher { handleRecordTap() })
+        // Nothing may come before the camera here. Apple's own wording: a
+        // capture extension "terminates shortly after launch if it doesn't
+        // have an active camera view [...] or if access to the camera hasn't
+        // been requested". This used to await the app context first — a
+        // cross-process AppIntents fetch — and only then start the session,
+        // which handed the system a window in which this looked like an
+        // extension that wasn't a camera. That is what a launch that zooms in
+        // a little and drops straight back to the Lock Screen looks like.
         .task {
             // Session content, not Documents: this extension's own container is
             // wiped on suspension, so anything written there would be gone
             // before the app could ever import it.
             camera.outputDirectory = session.sessionContentURL
-            if let handed = try? await KeepCaptureIntent.appContext {
-                context = handed
-            }
-            // Starts on the length the user chose in the app, and can be
-            // changed from here for this clip only.
-            durationLimit = RecordingDuration.resolve(context.duration)
-            // Warmed up now so the fix has arrived by the time a clip is
-            // written seconds later — the same trick the in-app camera plays.
-            location.prime(granularity: LocationGranularity(rawValue: context.locationGranularity ?? "") ?? .off)
             startHaptic.prepare()
             try? await camera.startSession()
+        }
+        // Runs alongside the one above, not after it. Everything it fetches is
+        // a display hint, and the fallbacks are honest ones — the standard
+        // clip length and no location — so arriving a moment late costs
+        // nothing and blocking the camera on it cost the launch.
+        .task {
+            guard let handed = try? await KeepCaptureIntent.appContext else { return }
+            context = handed
+            // Only while nothing has started. If the context lands mid-clip,
+            // rewriting the limit would move the finish line under a recording
+            // already in progress.
+            guard !camera.isRecording, !didCapture else { return }
+            durationLimit = RecordingDuration.resolve(handed.duration)
+            // Warmed up now so the fix has arrived by the time a clip is
+            // written seconds later — the same trick the in-app camera plays.
+            location.prime(granularity: LocationGranularity(rawValue: handed.locationGranularity ?? "") ?? .off)
         }
         .onDisappear {
             holdStartTask?.cancel()
