@@ -81,6 +81,8 @@ struct LockedCaptureView: View {
 
     @State private var didCapture = false
     @State private var isOpeningApp = false
+    /// The in-flight sidecar write, so opening the app can't outrun it.
+    @State private var sidecarTask: Task<Void, Never>?
 
     var body: some View {
         // GeometryReader rather than `UIScreen.main.bounds`: this scene is the
@@ -217,14 +219,15 @@ struct LockedCaptureView: View {
             camera.setTorch(false)
             camera.setExposureBias(0)
             camera.stopSession()
+            location.stop()
         }
         .onChange(of: camera.lastRecordedURL) { _, url in
             guard let url else { return }
-            // Before anything else: the clip is on disk, the session directory
-            // is the app's only channel, and a mid-recording camera flip means
-            // this can fire more than once per session — each clip gets its
-            // own sidecar.
-            location.writeSidecar(for: url)
+            // Detached from the confirmation on purpose: the sidecar write may
+            // wait a beat for a first GPS fix, and the "Clip saved" screen has
+            // no reason to wait with it. A mid-recording camera flip means this
+            // fires more than once per session, so each clip gets its own.
+            sidecarTask = Task { await location.writeSidecar(for: url) }
             finishRecording()
         }
         .onChange(of: camera.isRecording) { _, recording in
@@ -661,6 +664,12 @@ struct LockedCaptureView: View {
 
     @MainActor
     private func openApp() async {
+        // The one case where the sidecar could lose a race: tapping this
+        // immediately after recording hands the session directory to an app
+        // that imports it at once, possibly before the location has landed
+        // next to the clip. Bounded by the write's own timeout, so this can
+        // hold the button for a moment but never indefinitely.
+        await sidecarTask?.value
         let activity = NSUserActivity(activityType: NSUserActivityTypeLockedCameraCapture)
         try? await session.openApplication(for: activity)
     }
