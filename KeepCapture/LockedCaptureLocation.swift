@@ -1,3 +1,8 @@
+// Combine, for `ObservableObject` — the view holds this with `@StateObject`,
+// which is what stops a fresh CLLocationManager being built on every body
+// evaluation. The conformance comes from Combine, and this project enables
+// MEMBER_IMPORT_VISIBILITY, so the defining module has to be named.
+import Combine
 import CoreLocation
 import Foundation
 
