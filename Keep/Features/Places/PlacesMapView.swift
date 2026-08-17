@@ -209,9 +209,17 @@ struct PlacesMapView: View {
                         .annotationTitles(.hidden)
                     }
                 }
-                .mapStyle(.standard(elevation: .flat, emphasis: .muted,
-                                   pointsOfInterest: .excludingAll, showsTraffic: false))
-                .mapControlVisibility(.hidden)   // replaced by our own zoom buttons below
+                // `emphasis: .muted` is MapKit's own way of stepping back so
+                // overlays read first. Dropped: stacked on top of our grading
+                // it was muting an already-muted map, and between the two the
+                // land lost every trace of colour. Suppressing the clutter is
+                // what `pointsOfInterest: .excludingAll` and no traffic are
+                // for; that part never needed help.
+                .mapStyle(.standard(elevation: .flat,
+                                    pointsOfInterest: .excludingAll, showsTraffic: false))
+                // Nothing floats over the map any more — no stepper, no
+                // compass, no scale bar, and no zoom buttons of our own.
+                .mapControlVisibility(.hidden)
                 .colorScheme(.dark)
                 .warmMapGrading()
                 .onMapCameraChange(frequency: .onEnd) { ctx in
@@ -244,9 +252,6 @@ struct PlacesMapView: View {
             }
             .overlay(alignment: .bottom) {
                 if let place = activePlace { previewCard(for: place) }
-            }
-            .overlay(alignment: .topTrailing) {
-                if !places.places.isEmpty { zoomButtons }
             }
             .onAppear {
                 viewWidth = geo.size.width
@@ -281,41 +286,6 @@ struct PlacesMapView: View {
         }
         .buttonStyle(.plain)
         .padding(12)
-    }
-
-    private var zoomButtons: some View {
-        VStack(spacing: 6) {
-            zoomButton(symbol: "plus") { zoomBy(1.4) }
-            zoomButton(symbol: "minus") { zoomBy(1 / 1.4) }
-        }
-        .padding(12)
-    }
-
-    private func zoomButton(symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 32, height: 32)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().stroke(.white.opacity(0.12), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-    }
-
-    /// `followDistance` doubles as "the distance the user last settled at" (see
-    /// `onMapCameraChange`), so a manual nudge scales from the same value a
-    /// flight would land at — the two never disagree about how zoomed in "now" is.
-    private func zoomBy(_ factor: Double) {
-        cancelFlight()
-        follow = false
-        let newDistance = min(max(followDistance / factor, 250), 60_000)
-        followDistance = newDistance
-        let position = MapCameraPosition.camera(
-            MapCamera(centerCoordinate: visibleCenter, distance: newDistance)
-        )
-        if reduceMotion { camera = position }
-        else { withAnimation(.easeInOut(duration: 0.25)) { camera = position } }
     }
 
     @ViewBuilder
@@ -766,28 +736,39 @@ struct PlacesMapView: View {
 // MARK: - Warm map grading
 
 private extension View {
-    /// Real MapKit tiles can't be recolored directly, so this grades the
-    /// rendered map instead of replacing it: desaturate first so Apple's blue
-    /// water and green land read as neutral, then a warm multiply wash and a
-    /// centre-weighted vignette, so the map reads as belonging to the app's
-    /// black-and-amber palette rather than generic system Maps — and the
-    /// vignette keeps the middle, where the pins are, the brightest part.
+    /// Real MapKit tiles can't be recoloured directly, so this grades the
+    /// rendered map instead of replacing it — the goal being a map that looks
+    /// like it belongs to the app's paper-and-amber world rather than to
+    /// system Maps.
+    ///
+    /// The first attempt got there by *removing*: saturation down to 0.45,
+    /// brightness pulled below zero, a black wash across the bottom and a
+    /// heavy vignette, all on top of MapKit's own `emphasis: .muted`. Every
+    /// one of those subtracts, and together they didn't make the map warm,
+    /// they made it grey and dark — colourless land, black corners, nothing
+    /// left to be warm *with*.
+    ///
+    /// This does it by tinting instead. Saturation comes back most of the way
+    /// (calmer than raw MapKit, still clearly coloured), brightness lifts
+    /// rather than sinks, and a warm multiply does the actual work of moving
+    /// Apple's blue-green toward amber and sand.
+    ///
+    /// Order is deliberate: the lift runs on the raw tiles and the tint
+    /// colours what was lifted. Multiplying first and brightening afterwards
+    /// would pour neutral grey back over the warmth.
+    ///
+    /// The vignette stays, at a third of its old strength and starting much
+    /// further out — enough to stop the tiles glowing against the card's edge,
+    /// not so much that it eats the corners of the map.
     func warmMapGrading() -> some View {
         self
-            .saturation(0.45)
-            .brightness(-0.04)
-            .overlay {
-                LinearGradient(
-                    colors: [Theme.amber.opacity(0.07), .clear, .black.opacity(0.22)],
-                    startPoint: .top, endPoint: .bottom
-                )
-                .blendMode(.multiply)
-                .allowsHitTesting(false)
-            }
+            .saturation(0.8)
+            .brightness(0.05)
+            .colorMultiply(Color(red: 1.0, green: 0.90, blue: 0.76))
             .overlay {
                 RadialGradient(
-                    colors: [.clear, Theme.background.opacity(0.5)],
-                    center: .center, startRadius: 120, endRadius: 340
+                    colors: [.clear, Theme.background.opacity(0.18)],
+                    center: .center, startRadius: 240, endRadius: 460
                 )
                 .blendMode(.multiply)
                 .allowsHitTesting(false)
