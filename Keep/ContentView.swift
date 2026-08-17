@@ -36,10 +36,12 @@ struct ContentView: View {
             // pattern one level down already; this was the same bug one
             // level up, hiding behind it.
             Theme.background.ignoresSafeArea()
-            // The warm glow Diary wants reaching the top edge, mirrored here
-            // for the same reason — DiaryTimelineView's own copy is real and
-            // still there, but it's inside the clipped reader below, so it
-            // can only ever cover its own safe-area-constrained box.
+            // The warm glow Diary wants reaching the top edge, drawn here for
+            // the same reason. It lives here and nowhere else: Diary used to
+            // paint its own background over this one, which — being stuck
+            // inside the reader below — covered the glow everywhere except
+            // the status bar and so drew the very band this is meant to
+            // remove.
             if selectedTab == .timeline {
                 RadialGradient(colors: [Theme.amber.opacity(0.13), .clear],
                                center: .init(x: 0.5, y: 0.0), startRadius: 0, endRadius: 420)

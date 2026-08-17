@@ -204,29 +204,26 @@ struct DiaryTimelineView: View {
     private var px: CGFloat { zoom.pxPerDay }
 
     var body: some View {
-        // Backgrounds sit OUTSIDE the GeometryReader: nested inside it their
-        // ignoresSafeArea() didn't reach past the reader's own frame, which left
-        // a hard-edged band across the top of this tab. Turns out that reader
-        // itself sits inside ANOTHER one, one level up in ContentView, that
-        // isn't safe-area-ignoring either — so even this correctly-placed
-        // background could only ever reach ContentView's own safe-area box,
-        // not the true screen edge. ContentView now draws the amber glow
-        // itself, outside *its* reader, for exactly the reach this couldn't
-        // get — drawing it again here would double it up wherever the two
-        // overlap, so it's gone from here. The plain background stays: it's
-        // still this view's own fallback if it's ever shown outside
-        // ContentView's tab strip.
-        ZStack(alignment: .top) {
-            Theme.background.ignoresSafeArea()
-
-            GeometryReader { geo in
-                let cx = geo.size.width / 2
-                if let data, !data.bands.isEmpty {
-                    content(width: geo.size.width, cx: cx, data: data)
-                } else {
-                    emptyScreen
-                        .frame(width: geo.size.width, height: geo.size.height)
-                }
+        // This view paints no background of its own, and that is the whole
+        // point. ContentView owns both the flat background and the amber glow,
+        // outside its own GeometryReader, because that is the only place with
+        // the reach to cover the status bar.
+        //
+        // An opaque background here defeated exactly that. Sitting inside
+        // ContentView's reader, its ignoresSafeArea() stopped at the reader's
+        // safe-area bounds — so it covered the glow everywhere *except* the
+        // status bar, where the glow then showed through alone. The result was
+        // a warm band with a hard edge along the safe-area inset: the very bar
+        // the reach fix was meant to remove, now drawn by the fix's own
+        // leftover. Not a fallback worth keeping; this view is only ever shown
+        // inside ContentView's tab strip.
+        GeometryReader { geo in
+            let cx = geo.size.width / 2
+            if let data, !data.bands.isEmpty {
+                content(width: geo.size.width, cx: cx, data: data)
+            } else {
+                emptyScreen
+                    .frame(width: geo.size.width, height: geo.size.height)
             }
         }
         .preferredColorScheme(.dark)
