@@ -74,7 +74,7 @@ struct ProjectListView: View {
                                             Label("Duplicate", systemImage: "plus.square.on.square")
                                         }
                                         Button {
-                                            project.archive()
+                                            archiveProject(project)
                                         } label: {
                                             Label("Archive", systemImage: "archivebox")
                                         }
@@ -163,7 +163,7 @@ struct ProjectListView: View {
             titleVisibility: .visible
         ) {
             Button("Move to Trash", role: .destructive) {
-                if let p = projectToDelete { p.softDelete(); projectToDelete = nil }
+                if let p = projectToDelete { deleteProject(p); projectToDelete = nil }
             }
             Button("Cancel", role: .cancel) { projectToDelete = nil }
         } message: {
@@ -234,20 +234,46 @@ struct ProjectListView: View {
         // Don't nil out pendingID here — ProjectDetailView will consume it.
     }
 
+    /// Commits a change to this screen's library right away.
+    ///
+    /// Creating, deleting and archiving a project used to rely on autosave,
+    /// and the grid simply didn't move: `@Query` reads the store, autosave
+    /// decides for itself when to write to it, and until it did the new
+    /// project wasn't there and the deleted one still was. Relaunching the app
+    /// "fixed" it, which is what made it look like a refresh problem rather
+    /// than a save one.
+    ///
+    /// Every other screen that mutates these models — the project detail, the
+    /// trash — already saved explicitly. This one was the exception, which is
+    /// exactly why these three actions were the ones that looked broken.
+    private func persist() {
+        try? modelContext.save()
+    }
+
+    func archiveProject(_ project: Project) {
+        project.archive()
+        persist()
+    }
+
+    private func deleteProject(_ project: Project) {
+        project.softDelete()
+        persist()
+    }
+
     private func renameProject() {
         let name = renameText.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty, let project = projectToRename else { return }
         project.name = name
         project.updatedAt = Date()
         projectToRename = nil
+        persist()
     }
 
-    /// Saved immediately: the copy owns new files on disk from the moment
-    /// `duplicate` returns, so leaving the records unsaved would strand them
-    /// if the app were killed before the next autosave.
+    /// The copy owns new files on disk from the moment `duplicate` returns, so
+    /// leaving the records unsaved would strand them if the app were killed.
     private func duplicateProject(_ project: Project) {
         project.duplicate(context: modelContext)
-        try? modelContext.save()
+        persist()
     }
 
     private func createProject() {
@@ -255,6 +281,7 @@ struct ProjectListView: View {
         guard !name.isEmpty else { return }
         modelContext.insert(Project(name: name))
         newProjectName = ""
+        persist()
     }
 }
 

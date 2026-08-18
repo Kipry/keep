@@ -59,6 +59,7 @@ struct ArchiveView: View {
                                 .contextMenu {
                                     Button {
                                         project.unarchive()
+                                        persist()
                                     } label: {
                                         Label("Restore", systemImage: "arrow.uturn.up")
                                     }
@@ -87,12 +88,20 @@ struct ArchiveView: View {
             titleVisibility: .visible
         ) {
             Button("Move to Trash", role: .destructive) {
-                if let p = projectToDelete { p.softDelete(); projectToDelete = nil }
+                if let p = projectToDelete { p.softDelete(); persist(); projectToDelete = nil }
             }
             Button("Cancel", role: .cancel) { projectToDelete = nil }
         } message: {
             Text("The project will be moved to trash and can be restored at any time.")
         }
+    }
+
+    /// Same reason as in the library: `@Query` reads the store, so restoring
+    /// or trashing a project here has to reach the store before this grid can
+    /// show it. Leaving that to autosave meant the card stayed put until the
+    /// next launch.
+    private func persist() {
+        try? modelContext.save()
     }
 
     private var emptyState: some View {
