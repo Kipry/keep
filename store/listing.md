@@ -12,6 +12,9 @@ Zwei Sprachen: **Deutsch (Primär)** und **English (U.S.)**.
 - **Sekundäre Kategorie (optional):** Foto & Video
 - **Preis:** kostenlos (empfohlen für v1)
 - **Altersfreigabe:** 4+ (kein anstößiger Inhalt; siehe Checkliste)
+- **Copyright:** `2026 Karl-Pierre Kipry`
+  > Pflichtfeld in App Store Connect, sprachunabhängig. Ohne Jahr davor
+  > akzeptiert Apple es zwar, zeigt es aber unvollständig an.
 
 ---
 

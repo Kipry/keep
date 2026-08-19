@@ -52,6 +52,7 @@ Die fertigen Seiten liegen in `docs/` — genau dort, wo GitHub Pages sie veröf
 - [ ] Untertitel, Beschreibung, Keywords, Werbetext für **de-DE** und **en-US** einfügen.
 - [ ] **Support-URL** (Pflicht) und **Datenschutzrichtlinie-URL** eintragen (aus Schritt 2).
 - [ ] Kategorie: Lifestyle (sekundär optional Foto & Video).
+- [ ] **Copyright:** `2026 Karl-Pierre Kipry`.
 - [ ] **Screenshots** hochladen: mindestens ein **6.9"-iPhone-Set** (1320×2868). Motive siehe `store/listing.md`.
 
 ## 5. App-Privacy-Fragebogen

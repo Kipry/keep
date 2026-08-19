@@ -21,6 +21,10 @@
     <string>6.0</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
+    <!-- Same string as the Copyright field in App Store Connect; kept in step
+         so the bundle and the listing never disagree about who owns this. -->
+    <key>NSHumanReadableCopyright</key>
+    <string>2026 Karl-Pierre Kipry</string>
 
     <!-- Export compliance: the app does no networking and uses only exempt
          standard encryption, so it is exempt from export documentation. -->
