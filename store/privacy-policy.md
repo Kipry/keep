@@ -15,6 +15,24 @@ keep. erfasst **keine** personenbezogenen Daten. Alle deine Aufnahmen, Fotos und
 - **Aufnahmeort** (optional, siehe unten): Koordinaten und ein Ortsname werden zusammen mit dem Clip lokal gespeichert, damit die Karten-Ansicht „Orte" zeigen kann, wo ein Moment entstanden ist.
 - Für die Widgets wird eine kleine Vorschau (Projektname, Clip-Anzahl, Vorschaubild des zuletzt aufgenommenen Clips) in einer geräteinternen App-Gruppe abgelegt. Das Homescreen-Widget zeigt dieses Vorschaubild an. Diese Daten verlassen das Gerät nicht.
 
+## Aufnahme vom Sperrbildschirm
+
+Der Aufnahme-Knopf auf dem Sperrbildschirm, im Kontrollzentrum und auf der
+Action-Taste startet eine eigene, vom System abgeschottete Aufnahme-Erweiterung.
+Diese Erweiterung kann **weniger** als die App, nicht mehr:
+
+- Sie hat **keinen Netzwerkzugriff**.
+- Sie kann deine **Projekte, Clips und Einstellungen nicht lesen** — die Daten
+  der App bleiben verschlüsselt, solange das Gerät gesperrt ist.
+- Sie schreibt ausschließlich die neue Videodatei und, wenn du die
+  Standort-Funktion aktiviert hast, den zugehörigen Ort in ein eigenes
+  Übergabe-Verzeichnis. Alles Weitere macht die App beim nächsten Entsperren.
+
+Deshalb kannst du aufnehmen, ohne zu entsperren, aber nichts ansehen: Um an
+deine Projekte und bereits aufgenommenen Clips zu kommen, musst du das Gerät
+entsperren. Es werden dabei keine anderen Daten erfasst als bei einer Aufnahme
+in der App.
+
 ## Standort
 Der Aufnahmeort ist ein **optionales** Komfort-Merkmal und lässt sich in den App-Einstellungen jederzeit steuern. Es gibt drei Stufen:
 

@@ -10,7 +10,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 | Capture-Extension-Bundle-ID | `com.kipry.keep.app.KeepCapture` |
 | App-Gruppe | `group.com.kipry.keep.app` |
 | Team-ID | `3832YDF43A` |
-| Version / Build | `1.0` / `5` |
+| Version / Build | `1.0` / `6` |
 | Mindest-iOS | 18.0 |
 | Kategorie | Lifestyle |
 | Signing | Automatic |
@@ -76,7 +76,36 @@ Die fertigen Seiten liegen in `docs/` — genau dort, wo GitHub Pages sie veröf
 ## 9. (Optional) TestFlight
 - [ ] Build für internes TestFlight freigeben und auf einem **echten Gerät** testen, bevor du einreichst.
 
-## 10. Einreichen
+## 10. Hinweise für die App-Prüfung (App Review Information)
+
+Das Feld **„Notes"** ist keine Formalie mehr, seit die Beschreibung mit
+„Aufnehmen ohne Entsperren" wirbt: Der Prüfer sieht davon **nichts**, solange
+er das Steuerelement nicht selbst hinzufügt. Eine beworbene Funktion, die
+niemand findet, ist ein Ablehnungsgrund — und einer, der sich mit vier Zeilen
+vermeiden lässt.
+
+- [ ] Unter **App Review Information → Notes** eintragen (Englisch):
+
+```
+The headline feature — recording without unlocking — has to be enabled once,
+because iOS never adds a third-party control by itself:
+
+  Press and hold the Lock Screen → Customise → Lock Screen → tap one of the
+  two buttons at the bottom → choose "keep. · Record".
+
+Then lock the device and tap that button. The camera opens without Face ID or
+a passcode. Recording is all it does: projects and existing clips still
+require unlocking, by design.
+
+The same control can be added to Control Centre or assigned to the Action
+button (Settings → Action Button → Controls).
+
+No account, no server, no login. Everything stays on the device.
+```
+
+- [ ] **Kein Demo-Account nötig** — Häkchen „Sign-in required" bleibt aus.
+
+## 11. Einreichen
 - [ ] Alle Abschnitte grün → **„Zur Prüfung hinzufügen" / Submit for Review**.
 - [ ] Prüfungszeit i.d.R. 1–3 Tage. Bei Rückfragen antwortet man im „App Review"-Bereich.
 
