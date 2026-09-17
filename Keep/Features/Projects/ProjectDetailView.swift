@@ -682,12 +682,22 @@ struct ProjectDetailView: View {
                         onReorder: reorderDragClips,
                         onDropFinish: commitDragOrder,
                         onDelete: { clipToDelete = $0 },
-                        onCopyToProject: { clipToCopy = $0 },
-                        onTrim: { clipToTrim = $0 },
-                        onSetDuration: { clipToSetDuration = $0 },
-                        onSetAsCover: { setClipAsCover($0) },
+                        // Every one of these arrives from the context menu, and
+                        // the long press that opens that menu also arms
+                        // `.onDrag`. Choosing a menu item instead of dragging
+                        // means no drop ever happens, so nothing clears the drag
+                        // state — and a tap on any cell is then ignored, because
+                        // tapping is suppressed while a drag is in flight. That
+                        // is the "a trimmed clip won't open until you leave the
+                        // project and come back" bug: leaving simply threw the
+                        // stale state away. Picking a menu item is proof that no
+                        // drag is happening, exactly as deleting already was.
+                        onCopyToProject: { endDragIfIdle(); clipToCopy = $0 },
+                        onTrim: { endDragIfIdle(); clipToTrim = $0 },
+                        onSetDuration: { endDragIfIdle(); clipToSetDuration = $0 },
+                        onSetAsCover: { endDragIfIdle(); setClipAsCover($0) },
                         onPreview: { clip in previewingClipID = clip.id },
-                        onExport: { exportClip($0) },
+                        onExport: { endDragIfIdle(); exportClip($0) },
                         // Only the last row can have an open slot to fill —
                         // every earlier row is already full by construction
                         // (filmRows chunks by 4).
@@ -914,6 +924,16 @@ struct ProjectDetailView: View {
             deleteError = error.localizedDescription
         }
         WidgetDataStore.refresh(context: modelContext)
+    }
+
+    /// Ends a drag that was armed but never dropped.
+    ///
+    /// Any reorder made before it was abandoned is still worth keeping, so this
+    /// commits rather than discards — the same call the delete path has always
+    /// made, now shared by every action that proves no drag is in progress.
+    private func endDragIfIdle() {
+        guard !dragClips.isEmpty else { return }
+        commitDragOrder()
     }
 
     private func commitDragOrder() {

@@ -1,7 +1,9 @@
 import SwiftUI
+import SwiftData
 import AVFoundation
 
 struct ClipTrimView: View {
+    @Environment(\.modelContext) private var modelContext
     @Bindable var clip: Clip
     let onDismiss: () -> Void
 
@@ -170,6 +172,11 @@ struct ClipTrimView: View {
         clip.trimStart = trimStart
         // nil means "play to end" — avoids storing floating-point noise at duration boundary
         clip.trimEnd = trimEnd >= duration - 0.05 ? nil : trimEnd
+        clip.project?.updatedAt = Date()
+        // Committed here rather than left to autosave, for the same reason the
+        // library commits: a trim is a decision, and until it reaches the store
+        // every view that reads from the store still shows the old one.
+        try? modelContext.save()
         onDismiss()
     }
 
