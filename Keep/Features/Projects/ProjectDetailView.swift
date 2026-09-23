@@ -940,6 +940,7 @@ struct ProjectDetailView: View {
         // Skip anything deleted mid-drag, or it would consume an order index and
         // leave the surviving clips with a gapped sequence.
         for (i, clip) in dragClips.filter({ !$0.isTrashed }).enumerated() { clip.order = i }
+        persist()
         endDrag()
     }
 
@@ -980,6 +981,12 @@ struct ProjectDetailView: View {
         project.updatedAt = Date()
         modelContext.insert(clip)
         attachLocation(to: clip, imported: location)
+        // Committed before the artwork work below, not after it: the clip and
+        // its file are the part that can't be recreated, and everything in the
+        // task is derived data that a later pass can rebuild. Left to autosave,
+        // a recording made and the app killed seconds later leaves a video on
+        // disk with no record pointing at it.
+        persist()
         Task {
             // One render at cover size, downscaled for the filmstrip cell —
             // cheaper than two generator passes, and the cover stops being a
@@ -996,8 +1003,19 @@ struct ProjectDetailView: View {
             // rather than making the first export wait on the whole project.
             await ClipAudioLevels.analyzeIfNeeded(clip)
             ClipTone.analyzeIfNeeded(clip)      // palette tone for the year spiral
+            persist()
             WidgetDataStore.refresh(context: modelContext)
         }
+    }
+
+    /// Writes pending changes to the store.
+    ///
+    /// `@Query` and the widget snapshot both read the store, not the context,
+    /// so until this runs they are describing the previous state — and until it
+    /// runs the change isn't durable either. Autosave gets there eventually;
+    /// "eventually" is not a promise to make about someone's recording.
+    private func persist() {
+        try? modelContext.save()
     }
 
     // Stamps the clip with its capture location: an imported asset's own
@@ -1080,6 +1098,7 @@ struct ProjectDetailView: View {
             }
             ClipTone.analyzeIfNeeded(clip)
         }
+        persist()
         WidgetDataStore.refresh(context: modelContext)
         return true
     }
