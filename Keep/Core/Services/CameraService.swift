@@ -198,7 +198,12 @@ final class CameraService: NSObject, ObservableObject {
 
         // AVAudioSession must be configured BEFORE the capture session starts.
         // Skipping this is the #1 reason audio is silent on clips 2+.
-        try configureAudioSession()
+        //
+        // Awaited on the shared audio queue rather than run inline: off the main
+        // thread, and — the point — strictly after any deactivation a preview
+        // queued on its way out. Run inline, that deactivation could arrive
+        // after this and switch the session off under the recording.
+        try await AudioSessionQueue.perform { try Self.configureAudioSession() }
 
         let s = AVCaptureSession()
         // Prevent AVCaptureSession from overwriting our AVAudioSession configuration
@@ -263,7 +268,11 @@ final class CameraService: NSObject, ObservableObject {
         DispatchQueue.global(qos: .userInitiated).async { if s.isRunning { s.stopRunning() } }
         session = nil; videoDeviceInput = nil; audioDeviceInput = nil; movieOutput = nil
         isRunning = false; isRecording = false
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        // Queued, not inline: nothing waits on the release, and running it on
+        // the shared queue keeps it ordered against whatever opens next.
+        AudioSessionQueue.enqueue {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
     }
 
     // MARK: - Recording
@@ -583,7 +592,9 @@ final class CameraService: NSObject, ObservableObject {
         return CGFloat(max(1, ratio))
     }
 
-    private func configureAudioSession() throws {
+    /// Static and nonisolated because it runs on `AudioSessionQueue`, not on
+    /// the main actor: it touches nothing but the shared audio session.
+    nonisolated private static func configureAudioSession() throws {
         let a = AVAudioSession.sharedInstance()
         // .videoRecording, not .measurement.
         //

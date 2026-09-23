@@ -361,16 +361,25 @@ final class PlayerLayerView: UIView {
 // MARK: - PlaybackAudio
 // Preview/playback surfaces must set the session to .playback, otherwise
 // AVPlayer audio follows the ring/silent switch (silent when muted) and, right
-// after a recording, is left in the camera's quiet .measurement session.
+// after a recording, is left in the camera's recording session.
+//
+// Both go through `AudioSessionQueue` instead of running inline. Inline, they
+// blocked the main thread while audio routing was reconfigured — Xcode flags
+// both calls as a hang risk — and the queue keeps them ordered against the
+// camera, which shares the same session.
 
 enum PlaybackAudio {
     static func activate() {
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .moviePlayback)
-        try? session.setActive(true)
+        AudioSessionQueue.enqueue {
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, mode: .moviePlayback)
+            try? session.setActive(true)
+        }
     }
 
     static func deactivate() {
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        AudioSessionQueue.enqueue {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
     }
 }
