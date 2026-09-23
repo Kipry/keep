@@ -71,26 +71,23 @@ tagebuch,video,journal,clip,sekunde,rückblick,erinnerung,vlog,widget,sperrbilds
 Ein Tap auf dem Sperrbildschirm – ohne Entsperren – und der Moment ist festgehalten. Kein Umweg über die Kamera-App, kein Zögern.
 ```
 
-**Neue Funktionen / What's New** (v1.1)
+**Neue Funktionen / What's New** (v1.2)
 ```
-Aufnehmen, ohne das Handy zu entsperren – und eine Kamera, die mehr kann.
+Kleinere Runde, dafür an Stellen, die täglich auffallen.
 
-• Aufnahme direkt vom Sperrbildschirm, aus dem Kontrollzentrum oder über die
-  Action-Taste. Einmal einrichten: Sperrbildschirm anpassen → Steuerelement →
-  „keep. · Aufnehmen". An deine Projekte kommst du weiterhin nur entsperrt.
-• Feste Zoomstufen (0,5 · 1 · 2) und die Aufnahmedauer jetzt in einer Leiste
-  über dem Auslöser.
-• Aufnahme in 4K ist neuer Standard.
-• Halten auch über die Lautstärketasten und die Kamerataste – für Clips, die
-  so lang werden, wie du willst. Über die Kamerataste lässt sich auch zoomen.
-• Die Frontkamera geht weiter raus als bisher.
-• Ganze Projekte duplizieren: auf eine Kachel gedrückt halten → „Duplizieren".
-• Importierte Fotos sind so lang wie deine eingestellte Cliplänge.
-• Die Karte unter „Orte" sieht wärmer aus.
+• Der Knopf für ein neues Projekt sitzt jetzt in der Leiste unten statt darüber
+  zu schweben – unten steht ein Element statt zwei.
+• Projekte und Chronik blenden nach unten hin weich aus, statt hart an der
+  Leiste abzuschneiden.
 
-Behoben: verzerrte Fotos in der Film-Vorschau, ein grauer Balken im Tagebuch,
-Projekte, die erst nach einem Neustart auftauchten, überlappende Monatsnamen
-und plötzlich lautere Musik beim Aufnehmen.
+Behoben
+• Eine gerade aufgenommene Aufnahme konnte verloren gehen, wenn die App kurz
+  danach beendet wurde. Aufnahmen, Fotoimporte und die Reihenfolge im
+  Filmstreifen werden jetzt sofort gesichert.
+• Nach dem Trimmen ließ sich ein Clip nicht mehr öffnen, bis man das Projekt
+  einmal verlassen hatte. Das galt auch für die anderen Aktionen im
+  Kontextmenü.
+• Die Leiste über dem Auslöser stand mit der Frontkamera nicht mittig.
 ```
 
 ---
@@ -148,26 +145,22 @@ journal,video,diary,clip,seconds,memories,vlog,widget,lockscreen,map,places,capt
 One tap from your Lock Screen — no unlocking — and the moment is saved. No detour through the camera app.
 ```
 
-**What's New** (v1.1)
+**What's New** (v1.2)
 ```
-Record without unlocking your phone — and a camera that does more.
+A smaller release, in places you meet every day.
 
-• Record from the Lock Screen, Control Centre or the Action button. Set it up
-  once: customise the Lock Screen → control → "keep. · Record". Your projects
-  still need an unlock.
-• Fixed zoom steps (0.5 · 1 · 2) and the clip length now share one bar above
-  the shutter.
-• Recording in 4K is the new default.
-• Hold the volume buttons or Camera Control to record for as long as you like,
-  and slide Camera Control to zoom.
-• The front camera now goes wider than it did.
-• Duplicate a whole project: press and hold a card then choose "Duplicate".
-• Imported photos take your chosen clip length.
-• The places map looks warmer.
+• The new-project button now sits in the bar at the bottom instead of floating
+  above it — one object down there instead of two.
+• Projects and Chronicle fade out at the bottom rather than stopping dead
+  against the bar.
 
-Fixed: distorted photos in the film preview, a grey band in the journal,
-projects that only appeared after a relaunch, overlapping month names, and
-music jumping in volume while recording.
+Fixed
+• A clip you had just recorded could be lost if the app was killed moments
+  later. Recordings, photo imports and filmstrip order are now committed at
+  once.
+• After trimming, a clip wouldn't open until you left the project and came
+  back. The same went for the other context-menu actions.
+• The bar above the shutter sat off-centre on the front camera.
 ```
 
 ---

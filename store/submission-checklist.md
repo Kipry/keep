@@ -10,7 +10,7 @@ Alles hier sind **manuelle Schritte in Apple-Konten / Xcode**, die nicht aus dem
 | Capture-Extension-Bundle-ID | `com.kipry.keep.app.KeepCapture` |
 | App-Gruppe | `group.com.kipry.keep.app` |
 | Team-ID | `3832YDF43A` |
-| Version / Build | `1.1` / `8` |
+| Version / Build | `1.2` / `9` |
 | Mindest-iOS | 18.0 |
 | Kategorie | Lifestyle |
 | Signing | Automatic |
