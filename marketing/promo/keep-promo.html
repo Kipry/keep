@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8">
+<title>keep. Werbeclip</title>
+<style>
+@font-face{font-family:Inter;font-weight:800;src:url(fonts/Inter-ExtraBold.ttf)}
+@font-face{font-family:Inter;font-weight:700;src:url(fonts/Inter-Bold.ttf)}
+@font-face{font-family:Mono;font-weight:500;src:url(../../Keep/Resources/Fonts/JetBrainsMono-Medium.ttf)}
+@font-face{font-family:Mono;font-weight:400;src:url(../../Keep/Resources/Fonts/JetBrainsMono-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0D0D0D}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0D0D0D;
+  font-family:Inter,sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+.abs{position:absolute}
+/* captions */
+.cap{position:absolute;left:90px;right:90px;text-align:center;will-change:transform,opacity}
+.eyebrow{font-family:Mono;font-weight:500;font-size:28px;letter-spacing:.32em;color:rgba(255,255,255,.44);
+  text-transform:uppercase;margin-bottom:26px}
+.eyebrow.amber{color:#F0873A}
+.head{font-weight:800;font-size:84px;line-height:1.04;letter-spacing:-.028em;text-wrap:balance}
+.dot{color:#F0873A}
+.word{display:inline-block;will-change:transform,opacity}
+/* phone */
+#phone{position:absolute;left:240px;top:520px;width:600px;height:1240px;border-radius:92px;
+  background:linear-gradient(150deg,#353535,#0b0b0b);transform-origin:50% 0;z-index:5;
+  box-shadow:0 60px 120px rgba(0,0,0,.6),0 0 0 2px rgba(255,255,255,.06) inset}
+#screen{position:absolute;inset:16px;border-radius:76px;overflow:hidden;background:#000}
+#island{position:absolute;top:34px;left:215px;width:170px;height:50px;border-radius:25px;background:#000;z-index:9}
+#lock,#vf{position:absolute;inset:0}
+.glass{position:absolute;width:104px;height:104px;border-radius:50%;background:rgba(255,255,255,.14);
+  display:flex;align-items:center;justify-content:center}
+/* viewfinder chrome */
+.pill{position:absolute;left:50%;top:104px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;
+  background:rgba(0,0,0,.55);border-radius:30px;padding:12px 22px;font-family:Mono;font-size:28px}
+.pill i{width:12px;height:12px;border-radius:50%;background:#F0873A;display:block}
+#bar{position:absolute;left:50%;bottom:248px;transform:translateX(-50%);display:flex;align-items:center;
+  background:rgba(0,0,0,.42);border-radius:40px;padding:7px;font-family:Mono;font-weight:500;font-size:22px}
+#bar b{width:50px;height:50px;border-radius:25px;display:flex;align-items:center;justify-content:center;
+  font-weight:500;color:rgba(255,255,255,.72)}
+#bar b.on{background:rgba(255,255,255,.14);color:#F0873A;font-size:24px}
+#bar s{width:1px;height:34px;background:rgba(255,255,255,.16);margin:0 8px}
+#saved{position:absolute;left:54px;right:54px;top:360px;border-radius:44px;background:rgba(0,0,0,.72);
+  padding:52px 30px 48px;display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center}
+/* filmstrip */
+#stripView{position:absolute;left:0;top:560px;width:1080px;height:1180px;overflow:hidden;z-index:3;
+  -webkit-mask-image:linear-gradient(transparent 0,#000 70px,#000 calc(100% - 140px),transparent 100%)}
+.row{position:absolute;left:60px;width:960px;height:346px;border-radius:12px;background:#1F1F1F}
+.holes{position:absolute;left:0;right:0;height:33px;display:flex;justify-content:space-around;align-items:center;padding:0 10px}
+.holes i{width:24px;height:12px;border-radius:3px;background:#0D0D0D;display:block}
+.cell{position:absolute;width:224px;height:280px;border-radius:6px;background-size:cover;background-position:center;
+  will-change:transform,opacity;overflow:hidden}
+.cell em{position:absolute;left:10px;bottom:9px;font-family:Mono;font-style:normal;font-size:17px;
+  color:rgba(255,255,255,.9);background:rgba(0,0,0,.5);padding:2px 7px;border-radius:5px}
+/* film */
+#film{position:absolute;left:220px;top:600px;width:640px;height:800px;border-radius:18px;background:#1F1F1F;z-index:4}
+#film .holesV{position:absolute;top:0;bottom:0;width:40px;display:flex;flex-direction:column;justify-content:space-around;align-items:center;padding:14px 0}
+#film .holesV i{width:16px;height:24px;border-radius:3px;background:#0D0D0D;display:block}
+#pic{position:absolute;left:40px;right:40px;top:30px;bottom:66px;border-radius:8px;background-size:cover;background-position:center;overflow:hidden}
+#play{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;
+  background:#F5E6C8;display:flex;align-items:center;justify-content:center;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+#prog{position:absolute;left:40px;right:40px;bottom:26px;height:10px;border-radius:5px;background:rgba(255,255,255,.14);overflow:hidden}
+#prog i{position:absolute;left:0;top:0;bottom:0;background:#F0873A;border-radius:5px;display:block}
+#filmLabel{position:absolute;left:0;right:0;top:1440px;text-align:center;font-family:Mono;font-size:28px;
+  letter-spacing:.14em;color:rgba(255,255,255,.55);z-index:4}
+/* end card */
+#end{position:absolute;inset:0;z-index:20;background:#0D0D0D}
+#end img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover}
+#endLine{position:absolute;left:0;right:0;top:1290px;text-align:center;font-family:Mono;font-weight:500;
+  font-size:30px;letter-spacing:.34em;color:rgba(245,230,200,.78)}
+</style></head>
+<body><div id="stage">
+  <div id="glow" class="abs" style="inset:0;z-index:0"></div>
+  <div id="bleed" class="abs" style="inset:0;z-index:1"></div>
+  <div id="bleedShade" class="abs" style="inset:0;z-index:2;background:linear-gradient(transparent 45%,rgba(0,0,0,.78) 100%)"></div>
+  <div id="stripView"></div>
+  <div id="film">
+    <div class="holesV" style="left:0"></div><div class="holesV" style="right:0"></div>
+    <div id="pic"></div>
+    <div id="play"><svg width="54" height="60" viewBox="0 0 54 60"><path d="M8 4 L50 30 L8 56 Z" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="6" stroke-linejoin="round"/></svg></div>
+    <div id="prog"><i></i></div>
+  </div>
+  <div id="filmLabel">212 CLIPS → 1 VIDEO</div>
+
+  <div id="phone">
+    <div id="screen">
+      <div id="lock" style="background:radial-gradient(ellipse 120% 70% at 30% 18%,#4A2C1C 0,#23140D 45%,#0B0807 100%)">
+        <div class="abs" style="left:0;right:0;top:128px;text-align:center;font-family:Mono;font-size:24px;letter-spacing:.14em;color:rgba(245,230,200,.72)">DONNERSTAG, 25. SEPTEMBER</div>
+        <div class="abs" style="left:0;right:0;top:160px;text-align:center;font-weight:700;font-size:196px;letter-spacing:-.035em;line-height:1">23:07</div>
+        <div class="glass" style="left:56px;bottom:66px">
+          <svg width="40" height="46" viewBox="0 0 40 46" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"><path d="M10 3h20l-3 13H13z"/><path d="M13 16h14v25a3 3 0 01-3 3h-8a3 3 0 01-3-3z"/><circle cx="20" cy="27" r="2.6" fill="#fff"/></svg>
+        </div>
+        <div id="ctrl" class="glass" style="right:56px;bottom:66px">
+          <div style="width:52px;height:52px;border-radius:50%;border:4px solid #F0873A;display:flex;align-items:center;justify-content:center"><i style="display:block;width:22px;height:22px;border-radius:50%;background:#F0873A"></i></div>
+        </div>
+        <div id="finger" class="abs" style="width:150px;height:150px;border-radius:50%;left:383px;top:963px;
+          background:radial-gradient(circle,rgba(255,255,255,.42) 0,rgba(255,255,255,.2) 45%,transparent 70%)"></div>
+        <div id="ripple" class="abs" style="width:110px;height:110px;border-radius:50%;left:403px;top:983px;border:4px solid rgba(240,135,58,.9)"></div>
+        <div class="abs" style="left:199px;bottom:18px;width:170px;height:7px;border-radius:4px;background:rgba(255,255,255,.7)"></div>
+      </div>
+      <div id="vf">
+        <div id="vfScene" class="abs" style="inset:0"></div>
+        <div class="abs" style="inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(0,0,0,.5) 100%)"></div>
+        <div id="chrome" class="abs" style="inset:0">
+        <div class="glass" style="width:76px;height:76px;left:40px;top:100px;background:rgba(0,0,0,.4)">
+          <svg width="26" height="26" viewBox="0 0 26 26" stroke="#fff" stroke-width="3.4" stroke-linecap="round"><path d="M5 5L21 21M21 5L5 21"/></svg></div>
+        <div class="glass" style="width:76px;height:76px;right:40px;top:100px;background:rgba(0,0,0,.4)">
+          <svg width="28" height="30" viewBox="0 0 24 26" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><path d="M13 2L4 15h7l-1 9 9-13h-7l1-9z"/><path d="M2 2l20 22" stroke-linecap="round"/></svg></div>
+        <div id="pill" class="pill"><i></i><span id="pillT">0.0s</span></div>
+        <div id="bar"><b>0,5</b><b class="on">1×</b><b>2</b><s></s><b style="width:58px">φ</b></div>
+        <svg id="shutter" class="abs" style="left:199px;bottom:52px" width="170" height="170" viewBox="0 0 170 170">
+          <circle cx="85" cy="85" r="68" fill="none" stroke="#fff" stroke-width="7"/>
+          <circle id="arc" cx="85" cy="85" r="80" fill="none" stroke="#F0873A" stroke-width="7" stroke-linecap="round"
+            stroke-dasharray="502.65" stroke-dashoffset="502.65" transform="rotate(-90 85 85)"/>
+          <rect id="core" x="31" y="31" width="108" height="108" rx="54" fill="#E53935"/>
+        </svg>
+        <div class="glass" style="width:84px;height:84px;right:44px;bottom:95px;background:rgba(0,0,0,.4)">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0113-4.2M20 16a8 8 0 01-13 4.2"/><path d="M17 2v4h-4M7 22v-4h4"/></svg></div>
+        </div>
+        <div id="saved">
+          <div style="width:124px;height:124px;border-radius:50%;background:#F0873A;display:flex;align-items:center;justify-content:center">
+            <svg width="58" height="44" viewBox="0 0 58 44" fill="none" stroke="#1A1A1A" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 23l15 14L52 7"/></svg></div>
+          <div style="font-weight:700;font-size:46px;letter-spacing:-.02em">Clip gesichert</div>
+          <div style="font-size:25px;line-height:1.35;color:rgba(255,255,255,.62)">Landet im Projekt,<br>sobald du entsperrst.</div>
+        </div>
+      </div>
+    </div>
+    <div id="island"></div>
+  </div>
+
+  <div id="caps" class="abs" style="inset:0;z-index:10;pointer-events:none"></div>
+
+  <div id="end">
+    <img src="../../Keep/Assets.xcassets/LaunchWordmark.imageset/LaunchWordmark@3x.png" alt="">
+    <div id="endLine">JETZT IM APP STORE</div>
+  </div>
+</div>
+
+<script>
+// ─── Text & Timing — alles, was man zum Anpassen braucht, steht hier ───────────
+const CAPTIONS = [
+  { a: 0.25, b: 2.62, y: 820,  text: 'Der Moment ist gleich vorbei', words: true },
+  { a: 2.72, b: 4.30, y: 210,  eyebrow: 'Sperrbildschirm', text: 'Ein Tipp.\nOhne Entsperren' },
+  { a: 4.30, b: 7.30, y: 210,  eyebrow: 'Aufnehmen', text: 'Schneller als der Moment vorbei ist' },
+  { a: 7.55, b: 9.80, y: 1290, text: 'Halte ihn fest,\nohne ihn zu verpassen', size: 72 },
+  { a: 9.95, b: 14.62, y: 210, eyebrow: 'Tag 1', counter: true, text: 'Jeden Tag ein Clip' },
+  { a: 14.62, b: 17.45, y: 210, eyebrow: 'Export', text: 'Clips rein. Film raus' },
+];
+const REC_START = 4.6, REC_LEN = 1.618;   // φ — die voreingestellte Cliplänge der App
+const DAYS = 212, CELLS = 28;
+
+// ─── Helfer ────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const p = (t, a, b) => clamp((t - a) / (b - a));
+const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eout = x => 1 - Math.pow(1 - x, 3);
+const ein = x => x * x * x;
+const back = x => { const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+
+// ─── Motive im Stil der Onboarding-Mocks ─────────────────────────────────────
+const svg = s => `url("data:image/svg+xml;utf8,${encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 100' preserveAspectRatio='xMidYMid slice'>${s}</svg>`)}")`;
+const SCENES = [
+  svg(`<defs><linearGradient id='g' x2='0' y2='1'><stop offset='0' stop-color='#2B1A3D'/><stop offset='.45' stop-color='#9A3E52'/><stop offset='.66' stop-color='#F0873A'/><stop offset='.71' stop-color='#F7C27B'/><stop offset='1' stop-color='#3A2233'/></linearGradient><radialGradient id='s'><stop offset='0' stop-color='#FFE9B8'/><stop offset='.55' stop-color='#F6A451'/><stop offset='1' stop-color='#F6A451' stop-opacity='0'/></radialGradient></defs><rect width='80' height='100' fill='url(#g)'/><circle cx='40' cy='63' r='15' fill='url(#s)'/><rect y='69' width='80' height='31' fill='#3A2233' opacity='.6'/><g stroke='#F7C27B' stroke-opacity='.55' stroke-width='.9'><line x1='29' y1='74' x2='51' y2='74'/><line x1='32' y1='79' x2='48' y2='79'/><line x1='35' y1='84' x2='45' y2='84'/></g>`),
+  svg(`<defs><linearGradient id='g' x2='0' y2='1'><stop offset='0' stop-color='#F6DDB8'/><stop offset='1' stop-color='#DDA57C'/></linearGradient></defs><rect width='80' height='100' fill='url(#g)'/><circle cx='55' cy='27' r='9' fill='#FFF3DC' opacity='.85'/><polygon points='0,68 22,38 37,56 55,30 80,60 80,100 0,100' fill='#B87C5C'/><polygon points='0,82 17,61 33,75 52,54 80,79 80,100 0,100' fill='#7B4C3A'/><polygon points='0,100 0,91 25,79 45,91 65,81 80,88 80,100' fill='#4A2E26'/>`),
+  svg(`<defs><linearGradient id='g' x2='0' y2='1'><stop offset='0' stop-color='#0E1532'/><stop offset='1' stop-color='#232A50'/></linearGradient></defs><rect width='80' height='100' fill='url(#g)'/><g fill='#fff' opacity='.7'><circle cx='12' cy='12' r='.6'/><circle cx='30' cy='7' r='.5'/><circle cx='62' cy='14' r='.6'/><circle cx='70' cy='5' r='.4'/></g><g fill='#131936'><rect x='4' y='44' width='13' height='56'/><rect x='19' y='30' width='12' height='70'/><rect x='33' y='50' width='11' height='50'/><rect x='46' y='24' width='14' height='76'/><rect x='62' y='40' width='14' height='60'/></g><g fill='#F2C66D' opacity='.85'><rect x='22' y='36' width='2' height='2'/><rect x='26' y='44' width='2' height='2'/><rect x='49' y='31' width='2' height='2'/><rect x='54' y='45' width='2' height='2'/><rect x='66' y='50' width='2' height='2'/><rect x='8' y='52' width='2' height='2'/></g><circle cx='14' cy='86' r='6' fill='#E8A35C' opacity='.75'/><circle cx='36' cy='92' r='5' fill='#D9577A' opacity='.7'/><circle cx='58' cy='87' r='6' fill='#4FB7A0' opacity='.7'/><circle cx='72' cy='94' r='4' fill='#E8A35C' opacity='.7'/>`),
+  svg(`<defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='#6E4C34'/><stop offset='1' stop-color='#3F2A1D'/></linearGradient></defs><rect width='80' height='100' fill='url(#g)'/><g stroke='#2E1F15' stroke-opacity='.35'><line x1='0' y1='20' x2='80' y2='24'/><line x1='0' y1='56' x2='80' y2='60'/><line x1='0' y1='88' x2='80' y2='92'/></g><circle cx='40' cy='52' r='27' fill='#E9DFD0'/><circle cx='40' cy='52' r='21' fill='#F3EADB'/><circle cx='40' cy='52' r='16' fill='#5B3524'/><circle cx='40' cy='52' r='13' fill='#8A5A3B'/><circle cx='36' cy='48' r='4' fill='#B8845C' opacity='.7'/><circle cx='66' cy='52' r='5' fill='none' stroke='#F3EADB' stroke-width='3'/>`),
+  svg(`<rect width='80' height='100' fill='#0B0B13'/><g stroke='#F7C27B' stroke-width='1.1' stroke-linecap='round'><line x1='40' y1='38' x2='40' y2='18'/><line x1='40' y1='38' x2='54' y2='24'/><line x1='40' y1='38' x2='60' y2='38'/><line x1='40' y1='38' x2='54' y2='52'/><line x1='40' y1='38' x2='40' y2='58'/><line x1='40' y1='38' x2='26' y2='52'/><line x1='40' y1='38' x2='20' y2='38'/><line x1='40' y1='38' x2='26' y2='24'/></g><g fill='#FFE9B8'><circle cx='40' cy='18' r='1.4'/><circle cx='60' cy='38' r='1.4'/><circle cx='20' cy='38' r='1.4'/><circle cx='40' cy='58' r='1.4'/></g><g stroke='#E86A8C' stroke-width='.9' stroke-linecap='round'><line x1='60' y1='70' x2='60' y2='60'/><line x1='60' y1='70' x2='69' y2='70'/><line x1='60' y1='70' x2='51' y2='70'/><line x1='60' y1='70' x2='60' y2='80'/><line x1='60' y1='70' x2='66' y2='64'/><line x1='60' y1='70' x2='54' y2='76'/></g><circle cx='40' cy='38' r='3' fill='#F0873A'/>`),
+  svg(`<defs><linearGradient id='g' x2='0' y2='1'><stop offset='0' stop-color='#9FD1DE'/><stop offset='1' stop-color='#EAF3EE'/></linearGradient></defs><rect width='80' height='100' fill='url(#g)'/><circle cx='62' cy='18' r='7' fill='#FFF6DA'/><rect y='52' width='80' height='18' fill='#2F8FA3'/><path d='M0 66 Q10 62 20 66 T40 66 T60 66 T80 66 V72 H0Z' fill='#fff' opacity='.7'/><rect y='70' width='80' height='30' fill='#EAD3A8'/><circle cx='22' cy='84' r='3' fill='#D9577A'/>`),
+  svg(`<defs><linearGradient id='g' x2='0' y2='1'><stop offset='0' stop-color='#2C4A36'/><stop offset='1' stop-color='#0F1E16'/></linearGradient></defs><rect width='80' height='100' fill='url(#g)'/><polygon points='30,0 50,0 70,100 10,100' fill='#F7E6B0' opacity='.1'/><g fill='#0B170F'><polygon points='10,30 20,62 0,62'/><polygon points='28,20 40,62 16,62'/><polygon points='52,26 64,64 40,64'/><polygon points='70,34 80,62 60,62'/></g><rect y='62' width='80' height='38' fill='#16291D'/><circle cx='44' cy='82' r='2' fill='#F0873A'/>`),
+  svg(`<rect width='80' height='100' fill='#1A0F2E'/><polygon points='22,0 30,0 46,100 8,100' fill='#F0873A' opacity='.32'/><polygon points='52,0 60,0 76,100 36,100' fill='#B64AD6' opacity='.3'/><g fill='#FFE9B8'><circle cx='26' cy='4' r='2.4'/><circle cx='56' cy='4' r='2.4'/></g><g fill='#0A0613'><circle cx='8' cy='92' r='7'/><circle cx='22' cy='90' r='8'/><circle cx='38' cy='93' r='7'/><circle cx='54' cy='89' r='8'/><circle cx='70' cy='92' r='7'/><rect y='92' width='80' height='8'/></g>`),
+];
+
+// Warme Abendszene hinter dem Sucher: Bokeh statt Personen.
+function bokeh(t, k) {
+  const L = [
+    [22, 30, 150, 'rgba(255,196,120,.55)'], [70, 22, 110, 'rgba(255,176,96,.5)'],
+    [82, 58, 170, 'rgba(240,135,58,.42)'],  [15, 70, 120, 'rgba(255,214,150,.4)'],
+    [48, 44, 260, 'rgba(255,150,70,.22)'],  [60, 82, 140, 'rgba(255,190,120,.35)'],
+    [35, 12, 90, 'rgba(255,230,180,.45)'],  [92, 90, 100, 'rgba(255,160,90,.35)'],
+  ];
+  const g = L.map(([x, y, r, c], i) => {
+    const dx = Math.sin(t * .45 + i * 1.7) * 2.2, dy = Math.cos(t * .38 + i) * 1.8;
+    return `radial-gradient(circle at ${x + dx}% ${y + dy}%, ${c} 0, ${c.replace(/,[\d.]+\)$/, ',0.18)')} ${r * k * .55}px, transparent ${r * k}px)`;
+  });
+  return g.join(',') + `,radial-gradient(ellipse at 50% 38%, #7A4426 0, #3A2014 45%, #120B08 100%)`;
+}
+
+// ─── Aufbau ────────────────────────────────────────────────────────────────────
+const caps = CAPTIONS.map((c, i) => {
+  const el = document.createElement('div'); el.className = 'cap'; el.style.top = c.y + 'px';
+  const words = c.text.split(' ');
+  el.innerHTML = (c.eyebrow ? `<div class="eyebrow${c.counter ? ' amber' : ''}">${c.eyebrow}</div>` : '') +
+    `<div class="head"${c.size ? ` style="font-size:${c.size}px"` : ''}>` + (c.words
+      ? words.map((w, j) => `<span class="word">${w}${j === words.length - 1 ? '<span class="dot">.</span>' : ''}</span>`).join(' ')
+      : `${c.text.replace('\n', '<br>')}<span class="dot">.</span>`) + `</div>`;
+  $('caps').appendChild(el);
+  return { ...c, el, words: c.words ? [...el.querySelectorAll('.word')] : null, eb: el.querySelector('.eyebrow') };
+});
+
+const holes = n => `<div class="holes" style="top:0">${'<i></i>'.repeat(n)}</div><div class="holes" style="bottom:0">${'<i></i>'.repeat(n)}</div>`;
+const ROW_PITCH = 368, ROWS = CELLS / 4;
+const rows = [], cells = [];
+const MONTHS = ['Jan', 'Feb', 'März', 'Apr', 'Mai', 'Juni', 'Juli', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+for (let r = 0; r < ROWS; r++) {
+  const row = document.createElement('div'); row.className = 'row'; row.style.top = r * ROW_PITCH + 'px';
+  row.innerHTML = holes(22); $('stripView').appendChild(row); rows.push(row);
+}
+for (let i = 0; i < CELLS; i++) {
+  const r = Math.floor(i / 4), c = i % 4;
+  const el = document.createElement('div'); el.className = 'cell';
+  el.style.left = (60 + 14 + c * 236) + 'px'; el.style.top = (r * ROW_PITCH + 33) + 'px';
+  el.style.backgroundImage = SCENES[(i * 3 + r) % SCENES.length];
+  const d = new Date(2026, 1, 1 + Math.round(i * (DAYS - 1) / (CELLS - 1)));
+  el.innerHTML = `<em>${d.getDate()}. ${MONTHS[d.getMonth()]}</em>`;
+  $('stripView').appendChild(el);
+  cells.push({ el, r, c, at: 10.05 + 3.9 * Math.pow(i / CELLS, .65) });
+}
+document.querySelectorAll('.holesV').forEach(h => h.innerHTML = '<i></i>'.repeat(13));
+
+// ─── Ein Bild zum Zeitpunkt t ─────────────────────────────────────────────────
+function render(t) {
+  // Grundlicht: glimmt am Anfang auf, bleibt als warmer Schein oben
+  $('glow').style.background = `radial-gradient(ellipse 70% 42% at 50% ${lerp(46, 24, eio(p(t, 2.4, 3.4)))}%, rgba(240,135,58,${
+    .16 * eout(p(t, 0, 1.4)) * (1 - p(t, 17.2, 17.6))}) 0, transparent 100%)`;
+
+  // Bildunterschriften
+  for (const c of caps) {
+    const vin = eout(p(t, c.a, c.a + .45)), vout = eio(p(t, c.b - .3, c.b));
+    c.el.style.opacity = c.words ? 1 - vout : vin * (1 - vout);
+    c.el.style.transform = `translateY(${(1 - vin) * 26 - vout * 14}px)`;
+    if (c.words) c.words.forEach((w, j) => {
+      const q = eout(p(t, c.a + j * .26, c.a + j * .26 + .5));
+      w.style.opacity = q; w.style.transform = `translateY(${(1 - q) * 34}px)`;
+    });
+    if (c.counter) c.eb.textContent = `Tag ${1 + Math.round((DAYS - 1) * Math.pow(p(t, 10.05, 14.3), 1.7))}`;
+  }
+
+  // Telefon: kommt von unten, geht nach unten
+  const yIn = (1 - eout(p(t, 2.6, 3.35))) * 1500, yOut = ein(p(t, 7.2, 8.0)) * 1500;
+  $('phone').style.transform = `translateY(${yIn + yOut}px) scale(.9)`;
+  $('phone').style.opacity = t < 2.55 || t > 8.1 ? 0 : 1;
+
+  // Sperrbildschirm: Finger, Druck, Welle
+  const touch = p(t, 3.25, 3.5) * (1 - p(t, 3.75, 3.95));
+  $('finger').style.opacity = touch;
+  $('finger').style.transform = `scale(${lerp(1.25, 1, eout(p(t, 3.25, 3.5)))})`;
+  const press = eout(p(t, 3.42, 3.56)) * (1 - eout(p(t, 3.62, 3.8)));
+  $('ctrl').style.transform = `scale(${1 - .12 * press})`;
+  const rip = p(t, 3.5, 4.05);
+  $('ripple').style.opacity = rip > 0 && rip < 1 ? (1 - rip) * .9 : 0;
+  $('ripple').style.transform = `scale(${lerp(.8, 2.3, eout(rip))})`;
+
+  // Sucher öffnet sich — direkt, ohne Face ID
+  const open = eio(p(t, 3.85, 4.25));
+  $('vf').style.opacity = open;
+  $('vf').style.transform = `scale(${lerp(1.06, 1, open)})`;
+  $('lock').style.opacity = 1 - open;
+  $('vfScene').style.background = bokeh(t, 1);
+
+  // Aufnahme: Ring läuft in φ Sekunden voll
+  const rec = clamp(t - REC_START, 0, REC_LEN), recOn = t >= REC_START && t < REC_START + REC_LEN + .12;
+  $('arc').setAttribute('stroke-dashoffset', 502.65 * (1 - rec / REC_LEN));
+  $('arc').style.opacity = t >= REC_START && t < 6.5 ? 1 : 0;
+  const coreQ = eout(p(t, REC_START - .04, REC_START + .22)) * (1 - eout(p(t, 6.24, 6.45)));
+  const side = lerp(108, 50, coreQ), rx = lerp(54, 12, coreQ);
+  const core = $('core');
+  core.setAttribute('x', 85 - side / 2); core.setAttribute('y', 85 - side / 2);
+  core.setAttribute('width', side); core.setAttribute('height', side); core.setAttribute('rx', rx);
+  core.setAttribute('fill', coreQ > .02 ? '#F0873A' : '#E53935');
+  $('pill').style.opacity = recOn ? 1 : 0;
+  $('pillT').textContent = rec.toFixed(1) + 's';
+  $('bar').style.opacity = t > REC_START ? lerp(1, .4, p(t, REC_START, REC_START + .2)) : 1;
+  const saved = p(t, 6.32, 6.62);
+  $('saved').style.opacity = eout(saved);
+  // Wie in der echten Extension: nach dem Sichern steht nur noch die Bestätigung da.
+  $('chrome').style.opacity = 1 - eout(saved);
+  $('saved').style.transform = `scale(${lerp(.82, 1, back(saved))})`;
+
+  // Der Moment geht weiter: Szene füllt den Bildschirm
+  const bleedIn = eout(p(t, 7.1, 7.9)), bleedOut = eio(p(t, 9.55, 10.15));
+  $('bleed').style.background = bokeh(t, 2.1);
+  $('bleed').style.opacity = bleedIn * (1 - bleedOut);
+  $('bleed').style.transform = `scale(${lerp(1.14, 1, eout(p(t, 7.1, 9.8)))})`;
+  $('bleedShade').style.opacity = bleedIn * (1 - bleedOut);
+
+  // Filmstreifen füllt sich, immer schneller
+  const scroll = ROW_PITCH * 4 * eio(p(t, 11.4, 14.5));
+  const merge = t >= 14.6;
+  rows.forEach((row, r) => {
+    const first = cells[r * 4].at;
+    const q = eout(p(t, first - .05, first + .25)) * (1 - eio(p(t, 14.6, 15.0)));
+    row.style.opacity = q;
+    row.style.transform = `translateY(${-scroll}px)`;
+  });
+  cells.forEach((c, i) => {
+    const q = eout(p(t, c.at, c.at + .24));
+    let tx = 0, ty = -scroll, s = lerp(.72, 1, back(q)), o = q;
+    if (merge) {
+      const m = eio(p(t, 14.62 + (CELLS - i) * .008, 15.35 + (CELLS - i) * .008));
+      const cx = 60 + 14 + c.c * 236 + 112, cy = 560 + c.r * ROW_PITCH + 33 + 140 - scroll;
+      tx = (540 - cx) * m; ty += (1000 - cy) * m; s *= lerp(1, .22, m); o *= 1 - p(m, .55, 1);
+    }
+    c.el.style.opacity = o;
+    c.el.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+  });
+  $('stripView').style.opacity = t > 9.9 && t < 15.6 ? 1 : 0;
+
+  // Ein Film: zusammenziehen, Play, Schnellmontage
+  const fIn = p(t, 15.1, 15.7), fOut = p(t, 17.25, 17.6);
+  $('film').style.opacity = eout(fIn) * (1 - fOut);
+  $('film').style.transform = `scale(${lerp(.62, 1, back(fIn))})`;
+  const playIn = eout(p(t, 15.55, 15.85)), tap = eout(p(t, 15.98, 16.08)) * (1 - p(t, 16.08, 16.2)),
+        playOut = eio(p(t, 16.08, 16.3));
+  $('play').style.opacity = playIn * (1 - playOut);
+  $('play').style.transform = `scale(${lerp(.6, 1, playIn) * (1 - .1 * tap)})`;
+  const run = p(t, 16.1, 17.35);
+  const frame = t < 16.1 ? 0 : Math.floor((t - 16.1) / .15) % SCENES.length;
+  $('pic').style.backgroundImage = SCENES[frame];
+  $('prog').firstElementChild.style.width = (run * 100) + '%';
+  $('filmLabel').style.opacity = eout(p(t, 15.5, 15.9)) * (1 - fOut);
+
+  // Endkarte: der Ladescreen der App
+  $('end').style.opacity = eio(p(t, 17.35, 17.95));
+  $('endLine').style.opacity = eout(p(t, 18.2, 18.75));
+  $('endLine').style.transform = `translateY(${(1 - eout(p(t, 18.2, 18.75))) * 18}px)`;
+}
+window.render = render;
+render(0);
+</script>
+</body></html>
