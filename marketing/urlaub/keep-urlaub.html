@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8">
+<title>keep. — Bens Sommer</title>
+<style>
+@font-face{font-family:Inter;font-weight:800;src:url(fonts/Inter-ExtraBold.ttf)}
+@font-face{font-family:Inter;font-weight:700;src:url(fonts/Inter-Bold.ttf)}
+@font-face{font-family:Hand;font-weight:700;src:url(fonts/Caveat-Bold.woff2)}
+@font-face{font-family:Mono;font-weight:500;src:url(../../Keep/Resources/Fonts/JetBrainsMono-Medium.ttf)}
+@font-face{font-family:Brico;font-weight:800;src:url(../../Keep/Resources/Fonts/BricolageGrotesque-ExtraBold.ttf)}
+*{margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#ECD1BF}
+svg{display:block}
+</style></head>
+<body>
+<svg id="art" width="1080" height="1920" viewBox="0 0 1080 1920"></svg>
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+//  Farben, Zeitplan, Texte
+// ════════════════════════════════════════════════════════════════════════════
+const C = {
+  peach: '#ECD1BF', cream: '#F6E4D8', paper: '#FCF4EE', ink: '#2A2320', line: '#3A2822',
+  amber: '#F0873A', yellow: '#F2B04F', coral: '#E9683F', navy: '#2D4358', blueg: '#C8D7E2',
+};
+const REC = 1.618;                    // φ — voreingestellte Cliplänge der App
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Helfer
+// ════════════════════════════════════════════════════════════════════════════
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const p = (t, a, b) => clamp((t - a) / (b - a));
+const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eout = x => 1 - Math.pow(1 - x, 3);
+const ein = x => x * x * x;
+const back = x => { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const f = n => Math.round(n * 10) / 10;
+const rnd = s => { const x = Math.sin(s * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+function smoothClosed(pts) {
+  const n = pts.length; let d = `M${f(pts[0][0])},${f(pts[0][1])}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+    d += `C${f(p1[0] + (p2[0] - p0[0]) / 6)},${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)},${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])},${f(p2[1])}`;
+  }
+  return d + 'Z';
+}
+function blob(cx, cy, rx, ry, t, seed = 0) {
+  const pts = [];
+  for (let i = 0; i < 36; i++) {
+    const a = i / 36 * Math.PI * 2;
+    const r = 1 + .055 * Math.sin(3 * a + t * .8 + seed) + .035 * Math.sin(5 * a - t * .6 + seed * 2) + .025 * Math.sin(2 * a + t * .5);
+    pts.push([cx + Math.cos(a) * rx * r, cy + Math.sin(a) * ry * r]);
+  }
+  return smoothClosed(pts);
+}
+
+// ─── Handgezeichneter Pfeil: zeichnet sich selbst, Spitze erscheint am Ende ───
+function arrow(d, prog, tip, ang, w = 11, col = C.amber) {
+  if (prog <= 0) return '';
+  const hp = clamp((prog - .82) / .18), L = 50 * hp, b = ang + Math.PI;
+  const h = hp > 0 ? `<path d="M${f(tip[0] + Math.cos(b + .52) * L)},${f(tip[1] + Math.sin(b + .52) * L)} L${f(tip[0])},${f(tip[1])} L${f(tip[0] + Math.cos(b - .52) * L)},${f(tip[1] + Math.sin(b - .52) * L)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>` : '';
+  return `<path d="${d}" pathLength="1" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-dasharray="1 1" stroke-dashoffset="${f(1 - prog) === 0 ? 0 : 1 - prog}"/>` + h;
+}
+function hand(text, x, y, prog, rot = -6, size = 70, col = C.amber) {
+  if (prog <= 0) return '';
+  const s = lerp(.7, 1, back(prog));
+  return `<g transform="translate(${x},${y}) rotate(${rot}) scale(${f(s * 100) / 100})" opacity="${f(eout(prog) * 100) / 100}"><text font-family="Hand" font-weight="700" font-size="${size}" fill="${col}" text-anchor="middle">${text}</text></g>`;
+}
+
+// ─── Überschrift oben: dunkle Schrift auf hellem Grund, amberfarbener Punkt ──
+function headline(lines, eyebrow, a, b, t, y = 250) {
+  const vin = eout(p(t, a, a + .45)), vout = eio(p(t, b - .3, b));
+  const o = vin * (1 - vout); if (o <= 0) return '';
+  const dy = (1 - vin) * 26 - vout * 14;
+  let s = `<g opacity="${f(o * 100) / 100}" transform="translate(0,${f(dy)})">`;
+  if (eyebrow) s += `<text x="540" y="${y}" font-family="Mono" font-weight="500" font-size="27" letter-spacing="8" fill="${C.ink}" fill-opacity=".5" text-anchor="middle">${eyebrow}</text>`;
+  const top = y + (eyebrow ? 96 : 60);
+  lines.forEach((l, i) => {
+    const last = i === lines.length - 1;
+    s += `<text x="540" y="${top + i * 86}" font-family="Inter" font-weight="800" font-size="80" letter-spacing="-2.2" fill="${C.ink}" text-anchor="middle">${l}${last ? `<tspan fill="${C.amber}">.</tspan>` : ''}</text>`;
+  });
+  return s + '</g>';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Figuren
+// ════════════════════════════════════════════════════════════════════════════
+const L5 = `stroke="${C.line}" stroke-width="5" stroke-linejoin="round"`;
+const PEOPLE = {
+  ben:   { skin: '#F2C4A0', hair: '#3A2A22', style: 'short', beard: .45, shirt: '#2F8E8A' },
+  mia:   { skin: '#D9A07A', hair: '#4A2218', style: 'bun',   shirt: '#C63F3A', hood: true },
+  tom:   { skin: '#F0C09A', hair: '#8C7B6E', style: 'cap', cap: '#2A2A2E', beard: .5, glasses: true, shirt: '#B8332E' },
+  lea:   { skin: '#F4CDB2', hair: '#6B3A24', style: 'bob',   shirt: '#3A3D46' },
+  jonas: { skin: '#E6AE88', hair: '#1E1816', style: 'spiky', beard: 1, shirt: '#3B3240', tee: '#4E6B45' },
+};
+
+function face(o, st = {}) {
+  const w = st.wow || 0, lk = st.look || [0, 0], grin = st.grin || 0, glasses = st.glasses ?? o.glasses;
+  let s = '';
+  if (o.style === 'bob') s += `<path d="M-106,-36 C-120,-152 120,-152 106,-36 L110,76 C110,104 82,112 70,92 L-70,92 C-82,112 -110,104 -110,76Z" fill="${o.hair}" ${L5}/>`;
+  if (o.style === 'bun') s += `<circle cx="10" cy="-140" r="44" fill="${o.hair}" ${L5}/><path d="M-12,-150 C0,-160 20,-160 32,-148" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="5"/>`;
+  s += `<ellipse cx="-90" cy="10" rx="17" ry="25" fill="${o.skin}" ${L5}/><ellipse cx="90" cy="10" rx="17" ry="25" fill="${o.skin}" ${L5}/>`;
+  s += `<path d="M-86,-34 C-90,-130 90,-130 86,-34 C92,46 64,118 0,122 C-64,118 -92,46 -86,-34Z" fill="${o.skin}" ${L5}/>`;
+  if (o.beard) s += `<path d="M-86,4 C-84,94 -44,130 0,130 C44,130 84,94 86,4 C70,54 44,40 0,48 C-44,40 -70,54 -86,4Z" fill="${o.hair}" opacity="${o.beard}"/>`;
+  const H = {
+    short: `M-88,-28 C-98,-120 -22,-152 20,-136 C76,-146 106,-88 90,-28 C80,-72 58,-88 26,-94 C0,-80 -40,-98 -66,-78 C-80,-66 -86,-48 -88,-28Z`,
+    spiky: `M-88,-28 C-92,-92 -72,-120 -52,-128 L-44,-156 L-22,-130 L-2,-162 L14,-132 L40,-158 L48,-126 C82,-118 102,-82 90,-28 C80,-72 58,-88 26,-94 C0,-80 -40,-98 -66,-78 C-80,-66 -86,-48 -88,-28Z`,
+    bun:   `M-88,-22 C-98,-124 98,-124 88,-22 C76,-82 40,-100 0,-100 C-40,-100 -76,-82 -88,-22Z`,
+    bob:   `M-92,-18 C-98,-122 98,-122 92,-18 C72,-62 30,-72 8,-60 C-12,-82 -62,-72 -92,-18Z`,
+    cap:   '',
+  }[o.style];
+  if (H) s += `<path d="${H}" fill="${o.hair}" ${L5}/>`;
+  s += `<ellipse cx="-54" cy="44" rx="18" ry="10" fill="#E8735E" opacity=".3"/><ellipse cx="54" cy="44" rx="18" ry="10" fill="#E8735E" opacity=".3"/>`;
+  if (glasses) {
+    s += `<g ${L5}><rect x="-72" y="-30" width="64" height="46" rx="17" fill="#1E2A36"/><rect x="8" y="-30" width="64" height="46" rx="17" fill="#1E2A36"/><path d="M-8,-14 Q0,-20 8,-14" fill="none"/></g>`
+       + `<path d="M-58,-18 L-42,-2 M22,-18 L38,-2" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/>`;
+  } else {
+    const rx = 24 + 5 * w, ry = 28 + 9 * w, pr = 12 - 2.5 * w;
+    for (const sx of [-1, 1]) {
+      const ex = sx * 36, ey = -4, px = ex + lk[0] * 9, py = ey + lk[1] * 10;
+      s += `<ellipse cx="${ex}" cy="${ey}" rx="${f(rx)}" ry="${f(ry)}" fill="#fff" stroke="${C.line}" stroke-width="4.5"/>`
+         + `<circle cx="${f(px)}" cy="${f(py)}" r="${f(pr)}" fill="#2A1C17"/><circle cx="${f(px - 4)}" cy="${f(py - 5)}" r="4.5" fill="#fff"/>`;
+    }
+    const by = -44 - 14 * w;
+    const bc = o.style === 'cap' ? C.line : (o.hair === '#8C7B6E' ? '#5E5048' : o.hair);
+    s += `<path d="M-60,${f(by + 5)} Q-38,${f(by - 7)} -16,${f(by + 3)} M16,${f(by + 3)} Q38,${f(by - 7)} 60,${f(by + 5)}" fill="none" stroke="${bc}" stroke-width="9" stroke-linecap="round"/>`;
+  }
+  s += `<path d="M-4,6 C-13,32 -4,40 11,35" fill="none" stroke="${C.line}" stroke-width="4.5" stroke-linecap="round"/>`;
+  if (w > .45) s += `<ellipse cx="0" cy="76" rx="${f(14 + 7 * w)}" ry="${f(15 + 10 * w)}" fill="#6E231D" stroke="${C.line}" stroke-width="4.5"/><ellipse cx="0" cy="${f(84 + 5 * w)}" rx="${f(8 + 4 * w)}" ry="5" fill="#E07A6B"/>`;
+  else if (grin) s += `<path d="M-38,58 Q0,${f(58 + 44 * grin)} 38,58 Z" fill="#6E231D" stroke="${C.line}" stroke-width="4.5" stroke-linejoin="round"/><path d="M-30,60 L30,60 L26,68 L-26,68Z" fill="#fff"/>`;
+  else s += `<path d="M-30,60 Q0,84 30,60" fill="none" stroke="${C.line}" stroke-width="5" stroke-linecap="round"/>`;
+  if (o.style === 'cap') s += `<path d="M-94,-40 C-96,-156 96,-156 94,-40 C60,-56 -60,-56 -94,-40Z" fill="${o.cap}" ${L5}/><path d="M-10,-48 C40,-72 124,-64 148,-40 C104,-30 30,-32 -10,-40Z" fill="${o.cap}" ${L5}/><circle cx="0" cy="-138" r="8" fill="${o.cap}" ${L5}/>`;
+  return s;
+}
+
+function bust(o, st = {}) {
+  let s = `<path d="M-176,700 L-176,440 C-176,262 -112,196 0,196 C112,196 176,262 176,440 L176,700Z" fill="${o.shirt}" ${L5}/>`;
+  if (o.tee) s += `<path d="M-60,700 L-60,250 C-30,226 30,226 60,250 L60,700Z" fill="${o.tee}" ${L5}/>`;
+  if (o.hood) s += `<path d="M-72,206 C-60,260 60,260 72,206" fill="none" ${L5}/><path d="M-26,248 L-30,330 M26,248 L30,330" stroke="#F4E7DC" stroke-width="7" stroke-linecap="round"/>`;
+  s += `<path d="M-32,96 L-32,202 C-12,222 12,222 32,202 L32,96Z" fill="${o.skin}" ${L5}/>`;
+  if (!o.hood && !o.tee) s += `<path d="M-34,206 L0,256 L34,206" fill="none" ${L5}/>`;
+  return s + face(o, st);
+}
+
+// Arm von der Schulter zur Hand, mit Ärmel
+function arm(o, sx, sy, hx, hy) {
+  const mx = (sx + hx) / 2 + 20, my = Math.max(sy, hy) + 60;
+  return `<path d="M${sx},${sy} Q${mx},${my} ${hx},${hy}" fill="none" stroke="${C.line}" stroke-width="54" stroke-linecap="round"/>`
+       + `<path d="M${sx},${sy} Q${mx},${my} ${hx},${hy}" fill="none" stroke="${o.skin}" stroke-width="44" stroke-linecap="round"/>`
+       + `<path d="M${sx},${sy} Q${f(lerp(sx, mx, .5))},${f(lerp(sy, my, .5))} ${f(lerp(sx, hx, .4))},${f(lerp(sy, hy, .4))}" fill="none" stroke="${o.shirt}" stroke-width="56" stroke-linecap="round"/>`;
+}
+
+// Ganze Figur (klein) für die Pool-Szene. Ursprung = Hüfte, Winkel 0 = nach unten.
+function limb(x, y, a1, l1, a2, l2, col, w) {
+  const kx = x + Math.sin(a1) * l1, ky = y + Math.cos(a1) * l1, fx = kx + Math.sin(a2) * l2, fy = ky + Math.cos(a2) * l2;
+  const d = `M${f(x)},${f(y)} L${f(kx)},${f(ky)} L${f(fx)},${f(fy)}`;
+  return `<path d="${d}" fill="none" stroke="${C.line}" stroke-width="${w + 9}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+function figure(o, pose) {
+  const ph = pose.phase || 0, curl = pose.curl || 0, wave = pose.wave;
+  const run = pose.run ?? 1;
+  const L = (runA, curlA) => lerp(runA, curlA, curl);
+  const leg = s => limb(s * 16, -6, L(run * .6 * Math.sin(ph) * s, 2.3), 72,
+    L(run * .6 * Math.sin(ph) * s - (.5 + .5 * Math.sin(ph * s + 1.6)) * .9 * run, .25), 72, o.skin, 26);
+  const armL = s => wave && s < 0
+    ? limb(-34, -96, Math.PI - .3 + .35 * Math.sin(wave), 56, Math.PI - .7 + .5 * Math.sin(wave), 54, o.skin, 22)
+    : limb(s * 34, -96, L(-run * .7 * Math.sin(ph) * s, 1.7), 56, L(-run * .7 * Math.sin(ph) * s + 1.1 * run, .6), 54, o.skin, 22);
+  let s = leg(-1) + armL(-1);
+  s += `<rect x="-42" y="-118" width="84" height="122" rx="30" fill="${o.shirt}" ${L5}/>`;
+  s += `<g transform="translate(0,-176) scale(.5)">${face(o, { look: pose.look || [.3, .2], grin: pose.grin })}</g>`;
+  s += leg(1) + armL(1);
+  return s;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Filmelemente & Blätter (Stil der Referenz 1)
+// ════════════════════════════════════════════════════════════════════════════
+const leaf = (x, y, r, s, col) => `<g transform="translate(${x},${y}) rotate(${r}) scale(${s})"><path d="M0,0 C40,-90 150,-110 210,-60 C150,-10 60,20 0,0Z" fill="${col}"/><path d="M10,-6 C70,-40 130,-56 190,-58 M70,-30 L84,-56 M110,-42 L126,-66 M150,-50 L164,-70" fill="none" stroke="#FCEBD8" stroke-opacity=".75" stroke-width="5" stroke-linecap="round"/></g>`;
+const reel = (x, y, r, s) => `<g transform="translate(${x},${y}) rotate(${r}) scale(${s})"><circle r="78" fill="#EE7B47"/><circle r="70" fill="none" stroke="#F7A26D" stroke-width="6"/>${[0, 72, 144, 216, 288].map(a => `<circle cx="${f(Math.cos(a * Math.PI / 180) * 40)}" cy="${f(Math.sin(a * Math.PI / 180) * 40)}" r="20" fill="#FCEBDD"/>`).join('')}<circle r="12" fill="#F2B04F"/></g>`;
+const clapper = (x, y, r, s, open) => `<g transform="translate(${x},${y}) rotate(${r}) scale(${s})"><rect x="-120" y="-40" width="240" height="170" rx="8" fill="${C.navy}"/><path d="M-90,10 L90,10 M-90,50 L60,50 M-90,90 L30,90" stroke="${C.blueg}" stroke-width="12" stroke-linecap="round"/><g transform="translate(-120,-46) rotate(${-open})"><rect width="240" height="44" rx="6" fill="${C.navy}"/>${[0, 1, 2, 3, 4].map(i => `<path d="M${14 + i * 46},0 L${44 + i * 46},0 L${30 + i * 46},44 L${0 + i * 46},44Z" fill="${C.blueg}"/>`).join('')}</g><rect x="-120" y="-50" width="240" height="10" fill="${C.navy}"/></g>`;
+const strip = (x, y, r, s) => `<g transform="translate(${x},${y}) rotate(${r}) scale(${s})"><rect x="-70" y="-230" width="140" height="460" rx="6" fill="${C.blueg}" stroke="${C.navy}" stroke-width="8"/>${[...Array(9)].map((_, i) => `<rect x="-58" y="${-214 + i * 50}" width="12" height="22" rx="3" fill="#FCF4EE"/><rect x="46" y="${-214 + i * 50}" width="12" height="22" rx="3" fill="#FCF4EE"/>`).join('')}${[-1, 0, 1].map(i => `<rect x="-38" y="${-62 + i * 140}" width="76" height="124" rx="6" fill="none" stroke="#FCF4EE" stroke-width="4"/><circle cy="${i * 140}" r="26" fill="none" stroke="#FCF4EE" stroke-width="4"/>`).join('')}</g>`;
+const megaphone = (x, y, r, s) => `<g transform="translate(${x},${y}) rotate(${r}) scale(${s})"><path d="M-60,-24 L50,-70 L50,70 L-60,24Z" fill="${C.yellow}"/><rect x="-86" y="-26" width="30" height="52" rx="8" fill="${C.amber}"/><rect x="44" y="-76" width="18" height="152" rx="8" fill="${C.amber}"/><path d="M-40,20 L-30,62 L-6,58 L-14,18" fill="${C.amber}"/></g>`;
+const pencil = (x, y, r, s, col = C.navy) => `<g transform="translate(${x},${y}) rotate(${r}) scale(${s})"><rect x="-16" y="-120" width="32" height="200" rx="6" fill="${col}"/><path d="M-16,80 L16,80 L0,124Z" fill="#F4D3A8"/><path d="M-5,108 L5,108 L0,124Z" fill="${C.ink}"/><rect x="-16" y="-120" width="32" height="18" rx="6" fill="#F4D3A8"/></g>`;
+
+function decor(t, q = 1, withStrip = true) {
+  const b = (i, a = 10) => f(Math.sin(t * 1.3 + i) * a);
+  const back_ = leaf(60, 820 + +b(1), -40, 1.05, C.amber) + leaf(900, 1720 + +b(2), 200, 1.1, C.yellow)
+    + leaf(-20, 1560 + +b(3), -10, .9, C.yellow) + leaf(1000, 900 + +b(4), 150, .95, C.amber);
+  const front = reel(500, 610 + +b(5, 8), t * 22, .92) + clapper(96, 1080 + +b(6), -14, .72, 18 + 10 * Math.sin(t * 3))
+    + (withStrip ? strip(1000, 1260 + +b(7), 14, .8) : '') + megaphone(940, 700 + +b(8), -18, .8) + pencil(1010, 1600 + +b(9), 24, .8, C.coral);
+  return [`<g opacity="${q}">${back_}</g>`, `<g opacity="${q}">${front}</g>`];
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Szenen — alle im Bühnenraster 1080 × 1920 gezeichnet
+// ════════════════════════════════════════════════════════════════════════════
+const DEFS = `<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop offset="0" stop-color="#FFEAD0"/><stop offset="1" stop-color="#FCCEA2"/></linearGradient>
+ <linearGradient id="sea" x2="0" y2="1"><stop offset="0" stop-color="#6CC3DC"/><stop offset="1" stop-color="#3E96B8"/></linearGradient>
+ <linearGradient id="pool" x2="0" y2="1"><stop offset="0" stop-color="#8CE3F2"/><stop offset="1" stop-color="#34A9CE"/></linearGradient>
+ <linearGradient id="deck" x2="0" y2="1"><stop offset="0" stop-color="#F6E3CE"/><stop offset="1" stop-color="#EACDAF"/></linearGradient>
+ <linearGradient id="dusk" x2="0" y2="1"><stop offset="0" stop-color="#F6A96A"/><stop offset=".55" stop-color="#F28A5B"/><stop offset="1" stop-color="#E06C76"/></linearGradient>
+ <linearGradient id="duskSea" x2="0" y2="1"><stop offset="0" stop-color="#C26B78"/><stop offset="1" stop-color="#6E4A6C"/></linearGradient>
+ <linearGradient id="night" x2="0" y2="1"><stop offset="0" stop-color="#121A36"/><stop offset=".6" stop-color="#2B3666"/><stop offset="1" stop-color="#4E416F"/></linearGradient>
+ <linearGradient id="nightSea" x2="0" y2="1"><stop offset="0" stop-color="#23304F"/><stop offset="1" stop-color="#101830"/></linearGradient>
+ <linearGradient id="water" x2="0" y2="1"><stop offset="0" stop-color="#A5E8F3"/><stop offset="1" stop-color="#3FA9CF"/></linearGradient>
+ <linearGradient id="card" x2="0" y2="1"><stop offset="0" stop-color="#F5B65B"/><stop offset="1" stop-color="#EFA044"/></linearGradient>
+ <radialGradient id="sunGlow"><stop offset="0" stop-color="#FFE29A" stop-opacity=".75"/><stop offset="1" stop-color="#FFE29A" stop-opacity="0"/></radialGradient>
+ <radialGradient id="bulb"><stop offset="0" stop-color="#FFF1C4"/><stop offset=".35" stop-color="#FFD37A" stop-opacity=".8"/><stop offset="1" stop-color="#FFD37A" stop-opacity="0"/></radialGradient>
+</defs>`;
+
+const palm = (x, y, s, col = '#5E9A6E', trunk = '#B98A5E') => `<g transform="translate(${x},${y}) scale(${s})"><path d="M0,0 C-10,-160 10,-320 50,-440" fill="none" stroke="${trunk}" stroke-width="30" stroke-linecap="round"/>${[[-160, -.3], [-120, .2], [-60, .5], [30, .35], [80, -.1], [130, .1]].map(([a, c]) => `<path d="M50,-440 q${f(Math.cos(a * Math.PI / 180) * 90)},${f(Math.sin(a * Math.PI / 180) * 90 - 40)} ${f(Math.cos(a * Math.PI / 180) * 190)},${f(Math.sin(a * Math.PI / 180) * 190 + 40)}" fill="none" stroke="${col}" stroke-width="${f(34 + c * 10)}" stroke-linecap="round"/>`).join('')}</g>`;
+
+function villa(night = false) {
+  const w = night ? '#161C33' : '#FFFBF5', sh = night ? '#10152A' : '#EEDFD2', win = night ? '#FFCB74' : '#9DB8CB';
+  return `<rect x="150" y="980" width="170" height="232" fill="${sh}"/><rect x="290" y="880" width="520" height="332" fill="${w}"/>
+    <rect x="810" y="920" width="60" height="292" fill="${sh}"/><rect x="290" y="872" width="520" height="16" fill="${night ? '#0E1326' : '#F4E8DC'}"/>
+    <rect x="330" y="930" width="120" height="150" rx="6" fill="${win}"/><rect x="480" y="930" width="120" height="150" rx="6" fill="${win}"/><rect x="630" y="930" width="140" height="150" rx="6" fill="${win}"/>
+    <path d="M520,1212 L520,1120 Q560,1086 600,1120 L600,1212Z" fill="${night ? '#FFCB74' : '#7FA2B8'}"/>
+    <rect x="180" y="1020" width="100" height="110" rx="6" fill="${win}"/>
+    ${night ? '' : `<circle cx="310" cy="890" r="46" fill="#E8779A"/><circle cx="350" cy="872" r="34" fill="#F08DAB"/><circle cx="276" cy="920" r="30" fill="#E8779A"/>`}`;
+}
+
+function coast(t, cast = {}) {
+  const sun = `<circle cx="830" cy="700" r="230" fill="url(#sunGlow)"/><circle cx="830" cy="700" r="92" fill="#FFD27A"/>`;
+  const cloud = (x, y, s) => `<g transform="translate(${f(x)},${y}) scale(${s})" fill="#FFF8EE" opacity=".95"><circle r="44"/><circle cx="50" cy="-16" r="56"/><circle cx="108" cy="4" r="40"/><rect x="-40" y="0" width="186" height="44" rx="22"/></g>`;
+  let s = `<rect width="1080" height="1920" fill="url(#sky)"/>${sun}${cloud(120 + t * 12, 560, 1)}${cloud(560 - t * 8, 470, .75)}`;
+  s += `<rect y="860" width="1080" height="380" fill="url(#sea)"/>`;
+  for (let i = 0; i < 6; i++) s += `<path d="M${f(-40 + ((i * 190 + t * 40) % 1160))},${900 + i * 40} q30,-10 60,0 t60,0" fill="none" stroke="#C4EDF6" stroke-width="5" stroke-linecap="round" opacity=".7"/>`;
+  s += `<path d="M0,870 C120,770 280,780 440,870Z" fill="#E7C29C"/><path d="M1080,880 C980,810 880,820 800,880Z" fill="#D9AE8A"/>`;
+  s += villa() + palm(930, 1230, 1.05) + palm(70, 1236, .8, '#6FAE7C');
+  s += `<rect y="1210" width="1080" height="710" fill="url(#deck)"/>`;
+  s += `<path d="M280,1262 L800,1262 L1030,1900 L50,1900Z" fill="#FFF8F0"/><path d="M300,1276 L780,1276 L995,1890 L85,1890Z" fill="url(#pool)"/>`;
+  for (let i = 0; i < 9; i++) {
+    const y = 1320 + i * 64, x0 = lerp(300, 85, (y - 1276) / 614) + 30, x1 = lerp(780, 995, (y - 1276) / 614) - 30, sh = Math.sin(t * 2 + i) * 22;
+    s += `<path d="M${f(x0 + sh)},${y} q${f((x1 - x0) / 6)},-14 ${f((x1 - x0) / 3)},0 t${f((x1 - x0) / 3)},0" fill="none" stroke="#D6F7FC" stroke-width="5" stroke-linecap="round" opacity=".55"/>`;
+  }
+  // Sonnenschirm & Liege links
+  s += `<path d="M150,1180 L150,1330" stroke="#8A6E5E" stroke-width="10"/><path d="M40,1190 Q150,1100 260,1190Z" fill="${C.amber}"/><path d="M95,1190 Q150,1120 150,1110 Q150,1120 205,1190Z" fill="#FFF3E4"/>`;
+  if (cast.mia) s += cast.mia;
+  if (cast.splash) s += cast.splash;
+  return s;
+}
+
+function dinner(t, clink) {
+  let s = `<rect width="1080" height="1920" fill="url(#dusk)"/><circle cx="540" cy="930" r="320" fill="url(#sunGlow)"/><circle cx="540" cy="930" r="150" fill="#FFD27A"/>`;
+  s += `<rect y="930" width="1080" height="320" fill="url(#duskSea)"/>`;
+  for (let i = 0; i < 6; i++) s += `<rect x="${470 + (i % 2) * 20 - i * 6}" y="${960 + i * 42}" width="${140 - i * 14}" height="9" rx="4" fill="#FFD27A" opacity=".75"/>`;
+  // Lichterkette
+  for (const [y0, sag, off] of [[430, 190, 0], [560, 150, 35]]) {
+    s += `<path d="M-20,${y0} Q540,${y0 + sag * 2} 1100,${y0}" fill="none" stroke="#4A2B2A" stroke-width="4"/>`;
+    for (let i = 0; i <= 15; i++) {
+      const u = (i * 75 + off) / 1120, x = -20 + u * 1120, y = (1 - u) * (1 - u) * y0 + 2 * (1 - u) * u * (y0 + sag * 2) + u * u * y0;
+      const tw = .75 + .25 * Math.sin(t * 5 + i * 1.3);
+      s += `<circle cx="${f(x)}" cy="${f(y + 16)}" r="${f(36 * tw)}" fill="url(#bulb)"/><circle cx="${f(x)}" cy="${f(y + 16)}" r="9" fill="#FFF1C4"/>`;
+    }
+  }
+  // Brüstung
+  s += `<rect y="1240" width="1080" height="30" rx="6" fill="#FFF3EA"/>`;
+  for (let x = 20; x < 1080; x += 76) s += `<rect x="${x}" y="1270" width="36" height="160" rx="14" fill="#F8E7DA"/>`;
+  s += `<rect y="1420" width="1080" height="500" fill="#E5B79B"/>`;
+  // Drei Freunde stoßen an
+  const g = clink, ppl = [['lea', 230, 1310, [.8, .3]], ['tom', 540, 1260, [0, .5]], ['jonas', 850, 1310, [-.8, .3]]];
+  for (const [n, x, y, lk] of ppl) s += `<g transform="translate(${x},${y}) scale(.9)">${bust(PEOPLE[n], { look: lk, grin: .7 + .3 * g })}</g>`;
+  s += `<rect y="1690" width="1080" height="230" fill="#F7E9DC"/><rect y="1690" width="1080" height="18" fill="#EFD6C3"/>`;
+  s += ``;
+  // Gläser mit Spritz
+  const glass = (x, y, r) => `<g transform="translate(${f(x)},${f(y)}) rotate(${r})"><path d="M-34,-60 L34,-60 L26,10 Q0,26 -26,10Z" fill="#F2894A" ${L5}/><path d="M-30,-60 L30,-60" stroke="#fff" stroke-width="6"/><circle cx="-10" cy="-30" r="6" fill="#FFE1B0"/><path d="M0,18 L0,74 M-26,78 L26,78" stroke="${C.line}" stroke-width="7" stroke-linecap="round"/></g>`;
+  const meet = eio(g);
+  const gl = [[lerp(330, 478, meet), lerp(1640, 1470, meet), 14], [lerp(560, 540, meet), lerp(1660, 1440, meet), 0], [lerp(750, 602, meet), lerp(1640, 1470, meet), -14]];
+  const armFrom = [[350, 1570], [610, 1580], [730, 1570]];
+  gl.forEach(([x, y, r], i) => { const o = PEOPLE[['lea', 'tom', 'jonas'][i]]; s += arm(o, armFrom[i][0], armFrom[i][1], x, y + 60) + `<circle cx="${f(x)}" cy="${f(y + 54)}" r="26" fill="${o.skin}" ${L5}/>` + glass(x, y, r); });
+  if (g > .95) { const k = eout(p(t, 10.15, 10.45)), o = 1 - p(t, 10.45, 10.8); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; s += `<path d="M${f(540 + Math.cos(a) * 70 * k)},${f(1380 + Math.sin(a) * 70 * k)} L${f(540 + Math.cos(a) * 130 * k)},${f(1380 + Math.sin(a) * 130 * k)}" stroke="${C.yellow}" stroke-width="10" stroke-linecap="round" opacity="${f(o * 100) / 100}"/>`; } }
+  return s;
+}
+
+function fireworks(t, t0) {
+  let s = `<rect width="1080" height="1920" fill="url(#night)"/>`;
+  for (let i = 0; i < 60; i++) s += `<circle cx="${f(rnd(i) * 1080)}" cy="${f(rnd(i + 99) * 820)}" r="${f(1.5 + rnd(i + 7) * 2.5)}" fill="#fff" opacity="${f((.4 + .6 * Math.abs(Math.sin(t * 2 + i))) * 100) / 100}"/>`;
+  s += `<rect y="860" width="1080" height="380" fill="url(#nightSea)"/>`;
+  const bursts = [[t0 + .1, 380, 430, '#F0873A', '#FFD27A'], [t0 + .5, 720, 330, '#F08DAB', '#FFE1EC'], [t0 + .9, 540, 560, '#F2B04F', '#FFF3C4']];
+  for (const [bt, x, y, c1, c2] of bursts) {
+    const up = p(t, bt - .35, bt), ex = p(t, bt, bt + 1.2);
+    if (up > 0 && up < 1) s += `<path d="M${x},860 L${x},${f(lerp(860, y, eout(up)))}" stroke="${c2}" stroke-width="5" stroke-linecap="round" opacity=".8"/><circle cx="${x}" cy="${f(lerp(860, y, eout(up)))}" r="7" fill="#fff"/>`;
+    if (ex > 0 && ex < 1) {
+      const R = 210 * eout(ex), o = 1 - ex;
+      for (let i = 0; i < 20; i++) {
+        const a = i / 20 * Math.PI * 2, gx = x + Math.cos(a) * R, gy = y + Math.sin(a) * R + 70 * ex * ex;
+        s += `<path d="M${f(x + Math.cos(a) * R * .55)},${f(y + Math.sin(a) * R * .55 + 40 * ex * ex)} L${f(gx)},${f(gy)}" stroke="${i % 2 ? c1 : c2}" stroke-width="6" stroke-linecap="round" opacity="${f(o * 100) / 100}"/><circle cx="${f(gx)}" cy="${f(gy)}" r="6" fill="${c2}" opacity="${f(o * 100) / 100}"/>`;
+      }
+      s += `<rect x="${x - 40}" y="880" width="80" height="${f(300 * (1 - ex))}" fill="${c1}" opacity="${f(o * .35 * 100) / 100}"/>`;
+    }
+  }
+  s += `<path d="M0,870 C120,770 280,780 440,870Z" fill="#0F1428"/>` + villa(true) + palm(930, 1230, 1.05, '#0C1122', '#0C1122');
+  s += `<rect y="1210" width="1080" height="710" fill="#151B30"/>`;
+  s += `<path d="M280,1262 L800,1262 L1030,1900 L50,1900Z" fill="#1E2640"/><path d="M300,1276 L780,1276 L995,1890 L85,1890Z" fill="#1F5C7C"/>`;
+  for (let i = 0; i < 7; i++) s += `<circle cx="${140 + i * 135}" cy="${f(1250 + Math.sin(i) * 6)}" r="9" fill="#FFD27A" opacity=".85"/>`;
+  return s;
+}
+
+// ─── Sucher-Overlay: Rahmen, REC-Anzeige, Auslöser ─────────────────────────
+function viewfinder(t, recStart) {
+  const rec = clamp(t - recStart, 0, REC), on = t >= recStart && t < recStart + REC + .1;
+  let s = `<path d="M-10,-10 H1090 V1930 H-10 Z M84,24 H996 Q1056,24 1056,84 V1836 Q1056,1896 996,1896 H84 Q24,1896 24,1836 V84 Q24,24 84,24Z" fill="#141214" fill-rule="evenodd"/>`;
+  if (on) s += `<rect x="440" y="80" width="200" height="60" rx="30" fill="#000" fill-opacity=".5"/><circle cx="478" cy="110" r="9" fill="${C.amber}"/><text x="500" y="121" font-family="Mono" font-weight="500" font-size="30" fill="#fff">${rec.toFixed(1)}s</text>`;
+  s += `<circle cx="540" cy="1760" r="66" fill="none" stroke="#fff" stroke-width="8"/>`;
+  if (on) {
+    s += `<circle cx="540" cy="1760" r="80" pathLength="1" fill="none" stroke="${C.amber}" stroke-width="8" stroke-linecap="round" stroke-dasharray="1 1" stroke-dashoffset="${f((1 - rec / REC) * 1000) / 1000}" transform="rotate(-90 540 1760)"/><rect x="516" y="1736" width="48" height="48" rx="12" fill="${C.amber}"/>`;
+  } else s += `<circle cx="540" cy="1760" r="54" fill="#E53935"/>`;
+  return s;
+}
+
+// ─── Wassertropfen auf der Linse ───────────────────────────────────────────
+function lensDrop(x, y, r, o) {
+  return `<g opacity="${f(o * 100) / 100}"><circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="#D8F7FC" fill-opacity=".32" stroke="#fff" stroke-opacity=".75" stroke-width="5"/>`
+    + `<path d="M${f(x - r * .55)},${f(y - r * .2)} A${f(r * .6)},${f(r * .6)} 0 0 1 ${f(x + r * .1)},${f(y - r * .62)}" fill="none" stroke="#fff" stroke-width="${f(Math.max(4, r * .09))}" stroke-linecap="round"/>`
+    + `<path d="M${f(x - r * .6)},${f(y + r * .55)} A${f(r * .85)},${f(r * .85)} 0 0 0 ${f(x + r * .7)},${f(y + r * .45)}" fill="none" stroke="#2F8EB0" stroke-opacity=".35" stroke-width="${f(Math.max(4, r * .08))}" stroke-linecap="round"/></g>`;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Einstellungen
+// ════════════════════════════════════════════════════════════════════════════
+function miaAt(t) {
+  const o = PEOPLE.mia;
+  if (t < 6.95) {
+    const u = p(t, 6.0, 6.95), x = lerp(250, 560, u);
+    return `<g transform="translate(${f(x)},${1214 - Math.abs(Math.sin(t * 13)) * 10}) scale(.5)">${figure(o, { phase: t * 13, look: [.8, .1], grin: .8 })}</g>`;
+  }
+  if (t < 7.62) {
+    const u = p(t, 6.95, 7.62), x = lerp(560, 540, u), y = lerp(1214, 1560, u) - 520 * u * (1 - u) * 2.2, k = lerp(.5, .8, u);
+    return `<g transform="translate(${f(x)},${f(y)}) rotate(${f(-18 * u)}) scale(${f(k * 100) / 100})">${figure(o, { phase: 0, run: 0, curl: eout(p(t, 6.97, 7.15)), look: [0, .6], grin: 1 })}</g>`;
+  }
+  return '';
+}
+
+function splashAt(t) {
+  const s0 = t - 7.62; if (s0 < 0) return '';
+  const X = 540, Y = 1580; let s = '';
+  for (let i = 0; i < 4; i++) { const q = p(s0, i * .12, i * .12 + 1.2); if (q > 0 && q < 1) s += `<ellipse cx="${X}" cy="${Y}" rx="${f(60 + 360 * eout(q))}" ry="${f(18 + 90 * eout(q))}" fill="none" stroke="#fff" stroke-width="8" opacity="${f((1 - q) * .8 * 100) / 100}"/>`; }
+  const col = p(s0, 0, .9), h = 380 * Math.sin(Math.PI * clamp(col * 1.05));
+  if (col < 1) s += `<path d="M${X - 110},${Y} C${X - 90},${f(Y - h * .6)} ${X - 50},${f(Y - h)} ${X},${f(Y - h)} C${X + 50},${f(Y - h)} ${X + 90},${f(Y - h * .6)} ${X + 110},${Y}Z" fill="#EFFCFF" stroke="#9EE3F1" stroke-width="6"/>`;
+  for (let i = 0; i < 18; i++) {
+    const a = -1.25 + 2.5 * rnd(i), v = 900 + 700 * rnd(i + 3), q = clamp(s0 - rnd(i + 9) * .08, 0, .9);
+    const x = X + Math.sin(a) * v * q * .8, y = Y - Math.cos(a) * v * q + 1500 * q * q, r = 10 + 14 * rnd(i + 5);
+    if (q > 0 && q < .9) s += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="#E3F9FD" stroke="#7FD2E6" stroke-width="4" opacity="${f((1 - q / .9) * 100) / 100}"/>`;
+  }
+  s += `<ellipse cx="${X}" cy="${Y + 6}" rx="${f(150 * eout(p(s0, 0, .3)))}" ry="${f(40 * eout(p(s0, 0, .3)))}" fill="#fff" opacity="${f((1 - p(s0, .4, 1.2)) * 100) / 100}"/>`;
+  return s;
+}
+// Tropfen, die auf die Linse fliegen: [Startzeit, Ziel x, Ziel y, Radius]
+const LENS = [[7.78, 250, 520, 150], [7.84, 820, 760, 190], [7.9, 430, 1160, 120], [7.95, 900, 1380, 140], [8.0, 200, 1500, 110], [8.03, 640, 330, 100], [8.08, 560, 1640, 170], [8.12, 780, 1080, 80]];
+
+function shotPool(t) {
+  let s = coast(t, { mia: miaAt(t), splash: splashAt(t) });
+  for (const [st, x, y, r] of LENS) {
+    const q = p(t, st, st + .22); if (q <= 0) continue;
+    const e = eout(q), cx = lerp(540, x, e), cy = lerp(1560, y, e), rr = lerp(10, r, e);
+    s += lensDrop(cx, cy + 30 * p(t, 8.3, 9.4) * (r / 190), rr, 1);
+  }
+  return s + viewfinder(t, 6.95);
+}
+
+// ─── Blob-Einstellungen: Pfirsich-Grund, Creme-Fläche, Filmelemente ────────
+const BLOB = [540, 1250, 510, 630];
+function blobFrame(t, inner, deco = 1, withStrip = true) {
+  const [bx, by, brx, bry] = BLOB, [dBack, dFront] = decor(t, deco, withStrip);
+  const outer = blob(bx, by, brx + 30, bry + 34, t, 1.3), inn = blob(bx, by, brx, bry, t, .2);
+  return `<rect width="1080" height="1920" fill="${C.peach}"/>${dBack}<path d="${outer}" fill="${C.cream}"/>`
+    + `<clipPath id="bc"><path d="${inn}"/></clipPath><path d="${inn}" fill="${C.paper}"/><g clip-path="url(#bc)">${inner}</g>${dFront}`;
+}
+
+function shotIntro(t) {
+  const ben = PEOPLE.ben;
+  const inner = `<svg x="30" y="620" width="1020" height="1260" viewBox="30 520 1020 1260" preserveAspectRatio="xMidYMid slice">${coast(t, {
+    mia: `<g transform="translate(640,1214) scale(.42)">${figure(PEOPLE.mia, { run: 0, wave: t * 9, look: [-.6, .3], grin: 1 })}</g>`,
+  })}</svg>`
+    + `<g transform="translate(270,1600) scale(1.05) rotate(4)">${bust(ben, { glasses: true, grin: .5 })}${arm(ben, 120, 300, 30, 320)}<rect x="-60" y="240" width="96" height="170" rx="18" fill="${C.navy}" ${L5}/><circle cx="30" cy="320" r="30" fill="${ben.skin}" ${L5}/></g>`;
+  return blobFrame(t, inner) + headline(['Die besten Momente', 'kündigen sich nicht an'], 'SOMMER · KÜSTE', .3, 3.05, t);
+}
+
+const PHONE = { cx: 540, cy: 1240, w: 480, h: 980, rot: -5 };
+function lockScreen(t) {
+  const { w, h } = PHONE;
+  return `<svg x="${-w / 2 + 18}" y="${-h / 2 + 18}" width="${w - 36}" height="${h - 36}" viewBox="120 560 840 1720" preserveAspectRatio="xMidYMid slice">${coast(t)}</svg>`
+    + `<rect x="${-w / 2 + 18}" y="${-h / 2 + 18}" width="${w - 36}" height="${h - 36}" rx="56" fill="#000" fill-opacity=".18"/>`
+    + `<text x="0" y="-300" font-family="Mono" font-weight="500" font-size="22" letter-spacing="3" fill="#fff" text-anchor="middle">SAMSTAG, 16. AUGUST</text>`
+    + `<text x="0" y="-160" font-family="Inter" font-weight="700" font-size="150" letter-spacing="-5" fill="#fff" text-anchor="middle">14:32</text>`
+    + `<circle cx="-150" cy="380" r="46" fill="#000" fill-opacity=".3"/><path d="M-162,356 h24 l-4,16 h-16z M-158,372 h16 v28 h-16z" fill="#fff"/>`;
+}
+const CTRL = [150, 380];
+function shotPhone(t) {
+  const z = eio(p(t, 5.35, 6.0));
+  const { cx, cy, w, h, rot } = PHONE;
+  const tap = eout(p(t, 4.3, 4.45)) * (1 - eout(p(t, 4.5, 4.7)));
+  const ctrlScale = 1 - .12 * tap;
+  const toCam = eio(p(t, 4.6, 5.3));
+  let ph = `<rect x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" rx="72" fill="${C.navy}" ${L5}/>`
+    + `<clipPath id="scr"><rect x="${-w / 2 + 18}" y="${-h / 2 + 18}" width="${w - 36}" height="${h - 36}" rx="56"/></clipPath><g clip-path="url(#scr)">`
+    + `<g opacity="${1 - toCam}">${lockScreen(t)}<g transform="translate(${CTRL[0]},${CTRL[1]}) scale(${ctrlScale})"><circle r="46" fill="#000" fill-opacity=".35"/><circle r="24" fill="none" stroke="${C.amber}" stroke-width="5"/><circle r="10" fill="${C.amber}"/></g></g>`
+    + `<g opacity="${toCam}"><svg x="${-w / 2 + 18}" y="${-h / 2 + 18}" width="${w - 36}" height="${h - 36}" viewBox="0 0 1080 1920" preserveAspectRatio="xMidYMid slice">${coast(t, { mia: miaAt(Math.max(6.0, t)) })}</svg></g>`
+    + `</g><rect x="-70" y="${-h / 2 + 30}" width="140" height="34" rx="17" fill="#000"/>`;
+  // Ripple beim Tippen
+  const rip = p(t, 4.42, 4.95);
+  if (rip > 0 && rip < 1) ph += `<circle cx="${CTRL[0]}" cy="${CTRL[1]}" r="${f(46 + 90 * eout(rip))}" fill="none" stroke="${C.amber}" stroke-width="6" opacity="${f((1 - rip) * 100) / 100}"/>`;
+  // Finger von rechts unten
+  const fin = eout(p(t, 3.95, 4.3)) * (1 - eio(p(t, 4.55, 4.95)));
+  if (fin > 0) {
+    const fx = lerp(420, CTRL[0] + 18, fin), fy = lerp(760, CTRL[1] + 38, fin);
+    ph += `<g transform="translate(${f(fx)},${f(fy)}) rotate(-28)"><path d="M-30,0 L-30,260 L30,260 L30,0 Q30,-40 0,-40 Q-30,-40 -30,0Z" fill="${PEOPLE.ben.skin}" ${L5}/><path d="M-16,-10 Q0,-28 16,-10 L16,14 L-16,14Z" fill="#F7DCCB" stroke="${C.line}" stroke-width="3"/></g>`;
+  }
+  const scale = 1 + 1.75 * z, r = rot * (1 - z);
+  const phone = `<g transform="translate(${cx},${cy}) rotate(${f(r)}) scale(${f(scale * 100) / 100})">${ph}</g>`;
+  // Pfeil + Handschrift, auf den Knopf gerechnet (inkl. Drehung)
+  const a = rot * Math.PI / 180, tipX = cx + CTRL[0] * Math.cos(a) - CTRL[1] * Math.sin(a) - 40, tipY = cy + CTRL[0] * Math.sin(a) + CTRL[1] * Math.cos(a) - 50;
+  const ap = eio(p(t, 3.45, 4.0)) * (1 - p(t, 5.2, 5.4));
+  const ax = tipX - 30, ay = tipY + 110;
+  const arr = `<g opacity="${f((1 - p(t, 5.1, 5.4)) * 100) / 100}">${arrow(`M360,1845 C460,1885 ${f(ax - 60)},1880 ${f(ax)},${f(ay)}`, ap, [ax, ay], -1.3)}${hand('ohne', 150, 1725, p(t, 3.3, 3.6), -8, 76)}${hand('Entsperren!', 215, 1795, p(t, 3.4, 3.7), -8, 76)}</g>`;
+  const deco = 1 - z;
+  return blobFrame(t, '', deco) + `<rect width="1080" height="1920" fill="${C.peach}" opacity="${f(z * 100) / 100}"/>` + phone + arr
+    + headline(['Ein Tipp.', 'Ohne Entsperren'], null, 3.1, 5.35, t);
+}
+
+function shotDinner(t) { return dinner(t, eio(p(t, 9.7, 10.2))) + (t > 10.15 ? bubble('Prost!', 740, 820, p(t, 10.15, 10.4), 1, 90) : '') + viewfinder(t, 9.55); }
+function shotFireworks(t) { return fireworks(t, 11.7) + viewfinder(t, 11.85); }
+
+function bubble(text, x, y, prog, dir = 1, size = 76) {
+  if (prog <= 0) return '';
+  const s = lerp(.5, 1, back(prog)), w = text.length * size * .42 + 80, h = size * 1.5;
+  return `<g transform="translate(${x},${y}) scale(${f(s * 100) / 100})"><path d="M${-w / 2},${-h / 2} h${w} q24,0 24,24 v${h - 48} q0,24 -24,24 h${-w / 2 + 40 * dir} l${-50 * dir},56 l${-6 * dir},-56 h${-w / 2 + 16 * dir} q-24,0 -24,-24 v${-h + 48} q0,-24 24,-24Z" fill="#fff" stroke="${C.line}" stroke-width="6" stroke-linejoin="round"/><text y="${size * .34}" font-family="Hand" font-weight="700" font-size="${size}" fill="${C.ink}" text-anchor="middle">${text}</text></g>`;
+}
+
+// Mini-Szenen für Filmstreifen und Player
+const THUMBS = [t => shotPoolThumb(), t => dinner(10.3, 1), t => fireworks(12.4, 11.7), t => coast(2)];
+function shotPoolThumb() { return coast(7.75, { splash: splashAt(7.75) }); }
+function thumb(i, x, y, w, h) { return `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="0 400 1080 1440" preserveAspectRatio="xMidYMid slice">${THUMBS[i]()}</svg>`; }
+
+function shotFilm(t) {
+  const sIn = eout(p(t, 13.9, 14.6)), toCard = eio(p(t, 15.35, 15.95));
+  let inner = '';
+  // Filmstreifen mit den Urlaubsclips
+  const sx = lerp(1500, 540, sIn);
+  let st = `<rect x="-560" y="-165" width="1120" height="330" rx="10" fill="${C.blueg}" stroke="${C.navy}" stroke-width="9"/>`;
+  for (let i = 0; i < 20; i++) st += `<rect x="${-540 + i * 55}" y="-150" width="24" height="16" rx="4" fill="${C.paper}"/><rect x="${-540 + i * 55}" y="134" width="24" height="16" rx="4" fill="${C.paper}"/>`;
+  for (let i = 0; i < 4; i++) {
+    const fx = -520 + i * 262, k = p(toCard, i * .12, .6 + i * .1);
+    const dx = (0 - (fx + 120)) * eio(k), dy = 60 * eio(k);
+    st += `<g transform="translate(${f(dx)},${f(dy)}) scale(${f((1 - .6 * eio(k)) * 100) / 100})" opacity="${f((1 - p(k, .7, 1)) * 100) / 100}"><rect x="${fx - 6}" y="-116" width="252" height="232" rx="10" fill="${C.paper}"/>${thumb(i, fx, -110, 240, 220)}</g>`;
+  }
+  inner += `<g transform="translate(${f(sx)},1180) rotate(-9)" opacity="${f((1 - p(t, 15.7, 16.0)) * 100) / 100}">${st}</g>`;
+  // Video-Karte wie in Referenz 1
+  const cIn = p(t, 15.55, 16.1), prog = p(t, 16.2, 17.4);
+  if (cIn > 0) {
+    const s = lerp(.5, 1, back(cIn));
+    inner += `<g transform="translate(540,1230) rotate(-4) scale(${f(s * 100) / 100})" opacity="${f(eout(cIn) * 100) / 100}"><rect x="-340" y="-270" width="680" height="540" rx="22" fill="url(#card)"/>`
+      + `<clipPath id="cv"><rect x="-300" y="-230" width="600" height="360" rx="14"/></clipPath><g clip-path="url(#cv)">${thumb(prog > 0 ? Math.floor(prog * 12) % 4 : 0, -300, -230, 600, 360)}</g>`
+      + `<g transform="scale(${f((1 - .1 * eout(p(t, 16.05, 16.15)) * (1 - p(t, 16.15, 16.3))) * 100) / 100})" opacity="${f((1 - p(t, 16.2, 16.4)) * 100) / 100}"><rect x="-80" y="-110" width="160" height="120" rx="20" fill="${C.coral}"/><path d="M-20,-78 L36,-50 L-20,-22Z" fill="#F7E1CF"/></g>`
+      + `<rect x="-300" y="170" width="600" height="10" rx="5" fill="#F7E1CF" opacity=".6"/><rect x="-300" y="170" width="${f(600 * prog)}" height="10" rx="5" fill="${C.coral}"/><circle cx="${f(-300 + 600 * prog)}" cy="175" r="14" fill="${C.coral}"/>`
+      + `<path d="M-296,208 v32 M-282,208 v32" stroke="#F7E1CF" stroke-width="8" stroke-linecap="round"/><path d="M-250,210 L-222,224 L-250,238Z" fill="#F7E1CF"/>`
+      + `<path d="M230,238 v-10 M244,238 v-18 M258,238 v-26 M272,238 v-34" stroke="#F7E1CF" stroke-width="7" stroke-linecap="round"/></g>`;
+  }
+  const arr = arrow(`M870,860 C1010,980 960,1080 830,1080`, eio(p(t, 15.2, 15.6)) * (1 - p(t, 16.2, 16.5)), [830, 1080], Math.PI);
+  return blobFrame(t, inner, 1, false) + arr
+    + headline(['Ben war schnell genug'], 'ZUM GLÜCK', 13.95, 15.4, t)
+    + headline(['Clips rein. Film raus'], 'EXPORT', 15.4, 17.3, t);
+}
+
+function shotFriends(t) {
+  let s = `<rect width="1080" height="1920" fill="#F2E5D5"/>`;
+  const patches = [[120, 520, 150, 190, '#C9A98A', -3], [330, 380, 110, 150, '#8E8A83', 2], [700, 440, 170, 130, '#D8B99A', -2], [900, 620, 120, 170, '#B7C4C9', 3], [520, 640, 90, 110, '#C27F5B', 1], [60, 820, 90, 110, '#A9A39A', -4]];
+  for (const [x, y, w, h, c, r] of patches) s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${c}" opacity=".5" transform="rotate(${r} ${x + w / 2} ${y + h / 2})"/>`;
+  s += `<path d="M0,1040 Q540,1000 1080,1040 V1920 H0Z" fill="#EAD7C3" opacity=".6"/>`;
+  const w = eio(p(t, 18.45, 18.85)) * (1 - eio(p(t, 19.9, 20.4))), grin = eio(p(t, 19.9, 20.4));
+  s += `<g transform="translate(540,1190) scale(1.1) translate(-540,-1300)">`;
+  const cast = [['tom', 165, 1290, [.9, .55]], ['lea', 345, 1250, [.7, .6]], ['jonas', 915, 1290, [-.9, .55]], ['mia', 735, 1250, [-.7, .6]]];
+  for (const [n, x, y, lk] of cast) s += `<g transform="translate(${x},${y + Math.sin(t * 2 + x) * 4}) scale(.92)">${bust(PEOPLE[n], { look: lk, wow: w, grin: grin * .9, glasses: n === 'tom' ? w < .5 : undefined })}</g>`;
+  // Ben in der Mitte zeigt das Handy
+  const ben = PEOPLE.ben;
+  s += `<g transform="translate(540,1180) scale(1.0)">${bust(ben, { look: [0, .2], grin: .8 })}</g>`;
+  const px = 540, py = 1530;
+  s += arm(ben, 400, 1500, px - 110, py + 90) + arm(ben, 680, 1500, px + 110, py + 90);
+  s += `<g transform="translate(${px},${py}) rotate(-3)"><rect x="-150" y="-230" width="300" height="440" rx="40" fill="${C.navy}" ${L5}/><clipPath id="fp"><rect x="-134" y="-214" width="268" height="408" rx="28"/></clipPath><g clip-path="url(#fp)">${thumb(Math.floor(t * 4) % 4, -134, -214, 268, 408)}</g><rect x="-110" y="160" width="220" height="8" rx="4" fill="#fff" opacity=".5"/><rect x="-110" y="160" width="${f(220 * p(t, 17.6, 21.2))}" height="8" rx="4" fill="${C.amber}"/></g>`;
+  s += `<circle cx="${px - 150}" cy="${py + 80}" r="36" fill="${ben.skin}" ${L5}/><circle cx="${px + 150}" cy="${py + 80}" r="36" fill="${ben.skin}" ${L5}/>`;
+  // Sterne & Herzen steigen auf
+  for (let i = 0; i < 12; i++) {
+    const st = 18.7 + i * .16, q = p(t, st, st + 1.4); if (q <= 0 || q >= 1) continue;
+    const x = [165, 345, 735, 915][i % 4] + (rnd(i) - .5) * 120, y = 930 - 320 * eout(q), sc = lerp(.4, 1, back(Math.min(1, q * 3)));
+    const heart = i % 3 === 0;
+    s += `<g transform="translate(${f(x)},${f(y)}) scale(${f(sc * 100) / 100}) rotate(${f((rnd(i + 4) - .5) * 30)})" opacity="${f((1 - p(q, .65, 1)) * 100) / 100}">${heart
+      ? `<path d="M0,22 C-40,-6 -30,-40 0,-22 C30,-40 40,-6 0,22Z" fill="${C.coral}" stroke="${C.line}" stroke-width="5"/>`
+      : `<path d="M0,-34 L9,-10 L34,-10 L14,6 L22,32 L0,16 L-22,32 L-14,6 L-34,-10 L-9,-10Z" fill="${C.yellow}" stroke="${C.line}" stroke-width="5" stroke-linejoin="round"/>`}</g>`;
+  }
+  s += `</g>` + bubble('Wie cool ist das denn?!', 700, 760, p(t, 19.15, 19.45), 1, 64);
+  return s + headline(['Sein Sommer.', 'In einem Film'], null, 17.65, 21.5, t, 190);
+}
+
+function shotEnd(t) {
+  const q = p(t, 22.1, 22.7), [bx, by] = [540, 980];
+  let s = `<rect width="1080" height="1920" fill="${C.paper}"/><path d="${blob(bx, by, 470, 470, t, 2)}" fill="${C.cream}"/>`;
+  const [dB, dF] = decor(t, eout(p(t, 22.4, 23.0)));
+  s += dB;
+  s += `<g transform="translate(540,${f(lerp(1030, 990, eout(q)))})" opacity="${f(eout(q) * 100) / 100}"><text font-family="Brico" font-weight="800" font-size="220" fill="${C.ink}" text-anchor="middle" letter-spacing="-6">keep<tspan fill="${C.amber}">.</tspan></text></g>`;
+  const q2 = p(t, 22.55, 23.1);
+  s += `<g opacity="${f(eout(q2) * 100) / 100}" transform="translate(0,${f((1 - eout(q2)) * 20)})"><text x="540" y="1160" font-family="Inter" font-weight="800" font-size="50" letter-spacing="-1" fill="${C.ink}" text-anchor="middle">Halte den Moment fest,</text><text x="540" y="1222" font-family="Inter" font-weight="800" font-size="50" letter-spacing="-1" fill="${C.ink}" text-anchor="middle">ohne ihn zu verpassen<tspan fill="${C.amber}">.</tspan></text></g>`;
+  const q3 = p(t, 23.0, 23.5);
+  s += `<text x="540" y="1340" font-family="Mono" font-weight="500" font-size="28" letter-spacing="9" fill="${C.ink}" fill-opacity="${f(.55 * eout(q3) * 100) / 100}" text-anchor="middle">JETZT IM APP STORE</text>`;
+  return s + dF;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Übergänge
+// ════════════════════════════════════════════════════════════════════════════
+// Amber-Tropfen: fällt, schlägt auf, füllt den Bildschirm, öffnet die nächste Szene
+function dropCut(t, t0, from, to) {
+  const u = t - t0;
+  if (u < .45) {
+    const fall = eio(p(u, 0, .26)), hit = p(u, .24, .45);
+    let s = from(t);
+    if (hit <= 0) s += `<path transform="translate(540,${f(lerp(-160, 960, fall))}) scale(${f(lerp(1, 1.25, fall) * 100) / 100},${f(lerp(1.2, 1.5, fall) * 100) / 100})" d="M0,-90 C30,-40 60,-6 60,30 C60,66 34,92 0,92 C-34,92 -60,66 -60,30 C-60,-6 -30,-40 0,-90Z" fill="${C.amber}"/>`;
+    else {
+      const R = 60 + 1400 * ein(hit);
+      s += `<circle cx="540" cy="960" r="${f(R)}" fill="${C.amber}"/>`;
+      for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, d = R + 60 + 120 * eout(hit); s += `<circle cx="${f(540 + Math.cos(a) * d)}" cy="${f(960 + Math.sin(a) * d)}" r="${f(22 * (1 - hit))}" fill="${C.amber}"/>`; }
+    }
+    return s;
+  }
+  const rv = eio(p(u, .45, .7)), R = 1400 * rv;
+  return `<rect width="1080" height="1920" fill="${C.amber}"/><clipPath id="dr${Math.round(t0 * 10)}"><circle cx="540" cy="960" r="${f(R)}"/></clipPath><g clip-path="url(#dr${Math.round(t0 * 10)})">${to(t)}</g>`;
+}
+
+// Wasserschwall wischt von oben nach unten
+function waterCut(t, t0, from, to) {
+  const u = p(t, t0, t0 + .8), bottom = lerp(-100, 2250, eio(Math.min(1, u * 1.6))), top = lerp(-2400, 2100, eio(u));
+  const edge = (y, ph) => { let d = `M-20,${f(y)}`; for (let x = 0; x <= 1100; x += 60) d += ` L${x},${f(y + Math.sin(x / 90 + ph) * 34)}`; return d; };
+  let s = `<clipPath id="wOld"><rect y="${f(bottom)}" width="1080" height="${f(Math.max(0, 1920 - bottom + 60))}"/></clipPath><g clip-path="url(#wOld)">${from(t)}</g>`;
+  s += `<clipPath id="wNew"><rect y="0" width="1080" height="${f(Math.max(0, top))}"/></clipPath><g clip-path="url(#wNew)">${to(t)}</g>`;
+  s += `<path d="${edge(top, t * 8)} L1100,${f(bottom)} L-20,${f(bottom)}Z" fill="url(#water)"/>`;
+  s += `<path d="${edge(top, t * 8)}" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" opacity=".85"/><path d="${edge(bottom, t * 6 + 2)}" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round" opacity=".9"/>`;
+  for (let i = 0; i < 14; i++) { const y = lerp(top, bottom, rnd(i)), x = rnd(i + 20) * 1080; if (y > -50 && y < 1970) s += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(8 + rnd(i + 3) * 18)}" fill="none" stroke="#fff" stroke-width="4" opacity=".7"/>`; }
+  return s;
+}
+
+// Marker-Kritzel in App-Amber: deckt zu, wird wieder weggewischt
+function scribbleCut(t, t0, from, to) {
+  const d = `M-240,60 L1320,260 L-240,640 L1320,840 L-240,1220 L1320,1420 L-240,1800 L1320,2000`;
+  const on = eio(p(t, t0, t0 + .32)), off = eio(p(t, t0 + .36, t0 + .7));
+  const scene = t < t0 + .34 ? from(t) : to(t);
+  if (off <= 0) return scene + `<path d="${d}" pathLength="1" fill="none" stroke="${C.amber}" stroke-width="560" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 1" stroke-dashoffset="${f((1 - on) * 1000) / 1000}"/>`;
+  return scene + `<path d="${d}" pathLength="1" fill="none" stroke="${C.amber}" stroke-width="560" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${f((1 - off) * 1000) / 1000} 2" stroke-dashoffset="${f(-off * 1000) / 1000}"/>`;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Zeitleiste
+// ════════════════════════════════════════════════════════════════════════════
+function draw(t) {
+  let s;
+  if (t < 3.0) s = shotIntro(t);
+  else if (t < 3.3) { const q = p(t, 3.0, 3.3); s = shotPhone(t) + `<g opacity="${f((1 - q) * 100) / 100}">${shotIntro(t)}</g>`; }
+  else if (t < 6.0) s = shotPhone(t);
+  else if (t < 8.55) s = shotPool(t);
+  else if (t < 9.35) s = waterCut(t, 8.55, shotPool, shotDinner);
+  else if (t < 11.0) s = shotDinner(t);
+  else if (t < 11.7) s = dropCut(t, 11.0, shotDinner, shotFireworks);
+  else if (t < 13.2) s = shotFireworks(t);
+  else if (t < 13.9) s = dropCut(t, 13.2, shotFireworks, shotFilm);
+  else if (t < 17.15) s = shotFilm(t);
+  else if (t < 17.85) s = scribbleCut(t, 17.15, shotFilm, shotFriends);
+  else if (t < 21.45) s = shotFriends(t);
+  else if (t < 22.15) s = dropCut(t, 21.45, shotFriends, shotEnd);
+  else s = shotEnd(t);
+  return DEFS + s;
+}
+const art = document.getElementById('art');
+window.render = t => { art.innerHTML = draw(t); };
+window.render(0);
+</script>
+</body></html>
