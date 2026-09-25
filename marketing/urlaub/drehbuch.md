@@ -1,6 +1,7 @@
 # keep. — „Bens Sommer" · Werbeclip 24 s · Drehbuch
 
-**Format:** 1080 × 1920 (9:16), 30 fps, ohne Ton. Für Reels, Stories, TikTok.
+**Format:** 1080 × 1920 (9:16), 30 fps. Für Reels, Stories, TikTok.
+`keep-urlaub-24s-ton.mp4` hat Geräusche, keine Musik; `keep-urlaub-24s.mp4` ist die stumme Fassung.
 **Stil:** sonnig und flach wie eine Editorial-Illustration: Pfirsich und Creme,
 eine organische Fläche in der Mitte, schwebende Filmelemente. Die Figuren sind
 Cartoons mit Kontur, großen Augen und überzeichneten Proportionen. Übergänge
@@ -43,7 +44,7 @@ seinem Sommer, und seine Freunde finden ihn großartig.
 ## Grenzen
 
 - Die Figuren sind gezeichnete Vektorgrafik, keine gemalte Illustration. Für den Look der Referenz mit Schattierung und Pinseltextur bräuchte es einen Illustrator oder einen Bildgenerator.
-- Kein Ton. Musik und Platsch-Geräusch kommen beim Posten dazu.
+- Der Ton besteht nur aus Geräuschen: Brandung, Vögel, Schritte, Aufnahme-Töne, Platsch, Tropfen auf der Linse, Wasserschwall, Stimmengewirr, Gläserklirren, Feuerwerk, Filzstift, Tropfen-Blubb und ein Glockenton zur Endkarte. Alles ist in `sound.py` synthetisiert, es gibt keine fremden Samples. Stimmen gibt es keine, „Prost!" und „Wie cool ist das denn?!" stehen nur in den Sprechblasen.
 - Nicht für App-Store-Vorschauvideos geeignet, dort verlangt Apple echte Bildschirmaufnahmen.
 
 ## Neu rendern
@@ -53,4 +54,6 @@ cd marketing/urlaub
 npm i
 node render.mjs             # → keep-urlaub-24s.mp4
 node render.mjs --still 7.4 # einzelnes Bild zum Prüfen
+pip install numpy scipy
+python3 sound.py            # → keep-urlaub-24s-ton.mp4 (Geräusche zum Bild)
 ```
