@@ -106,7 +106,12 @@ struct CameraView: View {
         .statusBarHidden(true)
         .animation(.easeInOut(duration: 0.25), value: showZoomLabel)
         .animation(.easeInOut(duration: 0.2), value: showExposureControl)
+        .animation(.easeInOut(duration: 0.3), value: camera.controlRotation)
     }
+
+    /// Turns icons and labels upright for the way the phone is held. The
+    /// layout stays portrait; see `CameraService.controlRotation`.
+    private var controlAngle: Angle { .degrees(camera.controlRotation) }
 
     // MARK: - Camera UI
 
@@ -167,6 +172,7 @@ struct CameraView: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 7)
                     .background(.black.opacity(0.55), in: Capsule())
+                    .rotationEffect(controlAngle)
                     .transition(.opacity)
             }
 
@@ -274,6 +280,7 @@ struct CameraView: View {
                 Image(systemName: "xmark")
                     .font(.title3.bold())
                     .foregroundStyle(.white)
+                    .rotationEffect(controlAngle)
                     .padding(12)
                     .background(.black.opacity(0.4), in: Circle())
             }
@@ -313,6 +320,7 @@ struct CameraView: View {
                 Image(systemName: torchOn ? "bolt.fill" : "bolt.slash")
                     .font(.title3.bold())
                     .foregroundStyle(torchOn ? Theme.amber : .white)
+                    .rotationEffect(controlAngle)
                     .padding(12)
                     .background(.black.opacity(0.4), in: Circle())
             }
@@ -338,6 +346,7 @@ struct CameraView: View {
                 duration: durationLimit,
                 expanded: $expandedControls,
                 isRecording: camera.isRecording,
+                labelRotation: controlAngle,
                 onSelectLens: { stage in
                     camera.selectLens(stage)
                     lastZoom = camera.currentZoomFactor
@@ -382,6 +391,7 @@ struct CameraView: View {
                     Image(systemName: "arrow.triangle.2.circlepath.camera")
                         .font(.title2)
                         .foregroundStyle(.white)
+                        .rotationEffect(controlAngle)
                         .frame(width: 52, height: 52)
                         .background(.black.opacity(0.4), in: Circle())
                 }
@@ -402,6 +412,7 @@ struct CameraView: View {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(Theme.ink)
+                    .rotationEffect(controlAngle)
                     .frame(width: 48, height: 48)
                     .background(Theme.amber, in: Circle())
                     .shadow(color: Theme.amber.opacity(0.5), radius: 8)
@@ -409,6 +420,7 @@ struct CameraView: View {
                 Image(systemName: "lock.open")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
+                    .rotationEffect(controlAngle)
                     .frame(width: 48, height: 48)
                     .background(.black.opacity(0.45), in: Circle())
                     .overlay(Circle().stroke(.white.opacity(0.5), lineWidth: 1))

@@ -150,8 +150,24 @@ final class CameraService: NSObject, ObservableObject {
     /// camera — the front one, and every phone without a second module — which
     /// is what tells the UI to leave the lens picker out entirely.
     @Published var lensStages: [LensStage] = []
+    /// How far to turn icons and labels, in degrees, so they read upright the
+    /// way the phone is held: 0 upright, 90 turned left onto its side, −90
+    /// turned right. The screens themselves stay portrait, like the system
+    /// Camera: the layout holds still and only the symbols turn.
+    @Published private(set) var controlRotation: Double = 0
 
     // MARK: Private objects
+
+    /// Tracks which way up the phone is held, for the camera in use. Its
+    /// capture angle is stamped on each recording as it starts, so a clip shot
+    /// sideways is saved as a landscape video instead of a portrait one with
+    /// the picture on its side. Device-bound, so it's rebuilt on a flip.
+    private var captureRotation: AVCaptureDevice.RotationCoordinator?
+    /// Drives `controlRotation`. Always the back wide camera's, whichever
+    /// camera is active: the front camera's angles are mirrored, and the icons
+    /// have to turn the same way either way.
+    private var controlRotationSource: AVCaptureDevice.RotationCoordinator?
+    private var controlRotationObservation: NSKeyValueObservation?
 
     /// Where finished recordings are written.
     ///
@@ -243,6 +259,8 @@ final class CameraService: NSObject, ObservableObject {
         session = s
 
         installZoomControl(on: s, device: videoInput.device)
+        captureRotation = AVCaptureDevice.RotationCoordinator(device: videoInput.device, previewLayer: nil)
+        startTrackingControlRotation(fallback: videoInput.device)
 
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
             DispatchQueue.global(qos: .userInitiated).async { s.startRunning(); c.resume() }
@@ -268,6 +286,8 @@ final class CameraService: NSObject, ObservableObject {
         DispatchQueue.global(qos: .userInitiated).async { if s.isRunning { s.stopRunning() } }
         session = nil; videoDeviceInput = nil; audioDeviceInput = nil; movieOutput = nil
         isRunning = false; isRecording = false
+        captureRotation = nil
+        controlRotationObservation = nil; controlRotationSource = nil
         // Queued, not inline: nothing waits on the release, and running it on
         // the shared queue keeps it ordered against whatever opens next.
         AudioSessionQueue.enqueue {
@@ -281,6 +301,15 @@ final class CameraService: NSObject, ObservableObject {
         guard let output = movieOutput, !output.isRecording else { return URL(fileURLWithPath: "") }
         // Re-verify audio connection before every clip — direct fix for Glimpse bug.
         try verifyAudioConnection(on: output)
+        // Which way up the phone is held right now. The movie output doesn't
+        // turn the frames, it records this as the track's orientation — so it
+        // costs nothing, and players, thumbnails and the export all read the
+        // clip as landscape from then on. Fixed for the length of the clip.
+        if let conn = output.connection(with: .video),
+           let angle = captureRotation?.videoRotationAngleForHorizonLevelCapture,
+           conn.isVideoRotationAngleSupported(angle) {
+            conn.videoRotationAngle = angle
+        }
         let url = makeTemporaryURL()
         return try await withCheckedThrowingContinuation { continuation in
             recordingContinuation = continuation
@@ -304,6 +333,7 @@ final class CameraService: NSObject, ObservableObject {
         s.commitConfiguration()
         videoDeviceInput = newInput
         cameraPosition = newPosition
+        captureRotation = AVCaptureDevice.RotationCoordinator(device: newInput.device, previewLayer: nil)
         if let out = movieOutput { enableStabilization(on: out) }
         // The old slider still points at the camera that was just removed.
         installZoomControl(on: s, device: newInput.device)
@@ -313,6 +343,32 @@ final class CameraService: NSObject, ObservableObject {
         newInput.device.setExposureTargetBias(0, completionHandler: nil)
         newInput.device.unlockForConfiguration()
         exposureBias = 0
+    }
+
+    // MARK: - Orientation
+
+    private func startTrackingControlRotation(fallback: AVCaptureDevice) {
+        let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) ?? fallback
+        let source = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
+        controlRotationSource = source
+        controlRotationObservation = source.observe(\.videoRotationAngleForHorizonLevelCapture,
+                                                    options: [.initial, .new]) { [weak self] coordinator, _ in
+            let angle = coordinator.videoRotationAngleForHorizonLevelCapture
+            Task { @MainActor in self?.updateControlRotation(captureAngle: angle) }
+        }
+    }
+
+    /// The back camera's capture angle is 90 held upright, 0 turned left onto
+    /// its side and 180 turned right; the icons turn by the difference. Held
+    /// upside down (270) changes nothing, as in the system Camera — the icons
+    /// keep whichever way they last pointed.
+    private func updateControlRotation(captureAngle: CGFloat) {
+        switch Int(captureAngle.rounded()) {
+        case 90:  controlRotation = 0
+        case 0:   controlRotation = 90
+        case 180: controlRotation = -90
+        default:  break
+        }
     }
 
     // MARK: - Lens stages

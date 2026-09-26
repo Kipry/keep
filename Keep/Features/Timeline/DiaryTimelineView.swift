@@ -385,7 +385,7 @@ struct DiaryTimelineView: View {
     @ViewBuilder
     private func previewActive(_ band: TimelineBand) -> some View {
         ZStack {
-            TimelineThumb(clip: clip(at: 0), fallback: band.startTag)
+            TimelineThumb(clip: clip(at: 0), fallback: band.startTag, showsWholeLandscape: true)
                 .id(clip(at: 0)?.id ?? band.id)
                 .transition(.opacity)
 
@@ -983,15 +983,30 @@ struct DiaryTimelineView: View {
 private struct TimelineThumb: View {
     let clip: Clip?
     let fallback: Int
+    /// For the tall hero card: a clip shot sideways is shown whole, across the
+    /// middle, over a blurred fill of itself, instead of being cropped to its
+    /// central third. Small thumbnails keep filling their frame.
+    var showsWholeLandscape = false
     @State private var thumbImage: UIImage?
     @State private var hiResImage: UIImage?
 
     var body: some View {
         ZStack {
             if let img = hiResImage ?? thumbImage {
-                Image(uiImage: img)
-                    .resizable()
-                    .scaledToFill()
+                if showsWholeLandscape && img.size.width > img.size.height {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFill()
+                        .blur(radius: 28)
+                        .overlay(Color.black.opacity(0.35))
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFill()
+                }
             } else {
                 LinearGradient(colors: TimelinePalette.gradient(fallback),
                                startPoint: .topLeading, endPoint: .bottomTrailing)

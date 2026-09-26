@@ -129,6 +129,7 @@ struct LockedCaptureView: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
                         .background(.black.opacity(0.55), in: Capsule())
+                        .rotationEffect(controlAngle)
                         .transition(.opacity)
                 }
 
@@ -250,7 +251,12 @@ struct LockedCaptureView: View {
         .preferredColorScheme(.dark)
         .animation(.easeInOut(duration: 0.25), value: showZoomLabel)
         .animation(.easeInOut(duration: 0.2), value: showExposureControl)
+        .animation(.easeInOut(duration: 0.3), value: camera.controlRotation)
     }
+
+    /// Icons and labels turn upright for the way the phone is held; the
+    /// layout stays portrait, as in the app. See `CameraService.controlRotation`.
+    private var controlAngle: Angle { .degrees(camera.controlRotation) }
 
     // MARK: Top bar
 
@@ -291,6 +297,7 @@ struct LockedCaptureView: View {
                 Image(systemName: torchOn ? "bolt.fill" : "bolt.slash")
                     .font(.system(size: 19, weight: .bold))
                     .foregroundStyle(torchOn ? Theme.amber : .white)
+                    .rotationEffect(controlAngle)
                     .frame(width: 43, height: 43)
                     .background(.black.opacity(0.4), in: Circle())
             }
@@ -326,7 +333,7 @@ struct LockedCaptureView: View {
     private var bottomBar: some View {
         VStack(spacing: 16) {
             if !camera.isRecording {
-                DurationPicker(selection: $durationLimit).transition(.opacity)
+                DurationPicker(selection: $durationLimit, labelRotation: controlAngle).transition(.opacity)
             }
 
             if isLocked {
@@ -359,6 +366,7 @@ struct LockedCaptureView: View {
                     Image(systemName: "arrow.triangle.2.circlepath.camera")
                         .font(.system(size: 22))
                         .foregroundStyle(.white)
+                        .rotationEffect(controlAngle)
                         .frame(width: 52, height: 52)
                         .background(.black.opacity(0.4), in: Circle())
                 }
@@ -379,6 +387,7 @@ struct LockedCaptureView: View {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(Theme.ink)
+                    .rotationEffect(controlAngle)
                     .frame(width: 48, height: 48)
                     .background(Theme.amber, in: Circle())
                     .shadow(color: Theme.amber.opacity(0.5), radius: 8)
@@ -386,6 +395,7 @@ struct LockedCaptureView: View {
                 Image(systemName: "lock.open")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
+                    .rotationEffect(controlAngle)
                     .frame(width: 48, height: 48)
                     .background(.black.opacity(0.45), in: Circle())
                     .overlay(Circle().stroke(.white.opacity(0.5), lineWidth: 1))

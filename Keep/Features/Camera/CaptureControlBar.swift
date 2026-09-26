@@ -28,6 +28,10 @@ struct CaptureControlBar: View {
     let duration: Double
     @Binding var expanded: Group
     let isRecording: Bool
+    /// Turns each label upright when the phone is held sideways. Applied to
+    /// the text only: the buttons keep their shape and the width animation
+    /// that folds a group away keeps working along the bar.
+    var labelRotation: Angle = .zero
     let onSelectLens: (LensStage) -> Void
     let onSelectDuration: (Double) -> Void
 
@@ -183,6 +187,7 @@ struct CaptureControlBar: View {
                     .font(.mono(isActive ? 13 : 12, weight: .medium))
                     .foregroundStyle(isActive ? Theme.amber : .white.opacity(0.72))
                     .fixedSize()
+                    .rotationEffect(labelRotation)
                     // Shorter than the width curve, so the label is gone before
                     // its box is, instead of being crushed on the way out.
                     .opacity(isVisible ? 1 : 0)

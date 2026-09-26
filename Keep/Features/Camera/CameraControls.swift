@@ -90,6 +90,8 @@ struct RecordButton: View {
 /// write a preference back into the app.
 struct DurationPicker: View {
     @Binding var selection: Double
+    /// Turns the labels upright when the phone is held sideways.
+    var labelRotation: Angle = .zero
 
     var body: some View {
         HStack(spacing: 6) {
@@ -100,6 +102,7 @@ struct DurationPicker: View {
                     Text(verbatim: RecordingDuration.label(d))
                         .font(.mono(13, weight: .medium))
                         .foregroundStyle(selection == d ? Theme.ink : .white)
+                        .rotationEffect(labelRotation)
                         .padding(.horizontal, 15)
                         .padding(.vertical, 8)
                         .background(
