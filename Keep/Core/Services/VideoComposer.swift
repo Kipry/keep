@@ -248,8 +248,8 @@ actor VideoComposer {
     // MARK: - Intro bumper
 
     /// When the title card fades in over the bumper, in seconds. Matches the
-    /// moment the wordmark in BumperIntro.mp4 has settled (see
-    /// marketing/bumper/keep-bumper.html, which renders that file).
+    /// moment the wordmark in both bumper files has settled (see
+    /// marketing/bumper/keep-bumper.html, which renders them).
     private static let titleFadeInStart: CFTimeInterval = 1.65
 
     /// Renders the bundled "keep." intro bumper with the project title and its
@@ -257,13 +257,27 @@ actor VideoComposer {
     /// the first clip of the final export. Returns nil if the bundled asset is
     /// missing so the caller can fall back to exporting without it.
     ///
-    /// `shapeURL` is the clip the export takes its shape from. The bumper is
-    /// rendered straight onto that canvas, so a landscape film gets a
-    /// landscape title card. It used to be rendered portrait and cropped into
-    /// the landscape canvas afterwards, which cut the title off the bottom.
+    /// `shapeURL` is the clip the export takes its shape from. Its orientation
+    /// (natural size run through its rotation) picks the bumper: a film whose
+    /// first clip was shot sideways opens with BumperIntroWide, anything else
+    /// with the portrait BumperIntro. The bumper is then rendered straight onto
+    /// that canvas, title card included.
     func renderBumper(projectName: String, startDate: Date, endDate: Date,
                       quality: ExportQuality, shapeURL: URL?) async -> URL? {
-        guard let bumperURL = Bundle.main.url(forResource: "BumperIntro", withExtension: "mp4") else { return nil }
+        guard let portraitURL = Bundle.main.url(forResource: "BumperIntro", withExtension: "mp4") else { return nil }
+
+        // At the export's own quality and shape: the title card is drawn at
+        // this size, so rendering it smaller than the final canvas would
+        // soften it on a 4K export.
+        let renderSize = await canvasSize(for: AVURLAsset(url: shapeURL ?? portraitURL), quality: quality)
+        guard renderSize.width > 0, renderSize.height > 0 else { return nil }
+
+        // Falls back to the portrait file if the landscape one is ever missing;
+        // it still fills the canvas, just cropped to its middle band.
+        let isLandscape = renderSize.width > renderSize.height
+        let bumperURL = isLandscape
+            ? Bundle.main.url(forResource: "BumperIntroWide", withExtension: "mp4") ?? portraitURL
+            : portraitURL
         let asset = AVURLAsset(url: bumperURL)
         guard let videoTrack = try? await asset.loadTracks(withMediaType: .video).first,
               let naturalSize = try? await videoTrack.load(.naturalSize),
@@ -271,17 +285,9 @@ actor VideoComposer {
               let duration = try? await asset.load(.duration)
         else { return nil }
 
-        // At the export's own quality and shape: the title card is drawn at
-        // this size, so rendering it smaller than the final canvas would
-        // soften it on a 4K export.
-        let renderSize = await canvasSize(for: shapeURL.map { AVURLAsset(url: $0) } ?? asset,
-                                          quality: quality)
-        guard renderSize.width > 0, renderSize.height > 0 else { return nil }
-
         // Scale into the canvas rather than using preferredTransform alone: the
-        // canvas is the export's size, not the bumper's own. In landscape the
-        // portrait bumper is cropped to its middle band, which is where the
-        // animation keeps everything that matters.
+        // canvas is the export's size, not the bumper's own. A square or
+        // unusual clip shape crops the bumper to fit, never stretches it.
         let layerInstr = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
         layerInstr.setTransform(
             transformFilling(naturalSize: naturalSize,

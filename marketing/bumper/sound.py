@@ -2,7 +2,8 @@
 #
 #   python3 sound.py
 #     → bumper-ton.wav
-#     → ../../Keep/Resources/Videos/BumperIntro.mp4   (bumper-video.mp4 + Ton)
+#     → ../../Keep/Resources/Videos/BumperIntro.mp4       (bumper-video.mp4 + Ton)
+#     → ../../Keep/Resources/Videos/BumperIntroWide.mp4   (bumper-video-quer.mp4 + Ton)
 #     → vorschau-hoch.mp4 / vorschau-quer.mp4 bekommen denselben Ton, falls vorhanden
 #
 # Zeitpunkte wie in keep-bumper.html. Pegel bewusst unter den Clips: die App
@@ -97,7 +98,9 @@ def mux(video, dest):
     shutil.move(tmp, dest)
     print(dest)
 
-mux(os.path.join(HERE, 'bumper-video.mp4'), os.path.normpath(os.path.join(HERE, '../../Keep/Resources/Videos/BumperIntro.mp4')))
+VIDEOS = os.path.normpath(os.path.join(HERE, '../../Keep/Resources/Videos'))
+mux(os.path.join(HERE, 'bumper-video.mp4'), os.path.join(VIDEOS, 'BumperIntro.mp4'))
+mux(os.path.join(HERE, 'bumper-video-quer.mp4'), os.path.join(VIDEOS, 'BumperIntroWide.mp4'))
 for name in ['vorschau-hoch.mp4', 'vorschau-quer.mp4']:
     p = os.path.join(HERE, name)
     if os.path.exists(p): mux(p, p)

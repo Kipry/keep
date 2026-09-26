@@ -20,17 +20,19 @@ svg{display:block}
 //  Ladescreens (LaunchWordmark), gleiche Maße, gleiche Farben.
 //
 //  Projektname und Zeitraum brennt die App selbst ein (VideoComposer), unten
-//  links, ab 1,65 s. `?preview` zeichnet sie hier zur Ansicht nach, `?wide`
-//  zeigt den Ausschnitt eines Querformat-Exports.
+//  links, ab 1,65 s. `?preview` zeichnet sie hier zur Ansicht nach.
+//  `?wide` ist die eigene Fassung im Querformat (BumperIntroWide.mp4), die
+//  die App für Filme nimmt, deren erster Clip quer aufgenommen wurde.
 // ════════════════════════════════════════════════════════════════════════════
 const Q = new URLSearchParams(location.search);
 const WIDE = Q.has('wide'), PREVIEW = Q.has('preview');
 const W = WIDE ? 1920 : 1080, H = WIDE ? 1080 : 1920;
 const art = document.getElementById('art');
 art.setAttribute('width', W); art.setAttribute('height', H);
-// Querformat: die App füllt die Leinwand mit dem Hochformat-Clip, sichtbar
-// bleibt das mittlere Band. Genau das zeigt dieser Ausschnitt.
-art.setAttribute('viewBox', WIDE ? `0 ${960 - 1080 * 1080 / 1920 / 2} 1080 ${1080 * 1080 / 1920}` : '0 0 1080 1920');
+art.setAttribute('viewBox', `0 0 ${W} ${H}`);
+// Bildmitte, um die sich alles dreht. Quer ein Stück über der Mitte, damit
+// unten links Luft für Titel und Zeitraum bleibt.
+const CX = W / 2, CY = WIDE ? 500 : 960;
 
 const C = { bg: '#0D0D0D', amber: '#F0873A', white: '#FFFFFF', glow: '#482D19' };
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
@@ -48,8 +50,10 @@ const G = {
   line: { x0: 369, x1: 949, y: 1457.5, w: 12 },
   word: { x: 357, base: 1429, size: 208, track: -8 },
 };
-const S = 1080 / 1320;                    // gleiche relative Größe wie der Ladescreen
-const toFrame = (x, y) => [540 + (x - G.cx) * S, 960 + (y - G.cy) * S];
+// Hochkant dieselbe relative Größe wie der Ladescreen (45 % der Breite),
+// quer etwas größer, gemessen an der kurzen Kante.
+const S = WIDE ? 560 / 600 : 1080 / 1320;
+const toFrame = (x, y) => [CX + (x - G.cx) * S, CY + (y - G.cy) * S];
 
 const DEFS = `<defs>
   <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${C.glow}"/><stop offset=".55" stop-color="${C.glow}" stop-opacity=".55"/><stop offset="1" stop-color="${C.glow}" stop-opacity="0"/></radialGradient>
@@ -77,7 +81,7 @@ function lens(x, y, r, ringProg, dotScale, ringAlpha) {
 //  1,65–2,00  (App) Projektname und Zeitraum blenden ein
 //  bis 2,50   stehen lassen, dann harter Schnitt in den Film
 function draw(t) {
-  let s = DEFS + `<rect x="0" y="0" width="1080" height="1920" fill="${C.bg}"/>`;
+  let s = DEFS + `<rect x="0" y="0" width="${W}" height="${H}" fill="${C.bg}"/>`;
 
   // Wärme im Hintergrund, wie im Ladescreen; beim Klick kurz heller
   const [gx, gy] = toFrame(660, 1230);
@@ -89,7 +93,7 @@ function draw(t) {
   const move = eio(p(t, .98, 1.32));
   const appear = back(p(t, .05, .32));
   const big = 2.6;
-  const cx = lerp(540, lx, move), cy = lerp(960, ly, move);
+  const cx = lerp(CX, lx, move), cy = lerp(CY, ly, move);
   const r = rFinal * lerp(big, 1, move) * appear;
   const ring = p(t, .3, .95);           // linear, wie der Ring in der App
   // REC-Puls, solange der Ring läuft
@@ -101,7 +105,7 @@ function draw(t) {
   const [wx, wb] = toFrame(G.word.x, G.word.base);
   const letters = ['k', 'e', 'e', 'p'];
   const clipTop = toFrame(0, G.word.base - 200)[1], clipBot = toFrame(0, G.line.y + G.line.w / 2)[1];
-  s += `<clipPath id="wc"><rect x="0" y="${f(clipTop)}" width="1080" height="${f(clipBot - clipTop)}"/></clipPath><g clip-path="url(#wc)">`;
+  s += `<clipPath id="wc"><rect x="0" y="${f(clipTop)}" width="${W}" height="${f(clipBot - clipTop)}"/></clipPath><g clip-path="url(#wc)">`;
   let adv = 0;
   // Vorschübe in Font-Einheiten (Bricolage ExtraBold, 1000 upm) plus Laufweite
   const ADV = { k: 605, e: 587, p: 648 };
@@ -128,7 +132,7 @@ function draw(t) {
   const sw = p(t, .95, 1.38);
   if (sw > 0 && sw < 1) {
     const R = rFinal * big * (1.05 + 2.4 * eout(sw));
-    s += `<circle cx="540" cy="960" r="${f(R)}" fill="none" stroke="${C.amber}" stroke-width="${f(6 * (1 - sw) + 1)}" opacity="${f((1 - sw) * .8)}"/>`;
+    s += `<circle cx="${CX}" cy="${CY}" r="${f(R)}" fill="none" stroke="${C.amber}" stroke-width="${f(6 * (1 - sw) + 1)}" opacity="${f((1 - sw) * .8)}"/>`;
   }
 
   if (r > 0) s += lens(cx, cy, r, ring, dotIn * pulse * pop, 1 - move);
@@ -140,10 +144,9 @@ function draw(t) {
 function titleCard(t) {
   const a = eout(p(t, 1.65, 2.0)); if (a <= 0) return '';
   // Maße wie titleCardImage in VideoComposer.swift, auf die kurze Kante bezogen
-  const vw = 1080, vh = WIDE ? 1080 * 1080 / 1920 : 1920, y0 = WIDE ? 960 - vh / 2 : 0;
-  const unit = Math.min(WIDE ? 1920 : 1080, WIDE ? 1080 : 1920), k = vw / (WIDE ? 1920 : 1080);
-  const left = unit * .075 * k, bottom = y0 + vh - unit * .1 * k;
-  const title = unit * (WIDE ? .075 : .1) * k, range = unit * .032 * k;
+  const unit = Math.min(W, H), k = 1;
+  const left = unit * .075, bottom = H - unit * .1;
+  const title = unit * (WIDE ? .075 : .1), range = unit * .032;
   return `<g opacity="${f(a)}"><text x="${f(left)}" y="${f(bottom)}" font-family="Mono" font-weight="500" font-size="${f(range)}" letter-spacing="${f(range * .09)}" fill="${C.amber}">01.07.2026  –  31.08.2026</text>`
     + `<text x="${f(left)}" y="${f(bottom - range * 1.1 - 8 * k)}" font-family="-apple-system, Inter, Helvetica, Arial" font-weight="700" font-size="${f(title)}" fill="#fff">Sommer 2026</text></g>`;
 }

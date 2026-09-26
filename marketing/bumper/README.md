@@ -1,8 +1,13 @@
 # keep. — Signature-Clip vor dem Export
 
 Läuft vor jedem exportierten Film: 2,5 s, 30 fps, dunkel wie der Ladescreen,
-mit einem leisen Sound-Logo. Die fertige Datei liegt im App-Bundle als
-`Keep/Resources/Videos/BumperIntro.mp4` (2160 × 3840, H.264 + AAC).
+mit einem leisen Sound-Logo. Es gibt zwei Fassungen im App-Bundle, beide
+H.264 + AAC:
+
+- `Keep/Resources/Videos/BumperIntro.mp4`: hochkant, 2160 × 3840
+- `Keep/Resources/Videos/BumperIntroWide.mp4`: quer, 3840 × 2160
+
+Die App nimmt die Fassung, die zum ersten Clip des Projekts passt.
 
 ## Ablauf
 
@@ -19,10 +24,11 @@ mit einem leisen Sound-Logo. Die fertige Datei liegt im App-Bundle als
 
 ## Was die App dazutut
 
-`VideoComposer.renderBumper` brennt Projektname und Zeitraum ein. Das passiert
-auf der Leinwand des Exports: Ein Querformat-Film bekommt eine Titelkarte im
-Querformat, der Clip wird dabei auf sein mittleres Band beschnitten. Dort
-liegt alles Wichtige der Animation. Der Titel blendet ab 1,65 s ein
+`VideoComposer.renderBumper` liest am ersten Clip des Projekts ab, ob er
+hochkant oder quer aufgenommen wurde: Bildgröße samt Drehung, genau wie der
+Export selbst. Danach wählt es die Fassung und brennt Projektname und Zeitraum
+(erster bis letzter Clip) auf der Leinwand des Exports ein. In den Videos
+steht also kein Titel, nur in den Vorschauen. Der Titel blendet ab 1,65 s ein
 (`titleFadeInStart`). Wird das Timing hier geändert, muss der Wert dort mit.
 
 Pegel: Die App gleicht Clips auf −20 dBFS RMS an, das Sound-Logo liegt bei
@@ -34,7 +40,8 @@ etwa −27 dBFS (Spitze −9 dBFS), also bewusst darunter.
 cd marketing/bumper
 npm i && pip install numpy scipy
 node render.mjs                   # bumper-video.mp4, 2160×3840, ohne Ton
+node render.mjs --wide            # bumper-video-quer.mp4, 3840×2160, ohne Ton
 node render.mjs --preview         # vorschau-hoch.mp4 mit Beispieltitel
-node render.mjs --preview --wide  # vorschau-quer.mp4, Ausschnitt im Querformat
-python3 sound.py                  # Ton dazu → Keep/Resources/Videos/BumperIntro.mp4
+node render.mjs --preview --wide  # vorschau-quer.mp4 mit Beispieltitel
+python3 sound.py                  # Ton dazu → Keep/Resources/Videos/BumperIntro(Wide).mp4
 ```

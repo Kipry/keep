@@ -1,12 +1,13 @@
 // Rendert keep-bumper.html Bild für Bild zu einem MP4.
 //
-//   node render.mjs                    → bumper-video.mp4   (2160×3840, ohne Ton, fürs App-Bundle)
+//   node render.mjs                    → bumper-video.mp4       (2160×3840, ohne Ton, fürs App-Bundle)
+//   node render.mjs --wide             → bumper-video-quer.mp4  (3840×2160, ohne Ton, fürs App-Bundle)
 //   node render.mjs --preview          → vorschau-hoch.mp4  (1080×1920, mit Beispieltitel)
-//   node render.mjs --preview --wide   → vorschau-quer.mp4  (1920×1080, Ausschnitt im Querformat)
+//   node render.mjs --preview --wide   → vorschau-quer.mp4  (1920×1080, mit Beispieltitel)
 //   node render.mjs --still 1.2        → still-1.2.png
 //
 // Danach legt `python3 sound.py` den Ton darunter und schreibt
-// Keep/Resources/Videos/BumperIntro.mp4.
+// Keep/Resources/Videos/BumperIntro.mp4 und BumperIntroWide.mp4.
 // Env: FFMPEG=/pfad/zu/ffmpeg, CHROMIUM=/pfad/zu/chrome.
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
@@ -21,7 +22,7 @@ const stillAt = has('--still') ? parseFloat(args[args.indexOf('--still') + 1]) :
 const preview = has('--preview'), wide = has('--wide');
 const W = wide ? 1920 : 1080, H = wide ? 1080 : 1920;
 // Das Bundle-Video in doppelter Auflösung: die App skaliert es auf die
-// Export-Leinwand, bei 4K sind das 2160×3840.
+// Export-Leinwand, bei 4K sind das 2160×3840 bzw. 3840×2160.
 const scale = preview || stillAt !== null ? 1 : 2;
 
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
@@ -39,7 +40,7 @@ if (stillAt !== null) {
   process.exit(0);
 }
 
-const out = path.join(here, preview ? (wide ? 'vorschau-quer.mp4' : 'vorschau-hoch.mp4') : 'bumper-video.mp4');
+const out = path.join(here, preview ? (wide ? 'vorschau-quer.mp4' : 'vorschau-hoch.mp4') : (wide ? 'bumper-video-quer.mp4' : 'bumper-video.mp4'));
 const ff = spawn(process.env.FFMPEG || 'ffmpeg', [
   '-y', '-loglevel', 'error',
   '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'png', '-i', '-',
