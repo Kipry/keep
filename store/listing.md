@@ -33,30 +33,16 @@ Dein Leben, ein Clip pro Tag
 
 **Beschreibung** (max. 4000 Zeichen)
 ```
-keep. ist dein tägliches Video-Tagebuch – gebaut für einen einzigen Handgriff.
+keep. ist ein tägliches Video-Tagebuch, gebaut für einen einzigen Tipp.
 
-Ein Tipp auf den Aufnahme-Knopf im Sperrbildschirm, eine kurze Aufnahme, fertig – ohne das Handy zu entsperren. Kein Suchen, kein Hantieren, kein Face ID. Der Clip speichert sich von selbst und landet automatisch in deinem Tagebuch – und du bist wieder im Moment statt am Handy.
+Ein Tipp auf den Aufnahme-Knopf im Sperrbildschirm, und der Moment ist festgehalten, ohne das Handy zu entsperren. Danach bist du wieder im Moment statt am Handy.
 
-WARUM keep.
-Die schönsten Momente sind vorbei, bevor die Kamera-App geladen hat. keep. macht das Festhalten so schnell wie einen Gedanken – damit du dabei bist, statt am Handy zu hantieren.
+• Aufnehmen vom Sperrbildschirm, aus dem Kontrollzentrum oder mit der Action-Taste
+• Clips mit 1, 1,6, 3 oder 5 Sekunden, oder den Auslöser halten, so lange du willst
+• Clips in Projekte sortieren und aus jedem einen Film in 1080p oder 4K machen
+• Auf deine Tage zurückblicken, in der Zeitachse und auf einer Karte
 
-SO FUNKTIONIERT'S
-• Aufnahme vom Sperrbildschirm – ohne Entsperren. Auch über das Kontrollzentrum oder die Action-Taste
-• An deine Projekte und alten Clips kommst du weiterhin nur entsperrt. Aufnehmen ist schnell, Ansehen bleibt privat
-• Aufnahmedauer direkt in der Kamera wählen: 1, φ (gut 1,6), 3 oder 5 Sekunden. Oder den Auslöser halten und genau so lange aufnehmen, wie du hältst
-• Projekte: Urlaub, Alltag, Workout – jeder Clip landet in seiner eigenen Story
-• Filmstreifen: trimmen, sortieren, neu anordnen wie an einer echten Filmrolle
-• Lautstärke-Angleich: Clips aus Wochen klingen im fertigen Film gleich laut
-• Fotos importieren: Standbilder mit eigener Anzeigedauer einfügen
-• Hochkant oder quer: keep. erkennt, wie du das Handy hältst
-• Export in 1080p oder 4K: alle Clips eines Projekts in einem Tap zu einem fertigen Video
-• Tagebuch-Zeitachse: durch deine Tage scrollen und zurückblicken
-• Orte-Karte: sieh auf einer Karte, wo deine Momente entstanden sind – mit Reiseroute durch die letzten Tage
-• Chronik & Streak: deine Jahresspirale und die Tage, an denen du festgehalten hast
-• Papierkorb: Gelöschtes lässt sich 30 Tage lang wiederherstellen
-
-DEINE MOMENTE BLEIBEN BEI DIR
-keep. sammelt keine Daten. Alle Aufnahmen und Projekte bleiben lokal auf deinem Gerät. Kein Konto, kein Cloud-Zwang, kein Tracking, keine Werbung. Ob der Aufnahmeort gespeichert wird, entscheidest du – wahlweise gar nicht, nur ungefähr oder genau.
+Alles bleibt auf deinem Gerät. Kein Konto, kein Tracking, keine Werbung.
 
 Halt den Moment. Bevor er weg ist.
 ```
@@ -74,38 +60,16 @@ Ein Tap auf dem Sperrbildschirm – ohne Entsperren – und der Moment ist festg
 
 **Neue Funktionen / What's New** (v1.2)
 ```
-Kleinere Runde, dafür an Stellen, die täglich auffallen.
-
-• Der Knopf für ein neues Projekt sitzt jetzt in der Leiste unten statt darüber
-  zu schweben – unten steht ein Element statt zwei.
-• Projekte und Chronik blenden nach unten hin weich aus, statt hart an der
-  Leiste abzuschneiden.
-
-Behoben
-• Eine gerade aufgenommene Aufnahme konnte verloren gehen, wenn die App kurz
-  danach beendet wurde. Aufnahmen, Fotoimporte und die Reihenfolge im
-  Filmstreifen werden jetzt sofort gesichert.
-• Nach dem Trimmen ließ sich ein Clip nicht mehr öffnen, bis man das Projekt
-  einmal verlassen hatte. Das galt auch für die anderen Aktionen im
-  Kontextmenü.
-• Die Leiste über dem Auslöser stand mit der Frontkamera nicht mittig.
+• Der Knopf für ein neues Projekt sitzt jetzt in der Leiste unten.
+• Behoben: Ein Clip konnte verloren gehen, wenn die App direkt nach der Aufnahme beendet wurde.
+• Behoben: Ein getrimmter Clip ließ sich erst öffnen, nachdem man das Projekt verlassen hatte.
+• Behoben: Die Leiste über dem Auslöser stand mit der Frontkamera nicht mittig.
 ```
 
 **Neue Funktionen / What's New** (v1.3, Entwurf für den nächsten Build)
 ```
-Querformat
-• keep. erkennt jetzt, wie du das Handy hältst. Quer aufgenommene Clips
-  werden als Querformat gespeichert, in der App und vom Sperrbildschirm.
-• Die Symbole in der Kamera drehen sich mit.
-• Die große Vorschau im Tagebuch zeigt Querformat-Clips ganz.
-
-Neuer Vorspann
-• Exportierte Filme beginnen mit einem neuen, kurzen Vorspann: Projektname
-  und Zeitraum, dazu das keep.-Logo und ein leiser Ton. Im Querformat
-  gibt es eine eigene Fassung.
-
-Behoben
-• Bei Filmen im Querformat wurde der Projektname im Vorspann abgeschnitten.
+• Querformat: keep. erkennt, wie du das Handy hältst.
+• Exportierte Filme beginnen mit einem neuen Vorspann mit Projektname und Zeitraum.
 ```
 
 ---
