@@ -128,30 +128,16 @@ Your life, one clip a day
 
 **Description** (max. 4000 chars)
 ```
-keep. is your daily video journal — built around a single tap.
+keep. is a daily video journal built around a single tap.
 
-Tap the record button on your Lock Screen, record a quick clip, done — without unlocking your phone. No hunting, no fumbling, no Face ID. The clip saves itself and lands straight in your journal — and you're back in the moment instead of behind a phone.
+Tap the record button on your Lock Screen and the moment is saved, without unlocking your phone. Then you're back in the moment instead of behind your phone.
 
-WHY keep.
-The best moments are gone before the camera app even loads. keep. makes capturing as fast as a thought — so you stay in the moment instead of wrestling with your phone.
+• Record from the Lock Screen, Control Center or the Action button
+• Clips of 1, 1.6, 3 or 5 seconds, or hold the shutter for as long as you like
+• Sort your clips into projects and turn each one into a film in 1080p or 4K
+• Look back on your days in the timeline and on a map
 
-HOW IT WORKS
-• Record from the Lock Screen without unlocking — also from Control Center or the Action button
-• Your projects and past clips still need an unlock. Recording is fast; looking back stays private
-• Pick your length right in the camera: 1, φ (about 1.6), 3 or 5 seconds. Or hold the shutter and record for exactly as long as you hold it
-• Projects: vacation, everyday, workout — every clip lands in its own story
-• Filmstrip: trim, sort and rearrange like a real reel
-• Volume matching: clips recorded weeks apart sound equally loud in the finished film
-• Import photos: drop in stills with their own on-screen duration
-• Portrait or landscape: keep. knows which way you're holding your phone
-• Export in 1080p or 4K: turn a whole project into a finished video in one tap
-• Journal timeline: scroll through your days and look back
-• Places map: see where your moments happened, with a travel route through your recent days
-• Chronicle & streak: your year as a spiral, and the days you captured
-• Trash: anything deleted can be restored for 30 days
-
-YOUR MOMENTS STAY YOURS
-keep. collects no data. Every recording and project stays local on your device. No account, no forced cloud, no tracking, no ads. Whether capture locations are saved is up to you — off, approximate, or precise.
+Everything stays on your device. No account, no tracking, no ads.
 
 Hold the moment. Before it's gone.
 ```
