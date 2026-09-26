@@ -43,11 +43,12 @@ Die schönsten Momente sind vorbei, bevor die Kamera-App geladen hat. keep. mach
 SO FUNKTIONIERT'S
 • Aufnahme vom Sperrbildschirm – ohne Entsperren. Auch über das Kontrollzentrum oder die Action-Taste
 • An deine Projekte und alten Clips kommst du weiterhin nur entsperrt. Aufnehmen ist schnell, Ansehen bleibt privat
-• Aufnahmedauer wählbar: 1, gut anderthalb (φ), 3 oder 5 Sekunden – fest eingestellt, kein Zufall
+• Aufnahmedauer direkt in der Kamera wählen: 1, φ (gut 1,6), 3 oder 5 Sekunden. Oder den Auslöser halten und genau so lange aufnehmen, wie du hältst
 • Projekte: Urlaub, Alltag, Workout – jeder Clip landet in seiner eigenen Story
 • Filmstreifen: trimmen, sortieren, neu anordnen wie an einer echten Filmrolle
 • Lautstärke-Angleich: Clips aus Wochen klingen im fertigen Film gleich laut
 • Fotos importieren: Standbilder mit eigener Anzeigedauer einfügen
+• Hochkant oder quer: keep. erkennt, wie du das Handy hältst
 • Export in 1080p oder 4K: alle Clips eines Projekts in einem Tap zu einem fertigen Video
 • Tagebuch-Zeitachse: durch deine Tage scrollen und zurückblicken
 • Orte-Karte: sieh auf einer Karte, wo deine Momente entstanden sind – mit Reiseroute durch die letzten Tage
@@ -90,9 +91,29 @@ Behoben
 • Die Leiste über dem Auslöser stand mit der Frontkamera nicht mittig.
 ```
 
+**Neue Funktionen / What's New** (v1.3, Entwurf für den nächsten Build)
+```
+Querformat
+• keep. erkennt jetzt, wie du das Handy hältst. Quer aufgenommene Clips
+  werden als Querformat gespeichert, in der App und vom Sperrbildschirm.
+• Die Symbole in der Kamera drehen sich mit.
+• Die große Vorschau im Tagebuch zeigt Querformat-Clips ganz.
+
+Neuer Vorspann
+• Exportierte Filme beginnen mit einem neuen, kurzen Vorspann: Projektname
+  und Zeitraum, dazu das keep.-Logo und ein leiser Ton. Im Querformat
+  gibt es eine eigene Fassung.
+
+Behoben
+• Bei Filmen im Querformat wurde der Projektname im Vorspann abgeschnitten.
+```
+
 ---
 
 ## English (en-US)
+
+> US-Schreibweise durchgehend (Control Center, vacation, off-center, canceled).
+> Alle Aussagen gegen den Code geprüft, Stand v1.3.
 
 **App Name** (max. 30 chars)
 ```
@@ -115,13 +136,14 @@ WHY keep.
 The best moments are gone before the camera app even loads. keep. makes capturing as fast as a thought — so you stay in the moment instead of wrestling with your phone.
 
 HOW IT WORKS
-• Record from the Lock Screen without unlocking — also from Control Centre or the Action button
+• Record from the Lock Screen without unlocking — also from Control Center or the Action button
 • Your projects and past clips still need an unlock. Recording is fast; looking back stays private
-• Choose your length: 1, a bit over 1.5 (φ), 3 or 5 seconds — set once in Settings
-• Projects: holiday, everyday, workout — every clip lands in its own story
+• Pick your length right in the camera: 1, φ (about 1.6), 3 or 5 seconds. Or hold the shutter and record for exactly as long as you hold it
+• Projects: vacation, everyday, workout — every clip lands in its own story
 • Filmstrip: trim, sort and rearrange like a real reel
 • Volume matching: clips recorded weeks apart sound equally loud in the finished film
 • Import photos: drop in stills with their own on-screen duration
+• Portrait or landscape: keep. knows which way you're holding your phone
 • Export in 1080p or 4K: turn a whole project into a finished video in one tap
 • Journal timeline: scroll through your days and look back
 • Places map: see where your moments happened, with a travel route through your recent days
@@ -160,7 +182,24 @@ Fixed
   once.
 • After trimming, a clip wouldn't open until you left the project and came
   back. The same went for the other context-menu actions.
-• The bar above the shutter sat off-centre on the front camera.
+• The bar above the shutter sat off-center on the front camera.
+```
+
+**What's New** (v1.3, draft for the next build)
+```
+Landscape
+• keep. now knows which way you're holding your phone. Clips shot sideways
+  are saved in landscape, in the app and from the Lock Screen.
+• Camera icons turn with your phone.
+• The big preview in your journal shows landscape clips in full.
+
+New intro
+• Exported films open with a new, short intro: your project's name and
+  dates, the keep. logo and a soft sound. Landscape films get their own
+  version.
+
+Fixed
+• In landscape films, the project name in the intro was cut off.
 ```
 
 ---
