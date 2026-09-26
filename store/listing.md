@@ -155,37 +155,16 @@ One tap from your Lock Screen — no unlocking — and the moment is saved. No d
 
 **What's New** (v1.2)
 ```
-A smaller release, in places you meet every day.
-
-• The new-project button now sits in the bar at the bottom instead of floating
-  above it — one object down there instead of two.
-• Projects and Chronicle fade out at the bottom rather than stopping dead
-  against the bar.
-
-Fixed
-• A clip you had just recorded could be lost if the app was killed moments
-  later. Recordings, photo imports and filmstrip order are now committed at
-  once.
-• After trimming, a clip wouldn't open until you left the project and came
-  back. The same went for the other context-menu actions.
-• The bar above the shutter sat off-center on the front camera.
+• The new-project button now sits in the bottom bar.
+• Fixed: a clip could be lost if the app closed right after recording.
+• Fixed: a trimmed clip wouldn't open until you left the project.
+• Fixed: the bar above the shutter was off-center on the front camera.
 ```
 
 **What's New** (v1.3, draft for the next build)
 ```
-Landscape
-• keep. now knows which way you're holding your phone. Clips shot sideways
-  are saved in landscape, in the app and from the Lock Screen.
-• Camera icons turn with your phone.
-• The big preview in your journal shows landscape clips in full.
-
-New intro
-• Exported films open with a new, short intro: your project's name and
-  dates, the keep. logo and a soft sound. Landscape films get their own
-  version.
-
-Fixed
-• In landscape films, the project name in the intro was cut off.
+• Record in landscape: keep. knows which way you're holding your phone.
+• Exported films open with a new intro showing your project's name and dates.
 ```
 
 ---
