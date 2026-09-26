@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8">
+<title>keep. — Signature</title>
+<style>
+@font-face{font-family:Brico;font-weight:800;src:url(../../Keep/Resources/Fonts/BricolageGrotesque-ExtraBold.ttf)}
+@font-face{font-family:Mono;font-weight:500;src:url(../../Keep/Resources/Fonts/JetBrainsMono-Medium.ttf)}
+*{margin:0;padding:0}
+html,body{overflow:hidden;background:#0D0D0D}
+svg{display:block}
+</style></head>
+<body>
+<svg id="art"></svg>
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+//  Signature-Clip vor jedem Export: 2,5 s, dunkel wie der Ladescreen.
+//
+//  Die Linse erscheint allein, der Aufnahmering läuft einmal voll, es klickt.
+//  Dann rückt die Linse an ihren Platz, „keep“ steigt daneben auf und die
+//  Unterstreichung zieht sich durch. Das Endbild ist genau das Logo des
+//  Ladescreens (LaunchWordmark), gleiche Maße, gleiche Farben.
+//
+//  Projektname und Zeitraum brennt die App selbst ein (VideoComposer), unten
+//  links, ab 1,65 s. `?preview` zeichnet sie hier zur Ansicht nach, `?wide`
+//  zeigt den Ausschnitt eines Querformat-Exports.
+// ════════════════════════════════════════════════════════════════════════════
+const Q = new URLSearchParams(location.search);
+const WIDE = Q.has('wide'), PREVIEW = Q.has('preview');
+const W = WIDE ? 1920 : 1080, H = WIDE ? 1080 : 1920;
+const art = document.getElementById('art');
+art.setAttribute('width', W); art.setAttribute('height', H);
+// Querformat: die App füllt die Leinwand mit dem Hochformat-Clip, sichtbar
+// bleibt das mittlere Band. Genau das zeigt dieser Ausschnitt.
+art.setAttribute('viewBox', WIDE ? `0 ${960 - 1080 * 1080 / 1920 / 2} 1080 ${1080 * 1080 / 1920}` : '0 0 1080 1920');
+
+const C = { bg: '#0D0D0D', amber: '#F0873A', white: '#FFFFFF', glow: '#482D19' };
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const p = (t, a, b) => clamp((t - a) / (b - a));
+const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eout = x => 1 - Math.pow(1 - x, 3);
+const back = x => { const c = 1.9; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const f = n => Math.round(n * 100) / 100;
+
+// Logo-Geometrie in Pixeln von LaunchWordmark@3x.png (1320 breit), gemessen.
+const G = {
+  cx: 663, cy: 1372.5,                   // Mitte des Logos
+  lens: { x: 904.5, y: 1364.5, r: 56.5, stroke: 5, dot: 16.5 },
+  line: { x0: 369, x1: 949, y: 1457.5, w: 12 },
+  word: { x: 357, base: 1429, size: 208, track: -8 },
+};
+const S = 1080 / 1320;                    // gleiche relative Größe wie der Ladescreen
+const toFrame = (x, y) => [540 + (x - G.cx) * S, 960 + (y - G.cy) * S];
+
+const DEFS = `<defs>
+  <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${C.glow}"/><stop offset=".55" stop-color="${C.glow}" stop-opacity=".55"/><stop offset="1" stop-color="${C.glow}" stop-opacity="0"/></radialGradient>
+  <radialGradient id="disc"><stop offset="0" stop-color="#4A3627"/><stop offset=".42" stop-color="#2A2622"/><stop offset="1" stop-color="#151718"/></radialGradient>
+  <radialGradient id="dotGlow"><stop offset="0" stop-color="${C.amber}" stop-opacity=".55"/><stop offset="1" stop-color="${C.amber}" stop-opacity="0"/></radialGradient>
+</defs>`;
+
+// Die Linse: dunkle Scheibe, Amber-Ring, Amber-Punkt. r = Radius der Ringmitte.
+function lens(x, y, r, ringProg, dotScale, ringAlpha) {
+  const k = r / G.lens.r, sw = G.lens.stroke * k, dr = G.lens.dot * k * dotScale;
+  let s = `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="url(#disc)"/>`;
+  // leise Spur, auf der der Ring läuft
+  s += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="none" stroke="#fff" stroke-opacity="${f(.12 * ringAlpha)}" stroke-width="${f(sw)}"/>`;
+  if (ringProg > 0) s += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="none" stroke="${C.amber}" stroke-width="${f(sw)}" stroke-linecap="round" pathLength="1" stroke-dasharray="${f(ringProg)} 2" transform="rotate(-90 ${f(x)} ${f(y)})"/>`;
+  s += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(dr * 2.6)}" fill="url(#dotGlow)"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(dr)}" fill="${C.amber}"/>`;
+  return s;
+}
+
+// ─── Zeitleiste ─────────────────────────────────────────────────────────────
+//  0,00–0,30  Punkt und Linse erscheinen in der Bildmitte
+//  0,30–0,95  Aufnahmering läuft einmal voll
+//  0,95       Klick: das Glühen blüht auf, eine Druckwelle läuft nach außen
+//  0,98–1,32  Linse rückt an ihren Platz, dahinter steigt „keep“ Buchstabe für Buchstabe auf
+//  1,28–1,68  Unterstreichung zieht sich durch
+//  1,65–2,00  (App) Projektname und Zeitraum blenden ein
+//  bis 2,50   stehen lassen, dann harter Schnitt in den Film
+function draw(t) {
+  let s = DEFS + `<rect x="0" y="0" width="1080" height="1920" fill="${C.bg}"/>`;
+
+  // Wärme im Hintergrund, wie im Ladescreen; beim Klick kurz heller
+  const [gx, gy] = toFrame(660, 1230);
+  const gIn = eout(p(t, 0, .5)), flash = Math.exp(-Math.max(0, t - .95) * 7) * (t >= .95 ? 1 : 0);
+  s += `<ellipse cx="${f(gx)}" cy="${f(gy)}" rx="${f(560 * S * (1 + .08 * flash))}" ry="${f(540 * S * (1 + .08 * flash))}" fill="url(#glow)" opacity="${f(gIn * (1 + .6 * flash))}"/>`;
+
+  // Linse: groß in der Mitte, dann an ihren Platz im Logo
+  const [lx, ly] = toFrame(G.lens.x, G.lens.y), rFinal = G.lens.r * S;
+  const move = eio(p(t, .98, 1.32));
+  const appear = back(p(t, .05, .32));
+  const big = 2.6;
+  const cx = lerp(540, lx, move), cy = lerp(960, ly, move);
+  const r = rFinal * lerp(big, 1, move) * appear;
+  const ring = p(t, .3, .95);           // linear, wie der Ring in der App
+  // REC-Puls, solange der Ring läuft
+  const pulse = t > .3 && t < .95 ? 1 + .12 * Math.sin((t - .3) * Math.PI * 2 / .325) ** 2 : 1;
+  const pop = t >= .95 ? 1 + .35 * Math.exp(-(t - .95) * 14) : 1;
+  const dotIn = back(p(t, 0, .18));
+
+  // „keep“ — jeder Buchstabe steigt aus einer Maske über der Grundlinie auf
+  const [wx, wb] = toFrame(G.word.x, G.word.base);
+  const letters = ['k', 'e', 'e', 'p'];
+  const clipTop = toFrame(0, G.word.base - 200)[1], clipBot = toFrame(0, G.line.y + G.line.w / 2)[1];
+  s += `<clipPath id="wc"><rect x="0" y="${f(clipTop)}" width="1080" height="${f(clipBot - clipTop)}"/></clipPath><g clip-path="url(#wc)">`;
+  let adv = 0;
+  // Vorschübe in Font-Einheiten (Bricolage ExtraBold, 1000 upm) plus Laufweite
+  const ADV = { k: 605, e: 587, p: 648 };
+  letters.forEach((ch, i) => {
+    const q = p(t, 1.1 + i * .055, 1.46 + i * .055);
+    const dy = (1 - back(q)) * 150 * S;
+    const x = wx + adv * S;
+    if (q > 0) s += `<text x="${f(x)}" y="${f(wb + dy)}" font-family="Brico" font-weight="800" font-size="${f(G.word.size * S)}" fill="${C.white}" opacity="${f(clamp(q * 3))}">${ch}</text>`;
+    adv += ADV[ch] * G.word.size / 1000 + G.word.track;
+  });
+  s += `</g>`;
+
+  // Unterstreichung, von links nach rechts; das p reicht hinein wie im Ladescreen
+  const lp = eio(p(t, 1.28, 1.68));
+  if (lp > 0) {
+    const [x0, y] = toFrame(G.line.x0, G.line.y), [x1] = toFrame(G.line.x1, G.line.y);
+    s += `<path d="M${f(x0)},${f(y)} L${f(lerp(x0, x1, lp))},${f(y)}" stroke="${C.amber}" stroke-width="${f(G.line.w * S)}" stroke-linecap="round"/>`;
+    // Das p liegt über der Linie
+    const pq = p(t, 1.1 + 3 * .055, 1.46 + 3 * .055);
+    if (pq >= 1) s += `<g clip-path="url(#wc)"><text x="${f(wx + (ADV.k + ADV.e * 2) * G.word.size / 1000 * S + 3 * G.word.track * S)}" y="${f(wb)}" font-family="Brico" font-weight="800" font-size="${f(G.word.size * S)}" fill="${C.white}">p</text></g>`;
+  }
+
+  // Druckwelle beim Klick
+  const sw = p(t, .95, 1.38);
+  if (sw > 0 && sw < 1) {
+    const R = rFinal * big * (1.05 + 2.4 * eout(sw));
+    s += `<circle cx="540" cy="960" r="${f(R)}" fill="none" stroke="${C.amber}" stroke-width="${f(6 * (1 - sw) + 1)}" opacity="${f((1 - sw) * .8)}"/>`;
+  }
+
+  if (r > 0) s += lens(cx, cy, r, ring, dotIn * pulse * pop, 1 - move);
+
+  art.innerHTML = s + (PREVIEW ? titleCard(t) : '');
+}
+
+// ─── Nur Vorschau: so legt die App Titel und Zeitraum darüber ─────────────
+function titleCard(t) {
+  const a = eout(p(t, 1.65, 2.0)); if (a <= 0) return '';
+  // Maße wie titleCardImage in VideoComposer.swift, auf die kurze Kante bezogen
+  const vw = 1080, vh = WIDE ? 1080 * 1080 / 1920 : 1920, y0 = WIDE ? 960 - vh / 2 : 0;
+  const unit = Math.min(WIDE ? 1920 : 1080, WIDE ? 1080 : 1920), k = vw / (WIDE ? 1920 : 1080);
+  const left = unit * .075 * k, bottom = y0 + vh - unit * .1 * k;
+  const title = unit * (WIDE ? .075 : .1) * k, range = unit * .032 * k;
+  return `<g opacity="${f(a)}"><text x="${f(left)}" y="${f(bottom)}" font-family="Mono" font-weight="500" font-size="${f(range)}" letter-spacing="${f(range * .09)}" fill="${C.amber}">01.07.2026  –  31.08.2026</text>`
+    + `<text x="${f(left)}" y="${f(bottom - range * 1.1 - 8 * k)}" font-family="-apple-system, Inter, Helvetica, Arial" font-weight="700" font-size="${f(title)}" fill="#fff">Sommer 2026</text></g>`;
+}
+
+window.render = draw;
+draw(0);
+</script>
+</body></html>

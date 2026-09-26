@@ -247,12 +247,22 @@ actor VideoComposer {
 
     // MARK: - Intro bumper
 
+    /// When the title card fades in over the bumper, in seconds. Matches the
+    /// moment the wordmark in BumperIntro.mp4 has settled (see
+    /// marketing/bumper/keep-bumper.html, which renders that file).
+    private static let titleFadeInStart: CFTimeInterval = 1.65
+
     /// Renders the bundled "keep." intro bumper with the project title and its
     /// recording date range burned in near the bottom, ready to be prepended as
     /// the first clip of the final export. Returns nil if the bundled asset is
     /// missing so the caller can fall back to exporting without it.
+    ///
+    /// `shapeURL` is the clip the export takes its shape from. The bumper is
+    /// rendered straight onto that canvas, so a landscape film gets a
+    /// landscape title card. It used to be rendered portrait and cropped into
+    /// the landscape canvas afterwards, which cut the title off the bottom.
     func renderBumper(projectName: String, startDate: Date, endDate: Date,
-                      quality: ExportQuality) async -> URL? {
+                      quality: ExportQuality, shapeURL: URL?) async -> URL? {
         guard let bumperURL = Bundle.main.url(forResource: "BumperIntro", withExtension: "mp4") else { return nil }
         let asset = AVURLAsset(url: bumperURL)
         guard let videoTrack = try? await asset.loadTracks(withMediaType: .video).first,
@@ -261,15 +271,17 @@ actor VideoComposer {
               let duration = try? await asset.load(.duration)
         else { return nil }
 
-        // At the export's own quality, not a hardcoded 1080p: the bumper is
-        // scaled into the final canvas afterwards, and rendering it smaller
-        // than that canvas would soften the title card on a 4K export.
-        let renderSize = await canvasSize(for: asset, quality: quality)
+        // At the export's own quality and shape: the title card is drawn at
+        // this size, so rendering it smaller than the final canvas would
+        // soften it on a 4K export.
+        let renderSize = await canvasSize(for: shapeURL.map { AVURLAsset(url: $0) } ?? asset,
+                                          quality: quality)
         guard renderSize.width > 0, renderSize.height > 0 else { return nil }
 
         // Scale into the canvas rather than using preferredTransform alone: the
-        // canvas is now the quality's size, not the bumper's own, so a bare
-        // preferredTransform would leave the frame overflowing its bounds.
+        // canvas is the export's size, not the bumper's own. In landscape the
+        // portrait bumper is cropped to its middle band, which is where the
+        // animation keeps everything that matters.
         let layerInstr = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
         layerInstr.setTransform(
             transformFilling(naturalSize: naturalSize,
@@ -298,6 +310,17 @@ actor VideoComposer {
         let overlayLayer = CALayer()
         overlayLayer.frame = CGRect(origin: .zero, size: renderSize)
         overlayLayer.contents = overlay.cgImage
+        // The title waits for the wordmark to finish, then fades in. fillMode
+        // .both holds it at 0 before the animation starts and at 1 after.
+        let fadeIn = CABasicAnimation(keyPath: "opacity")
+        fadeIn.fromValue = 0
+        fadeIn.toValue = 1
+        fadeIn.beginTime = AVCoreAnimationBeginTimeAtZero + Self.titleFadeInStart
+        fadeIn.duration = 0.35
+        fadeIn.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        fadeIn.fillMode = .both
+        fadeIn.isRemovedOnCompletion = false
+        overlayLayer.add(fadeIn, forKey: "fadeIn")
         let parentLayer = CALayer()
         parentLayer.frame = CGRect(origin: .zero, size: renderSize)
         parentLayer.addSublayer(videoLayer)
@@ -329,29 +352,18 @@ actor VideoComposer {
         format.opaque = false
         let renderer = UIGraphicsImageRenderer(size: size, format: format)
 
-        return renderer.image { ctx in
-            let cg = ctx.cgContext
-            let maxWidth   = size.width * 0.86
-            let leftInset  = size.width * 0.07
-            let bottomInset = size.height * 0.065
-
-            // Bottom scrim so the text stays legible over any bumper content.
-            let scrimHeight = size.height * 0.34
-            let scrimRect = CGRect(x: 0, y: size.height - scrimHeight, width: size.width, height: scrimHeight)
-            let colors = [UIColor.black.withAlphaComponent(0).cgColor,
-                         UIColor.black.withAlphaComponent(0.82).cgColor] as CFArray
-            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
-                cg.saveGState()
-                cg.clip(to: scrimRect)
-                cg.drawLinearGradient(gradient,
-                                      start: CGPoint(x: 0, y: scrimRect.minY),
-                                      end: CGPoint(x: 0, y: scrimRect.maxY),
-                                      options: [])
-                cg.restoreGState()
-            }
+        return renderer.image { _ in
+            // Measured from the short edge, so a landscape card isn't scaled
+            // up by its width into a title that crowds the wordmark. No scrim:
+            // the bumper's background is already the app's near-black.
+            let unit        = min(size.width, size.height)
+            let isLandscape = size.width > size.height
+            let leftInset   = unit * 0.075
+            let bottomInset = unit * 0.1
+            let maxWidth    = size.width - leftInset * 2
 
             // Date range — mono, amber, tracked, matching the app's data-label style.
-            let rangeFontSize = size.width * 0.032
+            let rangeFontSize = unit * 0.032
             let rangeFont = UIFont(name: "JetBrainsMono-Medium", size: rangeFontSize)
                 ?? .monospacedSystemFont(ofSize: rangeFontSize, weight: .medium)
             let rangeAttrs: [NSAttributedString.Key: Any] = [
@@ -367,8 +379,8 @@ actor VideoComposer {
             // Title — bold, prominent. Shrinks in steps until it fits within
             // two lines at `maxWidth`; if it still doesn't fit at the floor size,
             // the final draw call truncates the last line with an ellipsis.
-            let maxTitleSize: CGFloat = size.width * 0.115
-            let minTitleSize: CGFloat = size.width * 0.05
+            let maxTitleSize: CGFloat = unit * (isLandscape ? 0.075 : 0.1)
+            let minTitleSize: CGFloat = unit * 0.05
             var fontSize = maxTitleSize
             var titleFont = UIFont.boldSystemFont(ofSize: fontSize)
             while fontSize > minTitleSize {
@@ -380,7 +392,7 @@ actor VideoComposer {
                 )
                 titleFont = font
                 if bounding.height <= font.lineHeight * 2.05 { break }
-                fontSize -= max(1, size.width * 0.003)
+                fontSize -= max(1, unit * 0.003)
             }
 
             let paragraph = NSMutableParagraphStyle()
@@ -390,7 +402,14 @@ actor VideoComposer {
                 .foregroundColor: UIColor.white,
                 .paragraphStyle: paragraph
             ]
-            let titleBoxHeight = titleFont.lineHeight * 2.1
+            // Sized to the text itself, capped at two lines, so a one-line
+            // title sits on the date instead of a blank line above it.
+            let measured = (projectName as NSString).boundingRect(
+                with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: titleAttrs, context: nil
+            ).height
+            let titleBoxHeight = min(ceil(measured), titleFont.lineHeight * 2.1)
             let titleRect = CGRect(
                 x: leftInset,
                 y: rangeOrigin.y - 6 - titleBoxHeight,

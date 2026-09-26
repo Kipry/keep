@@ -1203,9 +1203,12 @@ struct ProjectDetailView: View {
     private func makeBumperClipInfo(quality: ExportQuality) async -> VideoComposer.ClipInfo? {
         let dates = project.activeClips.map(\.createdAt)
         guard let first = dates.min(), let last = dates.max() else { return nil }
+        // The same clip compose() takes the canvas shape from: the first one
+        // that will actually be exported.
+        let shapeURL = project.activeClips.first { $0.isAvailable }?.fileURL
         guard let url = await composer.renderBumper(projectName: project.name,
                                                     startDate: first, endDate: last,
-                                                    quality: quality) else {
+                                                    quality: quality, shapeURL: shapeURL) else {
             return nil
         }
         // isIntro so the bumper's own shape can't decide the export canvas.
