@@ -17,6 +17,31 @@ svg{display:block}
 // ════════════════════════════════════════════════════════════════════════════
 //  Farben, Zeitplan, Texte
 // ════════════════════════════════════════════════════════════════════════════
+// ─── Sprache: ?lang=en für die englische Fassung, sonst Deutsch ─────────────
+const LANG = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'de';
+const TEXT = {
+  de: {
+    introEyebrow: 'SOMMER · KÜSTE', intro: ['Die besten Momente', 'kündigen sich nicht an'],
+    lockDate: 'SAMSTAG, 16. AUGUST', lockTime: '14:32',
+    handA: 'ohne', handB: 'Entsperren!', tap: ['Ein Tipp.', 'Ohne Entsperren'],
+    cheers: 'Prost!',
+    luckyEyebrow: 'ZUM GLÜCK', lucky: ['Ben war schnell genug'],
+    exportEyebrow: 'EXPORT', export: ['Clips rein. Film raus'],
+    wow: 'Wie cool ist das denn?!', summer: ['Sein Sommer.', 'In einem Film'],
+    endA: 'Halte den Moment fest,', endB: 'ohne ihn zu verpassen', store: 'JETZT IM APP STORE',
+  },
+  en: {
+    introEyebrow: 'SUMMER · COAST', intro: ['The best moments', "don't wait for you"],
+    lockDate: 'SATURDAY, AUGUST 16', lockTime: '2:32',
+    handA: 'no', handB: 'unlocking!', tap: ['One tap.', 'No unlocking'],
+    cheers: 'Cheers!',
+    luckyEyebrow: 'LUCKILY', lucky: ['Ben was fast enough'],
+    exportEyebrow: 'EXPORT', export: ['Clips in. Film out'],
+    wow: 'How cool is that?!', summer: ['His summer.', 'In one film'],
+    endA: 'Hold on to the moment,', endB: 'without missing it', store: 'NOW ON THE APP STORE',
+  },
+}[LANG];
+
 const C = {
   peach: '#ECD1BF', cream: '#F6E4D8', paper: '#FCF4EE', ink: '#2A2320', line: '#3A2822',
   amber: '#F0873A', yellow: '#F2B04F', coral: '#E9683F', navy: '#2D4358', blueg: '#C8D7E2',
@@ -375,7 +400,7 @@ function shotIntro(t) {
     mia: `<g transform="translate(640,1214) scale(.42)">${figure(PEOPLE.mia, { run: 0, wave: t * 9, look: [-.6, .3], grin: 1 })}</g>`,
   })}</svg>`
     + `<g transform="translate(270,1600) scale(1.05) rotate(4)">${bust(ben, { glasses: true, grin: .5 })}${arm(ben, 120, 300, 30, 320)}<rect x="-60" y="240" width="96" height="170" rx="18" fill="${C.navy}" ${L5}/><circle cx="30" cy="320" r="30" fill="${ben.skin}" ${L5}/></g>`;
-  return blobFrame(t, inner) + headline(['Die besten Momente', 'kündigen sich nicht an'], 'SOMMER · KÜSTE', .3, 3.05, t);
+  return blobFrame(t, inner) + headline(TEXT.intro, TEXT.introEyebrow, .3, 3.05, t);
 }
 
 const PHONE = { cx: 540, cy: 1240, w: 480, h: 980, rot: -5 };
@@ -383,8 +408,8 @@ function lockScreen(t) {
   const { w, h } = PHONE;
   return `<svg x="${-w / 2 + 18}" y="${-h / 2 + 18}" width="${w - 36}" height="${h - 36}" viewBox="120 560 840 1720" preserveAspectRatio="xMidYMid slice">${coast(t)}</svg>`
     + `<rect x="${-w / 2 + 18}" y="${-h / 2 + 18}" width="${w - 36}" height="${h - 36}" rx="56" fill="#000" fill-opacity=".18"/>`
-    + `<text x="0" y="-300" font-family="Mono" font-weight="500" font-size="22" letter-spacing="3" fill="#fff" text-anchor="middle">SAMSTAG, 16. AUGUST</text>`
-    + `<text x="0" y="-160" font-family="Inter" font-weight="700" font-size="150" letter-spacing="-5" fill="#fff" text-anchor="middle">14:32</text>`
+    + `<text x="0" y="-300" font-family="Mono" font-weight="500" font-size="22" letter-spacing="3" fill="#fff" text-anchor="middle">${TEXT.lockDate}</text>`
+    + `<text x="0" y="-160" font-family="Inter" font-weight="700" font-size="150" letter-spacing="-5" fill="#fff" text-anchor="middle">${TEXT.lockTime}</text>`
     + `<circle cx="-150" cy="380" r="46" fill="#000" fill-opacity=".3"/><path d="M-162,356 h24 l-4,16 h-16z M-158,372 h16 v28 h-16z" fill="#fff"/>`;
 }
 const CTRL = [150, 380];
@@ -414,13 +439,13 @@ function shotPhone(t) {
   const a = rot * Math.PI / 180, tipX = cx + CTRL[0] * Math.cos(a) - CTRL[1] * Math.sin(a) - 40, tipY = cy + CTRL[0] * Math.sin(a) + CTRL[1] * Math.cos(a) - 50;
   const ap = eio(p(t, 3.45, 4.0)) * (1 - p(t, 5.2, 5.4));
   const ax = tipX - 30, ay = tipY + 110;
-  const arr = `<g opacity="${f((1 - p(t, 5.1, 5.4)) * 100) / 100}">${arrow(`M360,1845 C460,1885 ${f(ax - 60)},1880 ${f(ax)},${f(ay)}`, ap, [ax, ay], -1.3)}${hand('ohne', 150, 1725, p(t, 3.3, 3.6), -8, 76)}${hand('Entsperren!', 215, 1795, p(t, 3.4, 3.7), -8, 76)}</g>`;
+  const arr = `<g opacity="${f((1 - p(t, 5.1, 5.4)) * 100) / 100}">${arrow(`M360,1845 C460,1885 ${f(ax - 60)},1880 ${f(ax)},${f(ay)}`, ap, [ax, ay], -1.3)}${hand(TEXT.handA, 150, 1725, p(t, 3.3, 3.6), -8, 76)}${hand(TEXT.handB, 215, 1795, p(t, 3.4, 3.7), -8, 76)}</g>`;
   const deco = 1 - z;
   return blobFrame(t, '', deco) + `<rect width="1080" height="1920" fill="${C.peach}" opacity="${f(z * 100) / 100}"/>` + phone + arr
-    + headline(['Ein Tipp.', 'Ohne Entsperren'], null, 3.1, 5.35, t);
+    + headline(TEXT.tap, null, 3.1, 5.35, t);
 }
 
-function shotDinner(t) { return dinner(t, eio(p(t, 9.7, 10.2))) + (t > 10.15 ? bubble('Prost!', 740, 820, p(t, 10.15, 10.4), 1, 90) : '') + viewfinder(t, 9.55); }
+function shotDinner(t) { return dinner(t, eio(p(t, 9.7, 10.2))) + (t > 10.15 ? bubble(TEXT.cheers, 740, 820, p(t, 10.15, 10.4), 1, 90) : '') + viewfinder(t, 9.55); }
 function shotFireworks(t) { return fireworks(t, 11.7) + viewfinder(t, 11.85); }
 
 function bubble(text, x, y, prog, dir = 1, size = 76) {
@@ -460,8 +485,8 @@ function shotFilm(t) {
   }
   const arr = arrow(`M870,860 C1010,980 960,1080 830,1080`, eio(p(t, 15.2, 15.6)) * (1 - p(t, 16.2, 16.5)), [830, 1080], Math.PI);
   return blobFrame(t, inner, 1, false) + arr
-    + headline(['Ben war schnell genug'], 'ZUM GLÜCK', 13.95, 15.4, t)
-    + headline(['Clips rein. Film raus'], 'EXPORT', 15.4, 17.3, t);
+    + headline(TEXT.lucky, TEXT.luckyEyebrow, 13.95, 15.4, t)
+    + headline(TEXT.export, TEXT.exportEyebrow, 15.4, 17.3, t);
 }
 
 function shotFriends(t) {
@@ -489,8 +514,8 @@ function shotFriends(t) {
       ? `<path d="M0,22 C-40,-6 -30,-40 0,-22 C30,-40 40,-6 0,22Z" fill="${C.coral}" stroke="${C.line}" stroke-width="5"/>`
       : `<path d="M0,-34 L9,-10 L34,-10 L14,6 L22,32 L0,16 L-22,32 L-14,6 L-34,-10 L-9,-10Z" fill="${C.yellow}" stroke="${C.line}" stroke-width="5" stroke-linejoin="round"/>`}</g>`;
   }
-  s += `</g>` + bubble('Wie cool ist das denn?!', 700, 760, p(t, 19.15, 19.45), 1, 64);
-  return s + headline(['Sein Sommer.', 'In einem Film'], null, 17.65, 21.5, t, 190);
+  s += `</g>` + bubble(TEXT.wow, 700, 760, p(t, 19.15, 19.45), 1, 64);
+  return s + headline(TEXT.summer, null, 17.65, 21.5, t, 190);
 }
 
 function shotEnd(t) {
@@ -500,9 +525,9 @@ function shotEnd(t) {
   s += dB;
   s += `<g transform="translate(540,${f(lerp(1030, 990, eout(q)))})" opacity="${f(eout(q) * 100) / 100}"><text font-family="Brico" font-weight="800" font-size="220" fill="${C.ink}" text-anchor="middle" letter-spacing="-6">keep<tspan fill="${C.amber}">.</tspan></text></g>`;
   const q2 = p(t, 22.55, 23.1);
-  s += `<g opacity="${f(eout(q2) * 100) / 100}" transform="translate(0,${f((1 - eout(q2)) * 20)})"><text x="540" y="1160" font-family="Inter" font-weight="800" font-size="50" letter-spacing="-1" fill="${C.ink}" text-anchor="middle">Halte den Moment fest,</text><text x="540" y="1222" font-family="Inter" font-weight="800" font-size="50" letter-spacing="-1" fill="${C.ink}" text-anchor="middle">ohne ihn zu verpassen<tspan fill="${C.amber}">.</tspan></text></g>`;
+  s += `<g opacity="${f(eout(q2) * 100) / 100}" transform="translate(0,${f((1 - eout(q2)) * 20)})"><text x="540" y="1160" font-family="Inter" font-weight="800" font-size="50" letter-spacing="-1" fill="${C.ink}" text-anchor="middle">${TEXT.endA}</text><text x="540" y="1222" font-family="Inter" font-weight="800" font-size="50" letter-spacing="-1" fill="${C.ink}" text-anchor="middle">${TEXT.endB}<tspan fill="${C.amber}">.</tspan></text></g>`;
   const q3 = p(t, 23.0, 23.5);
-  s += `<text x="540" y="1340" font-family="Mono" font-weight="500" font-size="28" letter-spacing="9" fill="${C.ink}" fill-opacity="${f(.55 * eout(q3) * 100) / 100}" text-anchor="middle">JETZT IM APP STORE</text>`;
+  s += `<text x="540" y="1340" font-family="Mono" font-weight="500" font-size="28" letter-spacing="9" fill="${C.ink}" fill-opacity="${f(.55 * eout(q3) * 100) / 100}" text-anchor="middle">${TEXT.store}</text>`;
   return s + dF;
 }
 

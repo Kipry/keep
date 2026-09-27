@@ -1,6 +1,7 @@
 # Vertont keep-urlaub-24s.mp4: nur Geräusche, keine Musik.
 #
 #   python3 sound.py      → keep-urlaub-sfx.wav und keep-urlaub-24s-ton.mp4
+#                           (und keep-urlaub-24s-en-ton.mp4, falls die englische Fassung gerendert ist)
 #
 # Alles wird hier synthetisiert, es gibt keine fremden Samples und damit keine
 # Lizenzfragen. Die Zeitpunkte stammen aus keep-urlaub.html. Wird dort das
@@ -306,8 +307,12 @@ with wave.open(wav, 'wb') as w:
     w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)
     w.writeframes((out.T * 32767).astype('<i2').tobytes())
 
-video, final = os.path.join(HERE, 'keep-urlaub-24s.mp4'), os.path.join(HERE, 'keep-urlaub-24s-ton.mp4')
-subprocess.run([os.environ.get('FFMPEG', 'ffmpeg'), '-y', '-loglevel', 'error', '-i', video, '-i', wav,
-                '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest',
-                '-movflags', '+faststart', final], check=True)
-print(final)
+# Deutsch immer, Englisch wenn gerendert (node render.mjs --en)
+for video, final in [('keep-urlaub-24s.mp4', 'keep-urlaub-24s-ton.mp4'),
+                     ('keep-urlaub-24s-en.mp4', 'keep-urlaub-24s-en-ton.mp4')]:
+    video, final = os.path.join(HERE, video), os.path.join(HERE, final)
+    if not os.path.exists(video): continue
+    subprocess.run([os.environ.get('FFMPEG', 'ffmpeg'), '-y', '-loglevel', 'error', '-i', video, '-i', wav,
+                    '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest',
+                    '-movflags', '+faststart', final], check=True)
+    print(final)

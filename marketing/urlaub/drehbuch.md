@@ -54,6 +54,13 @@ cd marketing/urlaub
 npm i
 node render.mjs             # → keep-urlaub-24s.mp4
 node render.mjs --still 7.4 # einzelnes Bild zum Prüfen
+node render.mjs --en         # englische Fassung → keep-urlaub-24s-en.mp4
 pip install numpy scipy
 python3 sound.py            # → keep-urlaub-24s-ton.mp4 (Geräusche zum Bild)
 ```
+
+## Englische Fassung
+
+`keep-urlaub-24s-en-ton.mp4`. Alle Texte stehen oben in `keep-urlaub.html` in
+`TEXT`, Deutsch und Englisch nebeneinander. Die Uhrzeit auf dem Sperrbildschirm
+ist in der englischen Fassung 2:32 statt 14:32, das Datum US-üblich.

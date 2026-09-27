@@ -1,6 +1,7 @@
 // Renders keep-urlaub.html to an MP4, one deterministic frame at a time.
 //
 //   node render.mjs                 → keep-urlaub-24s.mp4
+//   node render.mjs --en            → keep-urlaub-24s-en.mp4 (englische Fassung)
 //   node render.mjs --still 5.2     → still-5.2.png (one frame, for checking)
 //
 // Env: FFMPEG=/path/to/ffmpeg (default "ffmpeg"), CHROMIUM=/path/to/chrome
@@ -16,11 +17,12 @@ import path from 'node:path';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const FPS = 30, SECONDS = 24, W = 1080, H = 1920;
 const args = process.argv.slice(2);
-const stillAt = args[0] === '--still' ? parseFloat(args[1]) : null;
+const stillAt = args.includes('--still') ? parseFloat(args[args.indexOf('--still') + 1]) : null;
+const en = args.includes('--en');
 
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
-await page.goto(pathToFileURL(path.join(here, 'keep-urlaub.html')).href);
+await page.goto(pathToFileURL(path.join(here, 'keep-urlaub.html')).href + (en ? '?lang=en' : ''));
 // Fonts and the end-card image have to be in before the first frame, or the
 // opening seconds render in a fallback face and the end card pops in late.
 await page.evaluate(async () => {
@@ -30,14 +32,14 @@ await page.evaluate(async () => {
 
 if (stillAt !== null) {
   await page.evaluate(t => window.render(t), stillAt);
-  const out = path.join(here, `still-${stillAt}.png`);
+  const out = path.join(here, `still-${stillAt}${en ? '-en' : ''}.png`);
   await page.screenshot({ path: out });
   console.log(out);
   await browser.close();
   process.exit(0);
 }
 
-const out = path.join(here, 'keep-urlaub-24s.mp4');
+const out = path.join(here, en ? 'keep-urlaub-24s-en.mp4' : 'keep-urlaub-24s.mp4');
 const ff = spawn(process.env.FFMPEG || 'ffmpeg', [
   '-y', '-loglevel', 'error',
   '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
