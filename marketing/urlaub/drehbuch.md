@@ -20,7 +20,7 @@ seinem Sommer, und seine Freunde finden ihn großartig.
 | Zeit | Bild | Text |
 |---|---|---|
 | **0,0 – 3,0 s** | Pfirsichfarbener Grund, in der Mitte eine Creme-Fläche mit der Szene: Villa auf der Klippe, Pool, Meer, Sonne. Rundherum schweben Filmrolle, Klappe und Filmstreifen. Vorne Ben mit Sonnenbrille, hinten winkt Mia vom Beckenrand. | *SOMMER · KÜSTE* — **Die besten Momente kündigen sich nicht an.** |
-| **3,0 – 5,6 s** | Nahaufnahme: Bens Handy, Sperrbildschirm. Ein amberfarbener, handgezeichneter Pfeil zeigt auf den keep.-Knopf, daneben handschriftlich „ohne Entsperren!". Ein Tipp. | **Ein Tipp. Ohne Entsperren.** |
+| **3,0 – 5,6 s** | Nahaufnahme: Bens Handy, Sperrbildschirm. Ein amberfarbener, handgezeichneter Pfeil zeigt auf den keep.-Knopf, daneben handschriftlich „ohne Entsperren!". Ein Tipp. | **Ein Tipp. Direkt ins Projekt.** |
 | **5,6 – 6,0 s** | Das Handy zoomt heran, bis sein Bildschirm den ganzen Clip füllt. | — |
 | **6,0 – 8,6 s** | Durch den Sucher: Mia nimmt Anlauf, springt, macht eine Arschbombe. Die Aufnahme läuft genau die 1,6 Sekunden von Absprung bis Aufschlag, der Ring um den Auslöser läuft voll. | — |
 | **8,0 – 9,4 s** | Das Wasser spritzt bis auf die Linse. Tropfen legen sich über den Bildschirm, ein Wasserschwall wischt zum nächsten Moment. | — |
