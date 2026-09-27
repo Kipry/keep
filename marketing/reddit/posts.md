@@ -41,26 +41,28 @@ verbieten Eigenwerbung in der Regel und sperren schnell.
 
 **Titel:**
 ```
-I built a video diary you can record into without unlocking your phone
+I kept filming short moments and drowning my camera roll, so I built an app that turns them into one film
 ```
 
 **Text:**
 ```
-Hi! I made keep., a small iOS app for recording one short clip a day.
+Hi! I made keep., a small iOS app for short video clips.
 
-The problem I kept running into: the moments I actually wanted on video were over before I'd unlocked my phone and opened the camera. So keep. records straight from the Lock Screen. You swap the camera button in the bottom corner for keep., tap it, and it records without Face ID or a passcode. The Action button and Control Center work too.
+My problem: I'd film lots of tiny moments on a trip or just during the week, a few seconds each. They ended up scattered across my camera roll between screenshots and receipts, and I never did anything with them.
 
-Recording is quick, but looking back isn't exposed: your projects and older clips still need an unlock. New clips land in the app the next time you unlock.
+keep. keeps those clips out of your photo library. Each one goes into a project (a trip, a summer, everyday life), and when you're done, one tap turns the whole project into a single film.
 
-What else it does:
+To keep it fast, you can record straight from the Lock Screen by putting keep. where the camera button usually sits. The Action button and Control Center work too. Your projects still need an unlock to look at.
+
+A few details:
 - Clips of 1, 1.6, 3 or 5 seconds, or hold the shutter as long as you like
-- Projects (vacation, everyday, whatever) that export into one film in 1080p or 4K
+- Export in 1080p or 4K
 - A timeline and an optional map of where your clips were shot
 - No account, no tracking, no ads. Everything stays on the device
 
 It's free on iOS 18+: [LINK]
 
-I'd love honest feedback, especially on the first minute: is it clear what to do?
+I'd love honest feedback. Does the idea click for you, or do you just use the camera roll?
 ```
 
 ---
@@ -102,15 +104,17 @@ Happy to answer questions. The app is keep., a small video diary, if you want to
 
 **Titel:**
 ```
-[Free] keep. — a video diary you can record into from the Lock Screen, no unlock needed
+[Free] keep. — collect short clips in projects instead of your camera roll, then export them as one film
 ```
 
 **Text:**
 ```
-I'm the developer. keep. is for people who want to capture little moments without the fumbling: tap the keep. button on your Lock Screen and it records right away, no Face ID.
+I'm the developer. keep. is for people who film lots of short moments and don't want them cluttering their photo library.
 
+- Clips go into projects (a trip, a month, everyday life), not your camera roll
+- One tap turns a project into a finished film, 1080p or 4K
+- Record from the Lock Screen, Action button or Control Center
 - Clips of 1 to 5 seconds, or hold to record longer
-- Organize them into projects and export a finished film (1080p or 4K)
 - Timeline and optional places map to look back
 - Free, no account, no tracking, no ads, everything stays on your phone
 
@@ -146,26 +150,28 @@ Happy to share code if anyone's interested. The app is keep.: [LINK]
 
 **Titel:**
 ```
-Ich habe ein Video-Tagebuch gebaut, in das man ohne Entsperren aufnimmt
+Meine Galerie war voll mit kurzen Clips, also habe ich eine App gebaut, die daraus einen Film macht
 ```
 
 **Text:**
 ```
-Hallo zusammen, ich habe keep. entwickelt, eine kleine iOS-App für einen kurzen Clip am Tag.
+Hallo zusammen, ich habe keep. entwickelt, eine kleine iOS-App für kurze Videoclips.
 
-Mein Problem war immer: Die Momente, die ich filmen wollte, waren vorbei, bevor ich das Handy entsperrt und die Kamera geöffnet hatte. Mit keep. tauscht man die Kamera unten rechts auf dem Sperrbildschirm gegen keep. aus. Ein Tipp, und es nimmt auf, ohne Face ID oder Code. Action-Taste und Kontrollzentrum gehen auch.
+Mein Problem: Im Urlaub oder unter der Woche filme ich viele kleine Momente, jeweils ein paar Sekunden. Die lagen dann verstreut in der Galerie zwischen Screenshots und Kassenbons, und ich habe nie etwas daraus gemacht.
 
-An die Projekte und alten Clips kommt man trotzdem nur entsperrt. Aufnehmen ist schnell, Ansehen bleibt privat.
+Bei keep. landen die Clips nicht in der Galerie, sondern in Projekten, zum Beispiel ein Urlaub, ein Sommer oder einfach der Alltag. Am Ende macht ein Tipp aus dem ganzen Projekt einen Film.
+
+Damit es schnell geht, nimmt keep. auch direkt vom Sperrbildschirm auf: Man legt es dorthin, wo sonst unten rechts die Kamera sitzt. Action-Taste und Kontrollzentrum gehen auch. Die Projekte sieht man trotzdem nur entsperrt.
 
 Außerdem:
 - Clips mit 1, 1,6, 3 oder 5 Sekunden, oder den Auslöser halten
-- Projekte, die man als Film in 1080p oder 4K exportiert
+- Export in 1080p oder 4K
 - Zeitachse und optional eine Karte, wo die Clips entstanden sind
 - Kein Konto, kein Tracking, keine Werbung, alles bleibt auf dem Gerät
 
 Kostenlos ab iOS 18: [LINK]
 
-Über ehrliches Feedback freue ich mich sehr.
+Über ehrliches Feedback freue ich mich sehr. Klingt das sinnvoll, oder reicht euch die Galerie?
 ```
 
 ---
@@ -200,14 +206,14 @@ Subreddit dreht sich um eine andere App.
 
 **Titel:**
 ```
-For anyone who keeps missing their daily second: I built something that records from the Lock Screen
+Another take on the daily-clip habit: projects instead of one endless timeline
 ```
 
 **Text:**
 ```
 Mods, please remove if this isn't okay.
 
-My daily clips kept failing for one reason: by the time I'd unlocked and opened an app, the moment was gone. So I built keep., which records straight from the Lock Screen without unlocking. Clips of 1 to 5 seconds, grouped into projects, exported as one film.
+I built keep. for short clips too, but organized a bit differently: clips go into projects (a trip, a summer, everyday life), and each project exports as its own film. Clips of 1 to 5 seconds, and you can record from the Lock Screen or the Action button.
 
 Not trying to pull anyone away from 1SE. It's a different take on the same habit. If you try it, I'd love to hear what's missing: [LINK]
 ```
